@@ -5,6 +5,228 @@ interface EffectsLayerProps {
   type: EffectType;
 }
 
+interface Particle {
+  x: number;
+  y: number;
+  speed: number;
+  length: number;
+  size: number;
+  angle: number;
+  spin: number;
+  opacity: number;
+  oscillation: number;
+}
+
+type RenderFunction = (
+  ctx: CanvasRenderingContext2D,
+  canvas: HTMLCanvasElement,
+  particles: Particle[],
+  config: EffectConfig
+) => void;
+
+interface EffectConfig {
+  count: number;
+  speedRange: { min: number; max: number };
+  sizeRange: { min: number; max: number };
+  lengthRange?: { min: number; max: number };
+  opacityRange: { min: number; max: number };
+  renderFunction: RenderFunction;
+  color?: string;
+  lineWidth?: number;
+  slant?: number;
+  blur?: number;
+}
+
+// Generic render functions
+const renderRain: RenderFunction = (ctx, canvas, particles, config) => {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.strokeStyle = config.color || "rgba(174, 194, 224, 0.5)";
+  ctx.lineWidth = config.lineWidth || 1;
+  ctx.lineCap = "round";
+
+  particles.forEach((p) => {
+    p.y += p.speed;
+    if (config.slant) p.x -= config.slant;
+
+    if (p.y > canvas.height) {
+      p.y = -p.length;
+      p.x = Math.random() * canvas.width;
+    }
+    if (p.x < 0) p.x = canvas.width;
+
+    ctx.beginPath();
+    ctx.moveTo(p.x, p.y);
+    ctx.lineTo(p.x - (config.slant || 0), p.y + p.length);
+    ctx.stroke();
+  });
+};
+
+const renderSnow: RenderFunction = (ctx, canvas, particles, config) => {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = config.color || "rgba(255, 255, 255, 0.8)";
+
+  particles.forEach((p) => {
+    p.y += p.speed;
+    p.x += Math.sin(p.y * 0.01) * 0.5;
+
+    if (p.y > canvas.height) {
+      p.y = -5;
+      p.x = Math.random() * canvas.width;
+    }
+
+    ctx.globalAlpha = p.opacity;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+    ctx.fill();
+  });
+  ctx.globalAlpha = 1;
+};
+
+const renderLeaves: RenderFunction = (ctx, canvas, particles, config) => {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  particles.forEach((p) => {
+    p.y += p.speed * 0.5;
+    p.x += Math.sin(p.y * 0.005 + p.angle) * 1;
+    p.angle += p.spin;
+
+    if (p.y > canvas.height) {
+      p.y = -10;
+      p.x = Math.random() * canvas.width;
+    }
+
+    ctx.save();
+    ctx.translate(p.x, p.y);
+    ctx.rotate(p.angle);
+    ctx.fillStyle = `${config.color} ${p.opacity})`;
+    ctx.beginPath();
+    ctx.ellipse(0, 0, p.size * 2, p.size, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  });
+};
+
+const renderFireflies: RenderFunction = (ctx, canvas, particles, config) => {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  particles.forEach((p) => {
+    p.y += Math.sin(p.oscillation) * 0.5;
+    p.x += Math.cos(p.oscillation) * 0.5;
+    p.oscillation += 0.02;
+
+    // Wrap around
+    if (p.x > canvas.width + 10) p.x = -10;
+    if (p.x < -10) p.x = canvas.width + 10;
+    if (p.y > canvas.height + 10) p.y = -10;
+    if (p.y < -10) p.y = canvas.height + 10;
+
+    // Twinkle
+    const currentOpacity =
+      Math.abs(Math.sin(p.oscillation * 2)) * p.opacity + 0.2;
+
+    ctx.fillStyle = `rgba(255, 255, 150, ${currentOpacity})`;
+    ctx.shadowBlur = 10;
+    ctx.shadowColor = "yellow";
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+  });
+};
+
+const renderClouds: RenderFunction = (ctx, canvas, particles, config) => {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.filter = `blur(${config.blur || 60}px)`;
+  ctx.fillStyle = config.color || "rgba(0, 0, 0, 1)";
+
+  particles.forEach((p) => {
+    p.x += p.speed;
+    if (p.x > canvas.width + p.size) {
+      p.x = -p.size;
+    }
+
+    ctx.globalAlpha = p.opacity;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+    ctx.fill();
+  });
+  ctx.filter = "none";
+  ctx.globalAlpha = 1;
+};
+
+// Configuration for each effect type
+const EFFECT_CONFIGS: Record<
+  Exclude<EffectType, "none" | "sun-rays">,
+  EffectConfig
+> = {
+  rain: {
+    count: 300,
+    speedRange: { min: 10, max: 15 },
+    sizeRange: { min: 1, max: 4 },
+    lengthRange: { min: 10, max: 30 },
+    opacityRange: { min: 0.1, max: 0.6 },
+    renderFunction: renderRain,
+    color: "rgba(174, 194, 224, 0.5)",
+    lineWidth: 1,
+  },
+  "heavy-rain": {
+    count: 800,
+    speedRange: { min: 10, max: 15 },
+    sizeRange: { min: 1, max: 4 },
+    lengthRange: { min: 10, max: 30 },
+    opacityRange: { min: 0.1, max: 0.6 },
+    renderFunction: renderRain,
+    color: "rgba(174, 194, 224, 0.5)",
+    lineWidth: 2,
+    slant: 1,
+  },
+  snow: {
+    count: 150,
+    speedRange: { min: 1, max: 2 },
+    sizeRange: { min: 1, max: 4 },
+    lengthRange: { min: 10, max: 30 },
+    opacityRange: { min: 0.1, max: 0.6 },
+    renderFunction: renderSnow,
+    color: "rgba(255, 255, 255, 0.8)",
+  },
+  leaves: {
+    count: 50,
+    speedRange: { min: 1, max: 4 },
+    sizeRange: { min: 2, max: 6 },
+    lengthRange: { min: 10, max: 30 },
+    opacityRange: { min: 0.1, max: 0.6 },
+    renderFunction: renderLeaves,
+    color: "rgba(218, 165, 32,",
+  },
+  "cherry-blossom": {
+    count: 50,
+    speedRange: { min: 1, max: 4 },
+    sizeRange: { min: 2, max: 4 },
+    lengthRange: { min: 10, max: 30 },
+    opacityRange: { min: 0.1, max: 0.6 },
+    renderFunction: renderLeaves,
+    color: "rgba(255, 183, 197,",
+  },
+  fireflies: {
+    count: 40,
+    speedRange: { min: 0.5, max: 1 },
+    sizeRange: { min: 1, max: 4 },
+    lengthRange: { min: 10, max: 30 },
+    opacityRange: { min: 0.1, max: 0.6 },
+    renderFunction: renderFireflies,
+  },
+  "cloud-shadows": {
+    count: 6,
+    speedRange: { min: 0.2, max: 0.4 },
+    sizeRange: { min: 300, max: 700 },
+    lengthRange: { min: 10, max: 30 },
+    opacityRange: { min: 0.15, max: 0.15 },
+    renderFunction: renderClouds,
+    color: "rgba(0, 0, 0, 1)",
+    blur: 60,
+  },
+};
+
 export const EffectsLayer: React.FC<EffectsLayerProps> = ({ type }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -15,8 +237,11 @@ export const EffectsLayer: React.FC<EffectsLayerProps> = ({ type }) => {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
+    const config = EFFECT_CONFIGS[type];
+    if (!config) return;
+
     let animationFrameId: number;
-    let particles: any[] = [];
+    let particles: Particle[] = [];
 
     const resize = () => {
       canvas.width = window.innerWidth;
@@ -26,45 +251,30 @@ export const EffectsLayer: React.FC<EffectsLayerProps> = ({ type }) => {
     window.addEventListener("resize", resize);
     resize();
 
-    // Initialize particles based on type
+    // Initialize particles using config
     const initParticles = () => {
       particles = [];
-      const isHeavy = type === "heavy-rain";
-      const count = isHeavy
-        ? 800
-        : type === "rain"
-        ? 300
-        : type === "snow"
-        ? 150
-        : type === "fireflies"
-        ? 40
-        : type === "cloud-shadows"
-        ? 6
-        : 50;
-
-      for (let i = 0; i < count; i++) {
+      for (let i = 0; i < config.count; i++) {
         particles.push({
           x: Math.random() * canvas.width,
           y: Math.random() * canvas.height,
           speed:
-            Math.random() * 5 +
-            (isHeavy
-              ? 15
-              : type === "rain"
-              ? 10
-              : type === "fireflies"
-              ? 0.5
-              : type === "cloud-shadows"
-              ? 0.2
-              : 1),
-          length: Math.random() * 20 + 10,
+            Math.random() * (config.speedRange.max - config.speedRange.min) +
+            config.speedRange.min,
+          length: config.lengthRange
+            ? Math.random() *
+                (config.lengthRange.max - config.lengthRange.min) +
+              config.lengthRange.min
+            : 20,
           size:
-            type === "cloud-shadows"
-              ? Math.random() * 400 + 300
-              : Math.random() * 3 + 1,
+            Math.random() * (config.sizeRange.max - config.sizeRange.min) +
+            config.sizeRange.min,
           angle: Math.random() * Math.PI * 2,
           spin: Math.random() * 0.1 - 0.05,
-          opacity: type === "cloud-shadows" ? 0.15 : Math.random() * 0.5 + 0.1,
+          opacity:
+            Math.random() *
+              (config.opacityRange.max - config.opacityRange.min) +
+            config.opacityRange.min,
           oscillation: Math.random() * Math.PI * 2,
         });
       }
@@ -72,132 +282,8 @@ export const EffectsLayer: React.FC<EffectsLayerProps> = ({ type }) => {
 
     initParticles();
 
-    const drawRain = (isHeavy = false) => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.strokeStyle = "rgba(174, 194, 224, 0.5)";
-      ctx.lineWidth = isHeavy ? 2 : 1;
-      ctx.lineCap = "round";
-
-      particles.forEach((p) => {
-        p.y += p.speed;
-        if (isHeavy) p.x -= 1; // Slant for heavy rain
-
-        if (p.y > canvas.height) {
-          p.y = -p.length;
-          p.x = Math.random() * canvas.width;
-        }
-        if (p.x < 0) p.x = canvas.width;
-
-        ctx.beginPath();
-        ctx.moveTo(p.x, p.y);
-        ctx.lineTo(p.x - (isHeavy ? 5 : 0), p.y + p.length);
-        ctx.stroke();
-      });
-    };
-
-    const drawSnow = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.fillStyle = "rgba(255, 255, 255, 0.8)";
-
-      particles.forEach((p) => {
-        p.y += p.speed;
-        p.x += Math.sin(p.y * 0.01) * 0.5;
-
-        if (p.y > canvas.height) {
-          p.y = -5;
-          p.x = Math.random() * canvas.width;
-        }
-
-        ctx.globalAlpha = p.opacity;
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-        ctx.fill();
-      });
-      ctx.globalAlpha = 1;
-    };
-
-    const drawLeaves = (color = "rgba(218, 165, 32,") => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      particles.forEach((p) => {
-        p.y += p.speed * 0.5;
-        p.x += Math.sin(p.y * 0.005 + p.angle) * 1;
-        p.angle += p.spin;
-
-        if (p.y > canvas.height) {
-          p.y = -10;
-          p.x = Math.random() * canvas.width;
-        }
-
-        ctx.save();
-        ctx.translate(p.x, p.y);
-        ctx.rotate(p.angle);
-        ctx.fillStyle = `${color} ${p.opacity})`;
-        // Simple leaf shape
-        ctx.beginPath();
-        ctx.ellipse(0, 0, p.size * 2, p.size, 0, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.restore();
-      });
-    };
-
-    const drawFireflies = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      particles.forEach((p) => {
-        p.y += Math.sin(p.oscillation) * 0.5;
-        p.x += Math.cos(p.oscillation) * 0.5;
-        p.oscillation += 0.02;
-
-        // Wrap around
-        if (p.x > canvas.width + 10) p.x = -10;
-        if (p.x < -10) p.x = canvas.width + 10;
-        if (p.y > canvas.height + 10) p.y = -10;
-        if (p.y < -10) p.y = canvas.height + 10;
-
-        // Twinkle
-        const currentOpacity =
-          Math.abs(Math.sin(p.oscillation * 2)) * p.opacity + 0.2;
-
-        ctx.fillStyle = `rgba(255, 255, 150, ${currentOpacity})`;
-        ctx.shadowBlur = 10;
-        ctx.shadowColor = "yellow";
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.shadowBlur = 0;
-      });
-    };
-
-    const drawClouds = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.filter = "blur(60px)";
-      ctx.fillStyle = "rgba(0, 0, 0, 1)"; // Opacity handled by globalAlpha or loop
-
-      particles.forEach((p) => {
-        p.x += p.speed;
-        if (p.x > canvas.width + p.size) {
-          p.x = -p.size;
-        }
-
-        ctx.globalAlpha = p.opacity;
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-        ctx.fill();
-      });
-      ctx.filter = "none";
-      ctx.globalAlpha = 1;
-    };
-
     const render = () => {
-      if (type === "rain") drawRain(false);
-      else if (type === "heavy-rain") drawRain(true);
-      else if (type === "snow") drawSnow();
-      else if (type === "leaves") drawLeaves();
-      else if (type === "cherry-blossom") drawLeaves("rgba(255, 183, 197,");
-      else if (type === "fireflies") drawFireflies();
-      else if (type === "cloud-shadows") drawClouds();
-
+      config.renderFunction(ctx, canvas, particles, config);
       animationFrameId = requestAnimationFrame(render);
     };
 

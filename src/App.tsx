@@ -44,10 +44,6 @@ function App() {
     "zen_effect",
     "none"
   );
-  const [sounds, setSounds] = useLocalStorage<SoundTrack[]>(
-    "zen_sounds",
-    DEFAULT_SOUNDS
-  );
 
   // Runtime state for sound playback (volume and isPlaying)
   const [soundStates, setSoundStates] = useLocalStorage<SoundState[]>(
@@ -68,16 +64,15 @@ function App() {
     "zen_yt_history",
     []
   );
-  const [showYoutube, setShowYoutube] = useLocalStorage<boolean>(
-    "zen_yt_show",
-    false
-  ); // Persist visibility
   const [isBgMuted, setIsBgMuted] = useLocalStorage<boolean>(
     "zen_bg_muted",
     true
   ); // Background video mute state
 
-  const [timerMode, setTimerMode] = useState<TimerMode>("pomodoro");
+  const [timerMode, setTimerMode] = useLocalStorage<TimerMode>(
+    "zen_timerMode",
+    "pomodoro"
+  );
   const [activePanel, setActivePanel] = useState<PanelType>("none");
   const [isFullscreen, setIsFullscreen] = useState(false);
 
@@ -101,44 +96,6 @@ function App() {
     );
     setYoutubeHistory(newHistory);
   };
-
-  // Helper to get embed info
-  const getEmbedInfo = (url: string) => {
-    if (!url) return null;
-
-    // YouTube
-    const ytMatch = url.match(
-      /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/
-    );
-    if (ytMatch && ytMatch[2].length === 11) {
-      return {
-        type: "youtube",
-        src: `https://www.youtube.com/embed/${ytMatch[2]}?enablejsapi=1&origin=${window.location.origin}`,
-      };
-    }
-
-    // Spotify
-    if (url.includes("open.spotify.com")) {
-      let src = url;
-      if (!url.includes("/embed")) {
-        src = url.replace("open.spotify.com/", "open.spotify.com/embed/");
-      }
-      return { type: "spotify", src };
-    }
-
-    // Apple Music
-    if (url.includes("music.apple.com")) {
-      let src = url;
-      if (!url.includes("embed.music.apple.com")) {
-        src = url.replace("music.apple.com", "embed.music.apple.com");
-      }
-      return { type: "apple", src };
-    }
-
-    return null;
-  };
-
-  const embedInfo = getEmbedInfo(youtubeUrl);
 
   return (
     <div className="relative w-screen h-screen overflow-hidden font-sans">
@@ -255,13 +212,10 @@ function App() {
               }`}
             >
               <AudioController
-                sounds={sounds}
                 soundStates={soundStates}
                 setSoundStates={setSoundStates}
                 youtubeUrl={youtubeUrl}
                 setYoutubeUrl={setYoutubeUrl}
-                showYoutube={showYoutube}
-                setShowYoutube={setShowYoutube}
                 youtubeHistory={youtubeHistory}
                 addToHistory={addToHistory}
               />

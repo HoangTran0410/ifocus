@@ -1,4 +1,4 @@
-export type TimerMode = "pomodoro" | "shortBreak" | "longBreak" | "clock";
+export type TimerMode = "pomodoro" | "shortBreak" | "longBreak" | "clock" | "stopwatch";
 
 export type EffectType =
   | "none"

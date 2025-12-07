@@ -5,6 +5,7 @@ export const TIMER_SETTINGS: Record<TimerMode, number> = {
   shortBreak: 5 * 60,
   longBreak: 15 * 60,
   clock: 0, // Placeholder, not used for counting down
+  stopwatch: 0, // Starts at 0 and counts up
 };
 
 export const DEFAULT_SCENES: Scene[] = [
@@ -86,6 +87,8 @@ export const DEFAULT_SCENES: Scene[] = [
     url: "https://images.unsplash.com/photo-1444080748397-f442aa95c3e5?q=80&w=2560&auto=format&fit=crop",
     name: "Starry Sky",
   },
+
+  // youtube
   {
     id: "lofi-girl",
     type: "youtube",
@@ -117,10 +120,46 @@ export const DEFAULT_SCENES: Scene[] = [
     name: "City Night",
   },
   {
+    id: "HDR",
+    type: "youtube",
+    url: "https://www.youtube.com/watch?v=UYmvFzDuO5k",
+    name: "HDR",
+  },
+  {
+    id: "weeknd-lofi",
+    type: "youtube",
+    url: "https://www.youtube.com/watch?v=wVKDb9RTkrI",
+    name: "Weeknd Lofi",
+  },
+  {
+    id: "c418",
+    type: "youtube",
+    url: "https://www.youtube.com/watch?v=5ZYZ5HeuNsg",
+    name: "C418",
+  },
+  {
+    id: "interstellar",
+    type: "youtube",
+    url: "https://www.youtube.com/watch?v=WHqbqzqeskw", // "https://www.youtube.com/watch?v=UDVtMYqUAyw",
+    name: "Interstellar",
+  },
+  {
+    id: "purple-cat",
+    type: "youtube",
+    url: "https://www.youtube.com/watch?v=kLvZUXtVXQ0",
+    name: "Purple Cat",
+  },
+  {
     id: "sontung",
     type: "youtube",
     url: "https://www.youtube.com/watch?v=IfYjuHnAAFU",
-    name: "SonTung MTP",
+    name: "Sơn Tùng MTP",
+  },
+  {
+    id: "tet",
+    type: "youtube",
+    url: "https://www.youtube.com/watch?v=4qArfv4C2Lg",
+    name: "Tết",
   },
   { id: "solid-dark", type: "color", url: "#1a1a1a", name: "Dark Mode" },
   { id: "solid-warm", type: "color", url: "#2c241b", name: "Warm Brown" },
@@ -139,76 +178,76 @@ export const EFFECTS: { id: EffectType; name: string; icon: string }[] = [
 ];
 
 export const DEFAULT_SOUNDS: SoundTrack[] = [
-  {
-    id: "rain",
-    name: "Rain",
-    emoji: "🌧️",
-    url: "https://actions.google.com/sounds/v1/weather/rain_heavy_loud.ogg",
-  },
-  {
-    id: "thunder",
-    name: "Thunder",
-    emoji: "⚡",
-    url: "https://actions.google.com/sounds/v1/weather/thunderstorm.ogg",
-  },
-  {
-    id: "fire",
-    name: "Fireplace",
-    emoji: "🔥",
-    url: "https://actions.google.com/sounds/v1/ambiences/fireplace.ogg",
-  },
-  {
-    id: "forest",
-    name: "Forest",
-    emoji: "🌲",
-    url: "https://actions.google.com/sounds/v1/nature/forest_morning.ogg",
-  },
-  {
-    id: "coffee",
-    name: "Cafe",
-    emoji: "☕",
-    url: "https://actions.google.com/sounds/v1/ambiences/coffee_shop.ogg",
-  },
-  {
-    id: "crickets",
-    name: "Night",
-    emoji: "🦗",
-    url: "https://actions.google.com/sounds/v1/nature/jungle_atmosphere_late_night.ogg",
-  },
-  {
-    id: "ocean",
-    name: "Waves",
-    emoji: "🌊",
-    url: "https://actions.google.com/sounds/v1/water/waves_crashing_on_rocks_wait.ogg",
-  },
-  {
-    id: "wind",
-    name: "Wind",
-    emoji: "💨",
-    url: "https://actions.google.com/sounds/v1/weather/wind_blowing_loops.ogg",
-  },
-  {
-    id: "train",
-    name: "Train",
-    emoji: "🚂",
-    url: "https://actions.google.com/sounds/v1/transportation/steam_train_whistle_distant.ogg",
-  },
-  {
-    id: "chimes",
-    name: "Chimes",
-    emoji: "🎐",
-    url: "https://actions.google.com/sounds/v1/foley/glasses_clinking.ogg",
-  },
-  {
-    id: "fan",
-    name: "Fan",
-    emoji: "🌀",
-    url: "https://actions.google.com/sounds/v1/household/vacuum_cleaner_running.ogg",
-  },
+  // {
+  //   id: "rain",
+  //   name: "Rain",
+  //   emoji: "🌧️",
+  //   url: "https://actions.google.com/sounds/v1/weather/rain_heavy_loud.ogg",
+  // },
+  // {
+  //   id: "thunder",
+  //   name: "Thunder",
+  //   emoji: "⚡",
+  //   url: "https://actions.google.com/sounds/v1/weather/thunderstorm.ogg",
+  // },
+  // {
+  //   id: "fire",
+  //   name: "Fireplace",
+  //   emoji: "🔥",
+  //   url: "https://actions.google.com/sounds/v1/ambiences/fireplace.ogg",
+  // },
+  // {
+  //   id: "forest",
+  //   name: "Forest",
+  //   emoji: "🌲",
+  //   url: "https://actions.google.com/sounds/v1/nature/forest_morning.ogg",
+  // },
+  // {
+  //   id: "coffee",
+  //   name: "Cafe",
+  //   emoji: "☕",
+  //   url: "https://actions.google.com/sounds/v1/ambiences/coffee_shop.ogg",
+  // },
+  // {
+  //   id: "crickets",
+  //   name: "Night",
+  //   emoji: "🦗",
+  //   url: "https://actions.google.com/sounds/v1/nature/jungle_atmosphere_late_night.ogg",
+  // },
+  // {
+  //   id: "ocean",
+  //   name: "Waves",
+  //   emoji: "🌊",
+  //   url: "https://actions.google.com/sounds/v1/water/waves_crashing_on_rocks_wait.ogg",
+  // },
+  // {
+  //   id: "wind",
+  //   name: "Wind",
+  //   emoji: "💨",
+  //   url: "https://actions.google.com/sounds/v1/weather/wind_blowing_loops.ogg",
+  // },
+  // {
+  //   id: "train",
+  //   name: "Train",
+  //   emoji: "🚂",
+  //   url: "https://actions.google.com/sounds/v1/transportation/steam_train_whistle_distant.ogg",
+  // },
+  // {
+  //   id: "chimes",
+  //   name: "Chimes",
+  //   emoji: "🎐",
+  //   url: "https://actions.google.com/sounds/v1/foley/glasses_clinking.ogg",
+  // },
+  // {
+  //   id: "fan",
+  //   name: "Fan",
+  //   emoji: "🌀",
+  //   url: "https://actions.google.com/sounds/v1/household/vacuum_cleaner_running.ogg",
+  // },
 
   // studi focus
   {
-    id: "rain",
+    id: "rainfall",
     emoji: "\uD83C\uDF27️",
     name: "rainfall",
     url: "https://studyfoc.us/audio/rain.m4a",
@@ -236,7 +275,7 @@ export const DEFAULT_SOUNDS: SoundTrack[] = [
     category: "Nature",
   },
   {
-    id: "fire",
+    id: "crackling-fire",
     emoji: "\uD83D\uDD25",
     name: "cracklingFire",
     url: "https://studyfoc.us/audio/fire.mp3",
@@ -341,7 +380,7 @@ export const DEFAULT_SOUNDS: SoundTrack[] = [
     category: "Urban",
   },
   {
-    id: "coffee",
+    id: "cafe",
     emoji: "☕",
     name: "cafeAmbience",
     url: "https://studyfoc.us/audio/coffee.m4a",

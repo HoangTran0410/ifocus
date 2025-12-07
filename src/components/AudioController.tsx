@@ -1,14 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
-import {
-  Volume2,
-  VolumeX,
-  Youtube,
-  ExternalLink,
-  History,
-  Play,
-  Music as MusicIcon,
-} from "lucide-react";
+import { History, Play, Music as MusicIcon } from "lucide-react";
 import { SoundTrack, SoundState } from "../types";
+import { DEFAULT_SOUNDS } from "../constants";
 
 interface AudioControllerProps {
   sounds: SoundTrack[];
@@ -16,22 +9,16 @@ interface AudioControllerProps {
   setSoundStates: (states: SoundState[]) => void;
   youtubeUrl: string;
   setYoutubeUrl: (url: string) => void;
-  showYoutube: boolean;
-  setShowYoutube: (show: boolean) => void;
-  showYoutubePlayer: boolean;
-  setShowYoutubePlayer: (show: boolean) => void;
   youtubeHistory: string[];
   addToHistory: (url: string) => void;
 }
 
 export const AudioController: React.FC<AudioControllerProps> = ({
-  sounds,
+  // sounds,
   soundStates,
   setSoundStates,
   youtubeUrl,
   setYoutubeUrl,
-  showYoutube,
-  setShowYoutube,
   youtubeHistory,
   addToHistory,
 }) => {
@@ -43,7 +30,7 @@ export const AudioController: React.FC<AudioControllerProps> = ({
 
   useEffect(() => {
     // Sync audio elements with state
-    sounds.forEach((sound) => {
+    DEFAULT_SOUNDS.forEach((sound) => {
       if (!audioRefs.current[sound.id]) {
         audioRefs.current[sound.id] = new Audio(sound.url);
         audioRefs.current[sound.id].loop = true;
@@ -54,21 +41,32 @@ export const AudioController: React.FC<AudioControllerProps> = ({
 
       if (!soundState) return;
 
+      // Update volume
       audio.volume = soundState.volume;
 
       if (soundState.isPlaying) {
-        // Prevent interruption error by checking promise
-        const playPromise = audio.play();
-        if (playPromise !== undefined) {
-          playPromise.catch((error) =>
-            console.log("Audio play prevented:", error)
-          );
+        // Only play if not already playing
+        if (audio.paused) {
+          const playPromise = audio.play();
+          if (playPromise !== undefined) {
+            playPromise.catch((error) =>
+              console.log("Audio play prevented:", error)
+            );
+          }
         }
       } else {
+        // Pause the audio immediately
         audio.pause();
       }
     });
-  }, [sounds, soundStates]);
+
+    // Cleanup function to pause all audio on unmount
+    return () => {
+      Object.values(audioRefs.current).forEach((audio: HTMLAudioElement) => {
+        audio.pause();
+      });
+    };
+  }, [soundStates]);
 
   const toggleSound = (id: string) => {
     const newStates = soundStates.map((s) =>
@@ -89,13 +87,11 @@ export const AudioController: React.FC<AudioControllerProps> = ({
     if (!inputUrl) return;
     setYoutubeUrl(inputUrl);
     addToHistory(inputUrl);
-    setShowYoutube(true);
   };
 
   const handleHistoryClick = (url: string) => {
     setInputUrl(url);
     setYoutubeUrl(url);
-    setShowYoutube(true);
   };
 
   // Improved Embed URL generator
@@ -166,7 +162,7 @@ export const AudioController: React.FC<AudioControllerProps> = ({
       <div className="flex-1 overflow-y-auto custom-scrollbar p-1">
         {activeTab === "sounds" && (
           <div className="grid grid-cols-2 gap-3 pb-4">
-            {sounds.map((sound) => {
+            {DEFAULT_SOUNDS.map((sound) => {
               const soundState = soundStates.find((s) => s.id === sound.id);
               if (!soundState) return null;
 

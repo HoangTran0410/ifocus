@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Play, Pause, RotateCcw } from "lucide-react";
 import { TimerMode } from "../types";
 import { TIMER_SETTINGS } from "../constants";
+import { useLocalStorage } from "../hooks/useLocalStorage";
 
 interface TimerProps {
   mode: TimerMode;
@@ -9,10 +10,35 @@ interface TimerProps {
   onTick?: () => void; // Optional callback for ticks
 }
 
+// Type for storing time left for each mode
+type TimerStates = Record<TimerMode, number>;
+
 export const Timer: React.FC<TimerProps> = ({ mode, setMode }) => {
-  const [timeLeft, setTimeLeft] = useState(TIMER_SETTINGS[mode]);
+  // Store timeLeft for each mode separately
+  const [timerStates, setTimerStates] = useLocalStorage<TimerStates>(
+    "zen_timer_states",
+    {
+      pomodoro: TIMER_SETTINGS.pomodoro,
+      shortBreak: TIMER_SETTINGS.shortBreak,
+      longBreak: TIMER_SETTINGS.longBreak,
+      clock: TIMER_SETTINGS.clock,
+      stopwatch: TIMER_SETTINGS.stopwatch,
+    }
+  );
+
   const [isActive, setIsActive] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
+
+  // Get current mode's time
+  const timeLeft = timerStates[mode];
+
+  // Helper to update time for current mode
+  const setTimeLeft = (value: number | ((prev: number) => number)) => {
+    setTimerStates((prev) => ({
+      ...prev,
+      [mode]: typeof value === "function" ? value(prev[mode]) : value,
+    }));
+  };
 
   // Handle Clock Mode
   useEffect(() => {
@@ -24,24 +50,24 @@ export const Timer: React.FC<TimerProps> = ({ mode, setMode }) => {
     }
   }, [mode]);
 
-  // Handle Timer Mode
+  // Stop timer when switching modes
   useEffect(() => {
-    if (mode === "clock") {
-      setIsActive(false);
-      return;
-    }
-
     setIsActive(false);
-    setTimeLeft(TIMER_SETTINGS[mode]);
   }, [mode]);
 
   useEffect(() => {
     let interval: number | null = null;
-    if (mode !== "clock" && isActive && timeLeft > 0) {
+    if (mode === "stopwatch" && isActive) {
+      // Stopwatch counts up
+      interval = window.setInterval(() => {
+        setTimeLeft((time) => time + 1);
+      }, 1000);
+    } else if (mode !== "clock" && mode !== "stopwatch" && isActive && timeLeft > 0) {
+      // Regular timer counts down
       interval = window.setInterval(() => {
         setTimeLeft((time) => time - 1);
       }, 1000);
-    } else if (timeLeft === 0) {
+    } else if (mode !== "stopwatch" && timeLeft === 0) {
       setIsActive(false);
       // Play a bell sound or notification here if implemented
     }
@@ -53,7 +79,10 @@ export const Timer: React.FC<TimerProps> = ({ mode, setMode }) => {
   const toggleTimer = () => setIsActive(!isActive);
   const resetTimer = () => {
     setIsActive(false);
-    setTimeLeft(TIMER_SETTINGS[mode]);
+    setTimerStates((prev) => ({
+      ...prev,
+      [mode]: TIMER_SETTINGS[mode],
+    }));
   };
 
   const formatTimer = (seconds: number) => {
@@ -84,7 +113,7 @@ export const Timer: React.FC<TimerProps> = ({ mode, setMode }) => {
     <div className="group flex flex-col items-center justify-center p-8 transition-all duration-500 ease-in-out text-white w-full max-w-md mx-auto hover:bg-black/40 hover:backdrop-blur-md rounded-3xl font-sans">
       {/* Mode Selectors - Fades in on hover */}
       <div className="flex space-x-2 mb-8 p-1 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-4 group-hover:translate-y-0 bg-white/10">
-        {(["pomodoro", "shortBreak", "longBreak", "clock"] as TimerMode[]).map(
+        {(["pomodoro", "shortBreak", "longBreak", "stopwatch", "clock"] as TimerMode[]).map(
           (m) => (
             <button
               key={m}
@@ -101,6 +130,8 @@ export const Timer: React.FC<TimerProps> = ({ mode, setMode }) => {
                 ? "Short"
                 : m === "longBreak"
                 ? "Long"
+                : m === "stopwatch"
+                ? "Stopwatch"
                 : "Clock"}
             </button>
           )
@@ -131,7 +162,7 @@ export const Timer: React.FC<TimerProps> = ({ mode, setMode }) => {
           )}
         </button>
 
-        {timeLeft < TIMER_SETTINGS[mode] && (
+        {(mode === "stopwatch" ? timeLeft > 0 : timeLeft < TIMER_SETTINGS[mode]) && (
           <button
             onClick={resetTimer}
             className="bg-white/10 text-white p-4 rounded-full hover:bg-white/20 transition-colors"

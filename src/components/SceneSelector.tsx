@@ -10,6 +10,7 @@ import {
   VolumeX,
   ChevronDown,
   ChevronUp,
+  VideoIcon,
 } from "lucide-react";
 import { Scene, EffectType } from "../types";
 import { DEFAULT_SCENES, EFFECTS } from "../constants";
@@ -178,7 +179,7 @@ export const SceneSelector: React.FC<SceneSelectorProps> = ({
 
                 {scene.type === "youtube" && (
                   <div className="absolute top-2 left-2 bg-red-600 rounded px-1.5 py-0.5 text-[10px] font-bold">
-                    LIVE
+                    <VideoIcon size={16} className="text-white" />
                   </div>
                 )}
 
