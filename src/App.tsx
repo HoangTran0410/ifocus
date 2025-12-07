@@ -12,6 +12,7 @@ import {
   ExternalLink,
   Play,
   Music as MusicIcon,
+  Sparkles,
 } from "lucide-react";
 import { Background } from "./components/Background";
 import { Timer } from "./components/Timer";
@@ -19,6 +20,7 @@ import { AudioController } from "./components/AudioController";
 import { Tasks } from "./components/Tasks";
 import { Notes } from "./components/Notes";
 import { SceneSelector } from "./components/SceneSelector";
+import { EffectsSelector } from "./components/EffectsSelector";
 import { useLocalStorage } from "./hooks/useLocalStorage";
 import { DEFAULT_SCENES, DEFAULT_SOUNDS } from "./constants";
 import {
@@ -32,7 +34,7 @@ import {
 } from "./types";
 
 // Panel types
-type PanelType = "none" | "audio" | "tasks" | "notes" | "scenes";
+type PanelType = "none" | "audio" | "tasks" | "notes" | "scenes" | "effects";
 
 function App() {
   // Application State
@@ -156,6 +158,14 @@ function App() {
                 }
               />
               <DockButton
+                icon={<Sparkles size={20} />}
+                label="Effects"
+                isActive={activePanel === "effects"}
+                onClick={() =>
+                  setActivePanel(activePanel === "effects" ? "none" : "effects")
+                }
+              />
+              <DockButton
                 icon={<Music size={20} />}
                 label="Sounds"
                 isActive={activePanel === "audio"}
@@ -242,10 +252,18 @@ function App() {
               <SceneSelector
                 currentScene={currentScene}
                 setScene={setCurrentScene}
-                currentEffect={currentEffect}
-                setEffect={setCurrentEffect}
                 isBgMuted={isBgMuted}
                 setIsBgMuted={setIsBgMuted}
+              />
+            </div>
+            <div
+              className={`absolute inset-0 ${
+                activePanel === "effects" ? "block" : "hidden"
+              }`}
+            >
+              <EffectsSelector
+                currentEffect={currentEffect}
+                setEffect={setCurrentEffect}
               />
             </div>
           </div>
