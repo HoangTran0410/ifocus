@@ -159,7 +159,7 @@ export const AudioController: React.FC<AudioControllerProps> = ({
         </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto custom-scrollbar p-1">
+      <div className="flex-1 overflow-y-auto custom-scrollbar p-1 pt-3">
         {activeTab === "sounds" && (
           <div className="grid grid-cols-2 gap-3 pb-4">
             {DEFAULT_SOUNDS.map((sound) => {

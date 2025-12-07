@@ -112,16 +112,6 @@ export const SceneSelector: React.FC<SceneSelectorProps> = ({
           Presets
         </button>
         <button
-          onClick={() => setActiveTab("generate")}
-          className={`flex-1 py-3 text-sm font-medium transition-colors ${
-            activeTab === "generate"
-              ? "text-white border-b-2 border-white"
-              : "text-white/50 hover:text-white"
-          }`}
-        >
-          Generate
-        </button>
-        <button
           onClick={() => setActiveTab("custom")}
           className={`flex-1 py-3 text-sm font-medium transition-colors ${
             activeTab === "custom"
@@ -131,9 +121,19 @@ export const SceneSelector: React.FC<SceneSelectorProps> = ({
         >
           Custom
         </button>
+        <button
+          onClick={() => setActiveTab("generate")}
+          className={`flex-1 py-3 text-sm font-medium transition-colors ${
+            activeTab === "generate"
+              ? "text-white border-b-2 border-white"
+              : "text-white/50 hover:text-white"
+          }`}
+        >
+          Generate
+        </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 mb-6">
+      <div className="flex-1 overflow-y-auto custom-scrollbar p-2 mb-6">
         {/* PRESETS TAB */}
         {activeTab === "presets" && (
           <div className="grid grid-cols-2 gap-3 pb-4">
@@ -180,7 +180,7 @@ export const SceneSelector: React.FC<SceneSelectorProps> = ({
                   </span>
                 </div>
                 {currentScene.id === scene.id && (
-                  <div className="absolute top-2 right-2 w-2 h-2 bg-white rounded-full shadow-glow" />
+                  <div className="absolute top-2 right-2 w-2 h-2 bg-green-500 rounded-full shadow-glow" />
                 )}
               </button>
             ))}

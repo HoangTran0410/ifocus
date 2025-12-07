@@ -1,17 +1,12 @@
 import React, { useState, useEffect } from "react";
 import {
-  Menu,
   X,
   Music,
   CheckSquare,
   Edit3,
   Image as ImageIcon,
-  Settings,
   Maximize2,
   Minimize2,
-  ExternalLink,
-  Play,
-  Music as MusicIcon,
   Sparkles,
 } from "lucide-react";
 import { Background } from "./components/Background";
@@ -23,15 +18,7 @@ import { SceneSelector } from "./components/SceneSelector";
 import { EffectsSelector } from "./components/EffectsSelector";
 import { useLocalStorage } from "./hooks/useLocalStorage";
 import { DEFAULT_SCENES, DEFAULT_SOUNDS } from "./constants";
-import {
-  Scene,
-  SoundTrack,
-  SoundState,
-  Task,
-  Note,
-  TimerMode,
-  EffectType,
-} from "./types";
+import { Scene, SoundState, Task, Note, TimerMode, EffectType } from "./types";
 
 // Panel types
 type PanelType = "none" | "audio" | "tasks" | "notes" | "scenes" | "effects";

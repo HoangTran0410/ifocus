@@ -14,18 +14,7 @@ export const EffectsSelector: React.FC<EffectsSelectorProps> = ({
 }) => {
   return (
     <div className="flex flex-col h-full text-white">
-      {/* <div className="mb-6">
-        <div className="p-4 bg-gradient-to-br from-purple-500/20 to-pink-500/20 rounded-xl border border-white/10 text-center space-y-2">
-          <Sparkles size={24} className="mx-auto text-purple-300" />
-          <h4 className="font-bold text-sm">Overlay Effects</h4>
-          <p className="text-xs text-white/70">
-            Add atmospheric effects like rain, snow, or fireflies to enhance
-            your background scene.
-          </p>
-        </div>
-      </div> */}
-
-      <div className="flex-1 overflow-y-auto custom-scrollbar pr-2">
+      <div className="flex-1 overflow-y-auto custom-scrollbar p-2">
         <div className="grid grid-cols-2 gap-3 pb-4">
           {EFFECTS.map((effect) => (
             <button
