@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { PenLine, Plus, Trash2, ArrowLeft } from 'lucide-react';
-import { Note } from '../types';
+import React, { useState } from "react";
+import { PenLine, Plus, Trash2, ArrowLeft } from "lucide-react";
+import { Note } from "../types";
 
 interface NotesProps {
   notes: Note[];
@@ -10,13 +10,13 @@ interface NotesProps {
 export const Notes: React.FC<NotesProps> = ({ notes, setNotes }) => {
   const [activeNoteId, setActiveNoteId] = useState<string | null>(null);
 
-  const activeNote = notes.find(n => n.id === activeNoteId);
+  const activeNote = notes.find((n) => n.id === activeNoteId);
 
   const createNote = () => {
     const newNote: Note = {
       id: Date.now().toString(),
-      title: '',
-      content: '',
+      title: "",
+      content: "",
       updatedAt: Date.now(),
     };
     setNotes([newNote, ...notes]);
@@ -24,12 +24,16 @@ export const Notes: React.FC<NotesProps> = ({ notes, setNotes }) => {
   };
 
   const updateNote = (id: string, updates: Partial<Note>) => {
-    setNotes(notes.map(n => n.id === id ? { ...n, ...updates, updatedAt: Date.now() } : n));
+    setNotes(
+      notes.map((n) =>
+        n.id === id ? { ...n, ...updates, updatedAt: Date.now() } : n
+      )
+    );
   };
 
   const deleteNote = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    setNotes(notes.filter(n => n.id !== id));
+    setNotes(notes.filter((n) => n.id !== id));
     if (activeNoteId === id) setActiveNoteId(null);
   };
 
@@ -37,7 +41,7 @@ export const Notes: React.FC<NotesProps> = ({ notes, setNotes }) => {
     return (
       <div className="flex flex-col h-full text-white">
         <div className="flex items-center justify-between mb-4">
-          <button 
+          <button
             onClick={() => setActiveNoteId(null)}
             className="flex items-center gap-2 text-sm text-white/60 hover:text-white transition-colors"
           >
@@ -47,18 +51,20 @@ export const Notes: React.FC<NotesProps> = ({ notes, setNotes }) => {
             {new Date(activeNote.updatedAt).toLocaleTimeString()}
           </span>
         </div>
-        
-        <input 
-          type="text" 
+
+        <input
+          type="text"
           value={activeNote.title}
           onChange={(e) => updateNote(activeNote.id, { title: e.target.value })}
           placeholder="Note Title"
           className="w-full bg-transparent text-xl font-bold mb-4 focus:outline-none placeholder-white/30"
         />
-        
-        <textarea 
+
+        <textarea
           value={activeNote.content}
-          onChange={(e) => updateNote(activeNote.id, { content: e.target.value })}
+          onChange={(e) =>
+            updateNote(activeNote.id, { content: e.target.value })
+          }
           placeholder="Start typing..."
           className="flex-1 w-full bg-transparent resize-none focus:outline-none text-sm leading-relaxed text-white/90 placeholder-white/20 custom-scrollbar"
         />
@@ -72,7 +78,7 @@ export const Notes: React.FC<NotesProps> = ({ notes, setNotes }) => {
         <h3 className="text-lg font-semibold flex items-center gap-2">
           <PenLine size={20} /> Notes
         </h3>
-        <button 
+        <button
           onClick={createNote}
           className="p-1.5 bg-white text-black rounded-lg hover:bg-white/90 transition-colors"
         >
@@ -86,20 +92,20 @@ export const Notes: React.FC<NotesProps> = ({ notes, setNotes }) => {
             Capture your thoughts...
           </div>
         )}
-        {notes.map(note => (
-          <div 
+        {notes.map((note) => (
+          <div
             key={note.id}
             onClick={() => setActiveNoteId(note.id)}
             className="group relative p-4 bg-white/5 hover:bg-white/10 rounded-xl border border-white/5 hover:border-white/10 cursor-pointer transition-all"
           >
             <h4 className="font-medium mb-1 pr-6 truncate">
-              {note.title || 'Untitled Note'}
+              {note.title || "Untitled Note"}
             </h4>
             <p className="text-xs text-white/50 truncate">
-              {note.content || 'No content'}
+              {note.content || "No content"}
             </p>
-            
-            <button 
+
+            <button
               onClick={(e) => deleteNote(note.id, e)}
               className="absolute top-3 right-3 text-white/20 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all"
             >

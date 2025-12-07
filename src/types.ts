@@ -1,6 +1,15 @@
-export type TimerMode = 'pomodoro' | 'shortBreak' | 'longBreak' | 'clock';
+export type TimerMode = "pomodoro" | "shortBreak" | "longBreak" | "clock";
 
-export type EffectType = 'none' | 'rain' | 'heavy-rain' | 'snow' | 'leaves' | 'cherry-blossom' | 'fireflies' | 'cloud-shadows' | 'sun-rays';
+export type EffectType =
+  | "none"
+  | "rain"
+  | "heavy-rain"
+  | "snow"
+  | "leaves"
+  | "cherry-blossom"
+  | "fireflies"
+  | "cloud-shadows"
+  | "sun-rays";
 
 export interface Task {
   id: string;
@@ -18,7 +27,7 @@ export interface Note {
 
 export interface Scene {
   id: string;
-  type: 'image' | 'video' | 'color' | 'youtube';
+  type: "image" | "video" | "color" | "youtube";
   url: string; // URL for image/video/youtube or Hex code for color
   name: string;
 }
@@ -28,7 +37,12 @@ export interface SoundTrack {
   name: string;
   emoji: string;
   url: string;
-  volume: number; // 0 to 1
+  category?: string;
+}
+
+export interface SoundState {
+  id: string;
+  volume: number;
   isPlaying: boolean;
 }
 
