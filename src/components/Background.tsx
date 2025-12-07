@@ -1,4 +1,5 @@
-import React from "react";
+import React, { useRef, useEffect } from "react";
+import YouTube, { YouTubeProps } from "react-youtube";
 import { Scene, EffectType } from "../types";
 import { EffectsLayer } from "./EffectsLayer";
 
@@ -13,21 +14,51 @@ export const Background: React.FC<BackgroundProps> = ({
   effect = "none",
   isMuted = true,
 }) => {
-  const getYoutubeEmbedId = (url: string) => {
+  const playerRef = useRef<any>(null);
+
+  const getYoutubeVideoId = (url: string) => {
     const regExp =
       /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
     const match = url.match(regExp);
     return match && match[2].length === 11 ? match[2] : null;
   };
 
-  const getYoutubeEmbedUrl = (videoId: string | null, muted: boolean) => {
-    if (!videoId) return "";
-    // enablejsapi=1 is important for control
-    // origin must be set to window.location.origin to prevent error 153 in some envs
-    const origin = typeof window !== "undefined" ? window.location.origin : "";
-    return `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=${
-      muted ? 1 : 0
-    }&controls=0&loop=1&playlist=${videoId}&playsinline=1&showinfo=0&rel=0&iv_load_policy=3&disablekb=1&enablejsapi=1&origin=${origin}`;
+  // Handle mute/unmute changes
+  useEffect(() => {
+    if (playerRef.current && scene.type === "youtube") {
+      if (isMuted) {
+        playerRef.current.mute();
+      } else {
+        playerRef.current.unMute();
+      }
+    }
+  }, [isMuted, scene.type]);
+
+  const onPlayerReady: YouTubeProps['onReady'] = (event) => {
+    playerRef.current = event.target;
+    // Set initial mute state
+    if (isMuted) {
+      event.target.mute();
+    } else {
+      event.target.unMute();
+    }
+    // Start playing
+    event.target.playVideo();
+  };
+
+  const youtubeOpts: YouTubeProps['opts'] = {
+    playerVars: {
+      autoplay: 1,
+      controls: 0,
+      loop: 1,
+      playlist: scene.type === "youtube" ? getYoutubeVideoId(scene.url) || "" : "",
+      playsinline: 1,
+      showinfo: 0,
+      rel: 0,
+      iv_load_policy: 3,
+      disablekb: 1,
+      modestbranding: 1,
+    },
   };
 
   return (
@@ -67,13 +98,13 @@ export const Background: React.FC<BackgroundProps> = ({
       {scene.type === "youtube" && (
         <>
           <div className="absolute inset-0 w-full h-full pointer-events-none scale-[1.5]">
-            <iframe
-              src={getYoutubeEmbedUrl(getYoutubeEmbedId(scene.url), isMuted)}
-              className="w-full h-full object-cover pointer-events-none"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              referrerPolicy="strict-origin-when-cross-origin"
-              style={{ border: 0 }}
-              key={`${scene.url}-${isMuted}`}
+            <YouTube
+              videoId={getYoutubeVideoId(scene.url) || ""}
+              opts={youtubeOpts}
+              onReady={onPlayerReady}
+              className="w-full h-full"
+              iframeClassName="w-full h-full pointer-events-none"
+              style={{ width: '100%', height: '100%' }}
             />
           </div>
           <div className="absolute inset-0 bg-black/20" />
