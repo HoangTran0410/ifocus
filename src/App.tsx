@@ -9,6 +9,9 @@ import {
   Settings,
   Maximize2,
   Minimize2,
+  ExternalLink,
+  Play,
+  Music as MusicIcon,
 } from "lucide-react";
 import { Background } from "./components/Background";
 import { Timer } from "./components/Timer";
@@ -18,7 +21,15 @@ import { Notes } from "./components/Notes";
 import { SceneSelector } from "./components/SceneSelector";
 import { useLocalStorage } from "./hooks/useLocalStorage";
 import { DEFAULT_SCENES, DEFAULT_SOUNDS } from "./constants";
-import { Scene, SoundTrack, SoundState, Task, Note, TimerMode, EffectType } from "./types";
+import {
+  Scene,
+  SoundTrack,
+  SoundState,
+  Task,
+  Note,
+  TimerMode,
+  EffectType,
+} from "./types";
 
 // Panel types
 type PanelType = "none" | "audio" | "tasks" | "notes" | "scenes";
@@ -41,10 +52,10 @@ function App() {
   // Runtime state for sound playback (volume and isPlaying)
   const [soundStates, setSoundStates] = useLocalStorage<SoundState[]>(
     "zen_sound_states",
-    DEFAULT_SOUNDS.map(sound => ({
+    DEFAULT_SOUNDS.map((sound) => ({
       id: sound.id,
       volume: 0.5,
-      isPlaying: false
+      isPlaying: false,
     }))
   );
 
@@ -57,7 +68,14 @@ function App() {
     "zen_yt_history",
     []
   );
-  const [showYoutube, setShowYoutube] = useState(false); // Don't persist visibility
+  const [showYoutube, setShowYoutube] = useLocalStorage<boolean>(
+    "zen_yt_show",
+    false
+  ); // Persist visibility
+  const [isBgMuted, setIsBgMuted] = useLocalStorage<boolean>(
+    "zen_bg_muted",
+    true
+  ); // Background video mute state
 
   const [timerMode, setTimerMode] = useState<TimerMode>("pomodoro");
   const [activePanel, setActivePanel] = useState<PanelType>("none");
@@ -84,44 +102,52 @@ function App() {
     setYoutubeHistory(newHistory);
   };
 
-  const renderPanel = () => {
-    switch (activePanel) {
-      case "audio":
-        return (
-          <AudioController
-            sounds={sounds}
-            soundStates={soundStates}
-            setSoundStates={setSoundStates}
-            youtubeUrl={youtubeUrl}
-            setYoutubeUrl={setYoutubeUrl}
-            showYoutube={showYoutube}
-            setShowYoutube={setShowYoutube}
-            youtubeHistory={youtubeHistory}
-            addToHistory={addToHistory}
-          />
-        );
-      case "tasks":
-        return <Tasks tasks={tasks} setTasks={setTasks} />;
-      case "notes":
-        return <Notes notes={notes} setNotes={setNotes} />;
-      case "scenes":
-        return (
-          <SceneSelector
-            currentScene={currentScene}
-            setScene={setCurrentScene}
-            currentEffect={currentEffect}
-            setEffect={setCurrentEffect}
-          />
-        );
-      default:
-        return null;
+  // Helper to get embed info
+  const getEmbedInfo = (url: string) => {
+    if (!url) return null;
+
+    // YouTube
+    const ytMatch = url.match(
+      /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/
+    );
+    if (ytMatch && ytMatch[2].length === 11) {
+      return {
+        type: "youtube",
+        src: `https://www.youtube.com/embed/${ytMatch[2]}?enablejsapi=1&origin=${window.location.origin}`,
+      };
     }
+
+    // Spotify
+    if (url.includes("open.spotify.com")) {
+      let src = url;
+      if (!url.includes("/embed")) {
+        src = url.replace("open.spotify.com/", "open.spotify.com/embed/");
+      }
+      return { type: "spotify", src };
+    }
+
+    // Apple Music
+    if (url.includes("music.apple.com")) {
+      let src = url;
+      if (!url.includes("embed.music.apple.com")) {
+        src = url.replace("music.apple.com", "embed.music.apple.com");
+      }
+      return { type: "apple", src };
+    }
+
+    return null;
   };
+
+  const embedInfo = getEmbedInfo(youtubeUrl);
 
   return (
     <div className="relative w-screen h-screen overflow-hidden font-sans">
       {/* Dynamic Background */}
-      <Background scene={currentScene} effect={currentEffect} />
+      <Background
+        scene={currentScene}
+        effect={currentEffect}
+        isMuted={isBgMuted}
+      />
 
       {/* Main Content Layer */}
       <div className="relative z-10 w-full h-full flex flex-col pointer-events-none">
@@ -202,29 +228,74 @@ function App() {
         </div>
       </div>
 
-      {/* Side Panel Drawer */}
+      {/* Side Panel Drawer - Keep all panels mounted, just hide them */}
       <div
         className={`absolute top-0 right-0 h-full w-full sm:w-96 glass-panel border-l border-white/10 transition-transform duration-300 ease-out z-20 ${
           activePanel !== "none" ? "translate-x-0" : "translate-x-full"
         }`}
       >
-        {activePanel !== "none" && (
-          <div className="h-full flex flex-col p-6">
-            <div className="flex justify-between items-center mb-6">
-              <span className="text-white/50 text-xs font-bold uppercase tracking-widest">
-                {activePanel}
-              </span>
-              <button
-                onClick={() => setActivePanel("none")}
-                className="p-2 text-white/50 hover:text-white hover:bg-white/10 rounded-lg transition-all"
-              >
-                <X size={20} />
-              </button>
-            </div>
-
-            <div className="flex-1 overflow-hidden">{renderPanel()}</div>
+        <div className="h-full flex flex-col p-6">
+          <div className="flex justify-between items-center mb-6">
+            <span className="text-white/50 text-xs font-bold uppercase tracking-widest">
+              {activePanel}
+            </span>
+            <button
+              onClick={() => setActivePanel("none")}
+              className="p-2 text-white/50 hover:text-white hover:bg-white/10 rounded-lg transition-all"
+            >
+              <X size={20} />
+            </button>
           </div>
-        )}
+
+          {/* All panels stay mounted, just hidden */}
+          <div className="flex-1 overflow-hidden relative">
+            <div
+              className={`absolute inset-0 ${
+                activePanel === "audio" ? "block" : "hidden"
+              }`}
+            >
+              <AudioController
+                sounds={sounds}
+                soundStates={soundStates}
+                setSoundStates={setSoundStates}
+                youtubeUrl={youtubeUrl}
+                setYoutubeUrl={setYoutubeUrl}
+                showYoutube={showYoutube}
+                setShowYoutube={setShowYoutube}
+                youtubeHistory={youtubeHistory}
+                addToHistory={addToHistory}
+              />
+            </div>
+            <div
+              className={`absolute inset-0 ${
+                activePanel === "tasks" ? "block" : "hidden"
+              }`}
+            >
+              <Tasks tasks={tasks} setTasks={setTasks} />
+            </div>
+            <div
+              className={`absolute inset-0 ${
+                activePanel === "notes" ? "block" : "hidden"
+              }`}
+            >
+              <Notes notes={notes} setNotes={setNotes} />
+            </div>
+            <div
+              className={`absolute inset-0 ${
+                activePanel === "scenes" ? "block" : "hidden"
+              }`}
+            >
+              <SceneSelector
+                currentScene={currentScene}
+                setScene={setCurrentScene}
+                currentEffect={currentEffect}
+                setEffect={setCurrentEffect}
+                isBgMuted={isBgMuted}
+                setIsBgMuted={setIsBgMuted}
+              />
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

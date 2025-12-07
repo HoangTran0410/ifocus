@@ -5,11 +5,13 @@ import { EffectsLayer } from "./EffectsLayer";
 interface BackgroundProps {
   scene: Scene;
   effect?: EffectType;
+  isMuted?: boolean;
 }
 
 export const Background: React.FC<BackgroundProps> = ({
   scene,
   effect = "none",
+  isMuted = true,
 }) => {
   const getYoutubeEmbedId = (url: string) => {
     const regExp =
@@ -18,13 +20,14 @@ export const Background: React.FC<BackgroundProps> = ({
     return match && match[2].length === 11 ? match[2] : null;
   };
 
-  const getYoutubeEmbedUrl = (videoId: string | null) => {
+  const getYoutubeEmbedUrl = (videoId: string | null, muted: boolean) => {
     if (!videoId) return "";
     // enablejsapi=1 is important for control
     // origin must be set to window.location.origin to prevent error 153 in some envs
-    // autoplay=1&mute=1 ensures background play
     const origin = typeof window !== "undefined" ? window.location.origin : "";
-    return `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&controls=0&loop=1&playlist=${videoId}&playsinline=1&showinfo=0&rel=0&iv_load_policy=3&disablekb=1&enablejsapi=1&origin=${origin}`;
+    return `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=${
+      muted ? 1 : 0
+    }&controls=0&loop=1&playlist=${videoId}&playsinline=1&showinfo=0&rel=0&iv_load_policy=3&disablekb=1&enablejsapi=1&origin=${origin}`;
   };
 
   return (
@@ -65,11 +68,12 @@ export const Background: React.FC<BackgroundProps> = ({
         <>
           <div className="absolute inset-0 w-full h-full pointer-events-none scale-[1.5]">
             <iframe
-              src={getYoutubeEmbedUrl(getYoutubeEmbedId(scene.url))}
+              src={getYoutubeEmbedUrl(getYoutubeEmbedId(scene.url), isMuted)}
               className="w-full h-full object-cover pointer-events-none"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               referrerPolicy="strict-origin-when-cross-origin"
               style={{ border: 0 }}
+              key={`${scene.url}-${isMuted}`}
             />
           </div>
           <div className="absolute inset-0 bg-black/20" />

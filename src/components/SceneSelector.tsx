@@ -6,6 +6,10 @@ import {
   Search,
   Wand2,
   Video,
+  Volume2,
+  VolumeX,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import { Scene, EffectType } from "../types";
 import { DEFAULT_SCENES, EFFECTS } from "../constants";
@@ -15,6 +19,8 @@ interface SceneSelectorProps {
   setScene: (scene: Scene) => void;
   currentEffect: EffectType;
   setEffect: (effect: EffectType) => void;
+  isBgMuted: boolean;
+  setIsBgMuted: (muted: boolean) => void;
 }
 
 export const SceneSelector: React.FC<SceneSelectorProps> = ({
@@ -22,6 +28,8 @@ export const SceneSelector: React.FC<SceneSelectorProps> = ({
   setScene,
   currentEffect,
   setEffect,
+  isBgMuted,
+  setIsBgMuted,
 }) => {
   const [activeTab, setActiveTab] = useState<"presets" | "generate" | "custom">(
     "presets"
@@ -30,6 +38,7 @@ export const SceneSelector: React.FC<SceneSelectorProps> = ({
   const [isGenerating, setIsGenerating] = useState(false);
   const [customVideoUrl, setCustomVideoUrl] = useState("");
   const [generatedHistory, setGeneratedHistory] = useState<Scene[]>([]);
+  const [isEffectsExpanded, setIsEffectsExpanded] = useState(true);
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -305,28 +314,74 @@ export const SceneSelector: React.FC<SceneSelectorProps> = ({
         )}
       </div>
 
-      {/* Effects Section */}
-      <h3 className="text-lg font-semibold mb-4 flex items-center gap-2 border-t border-white/10 pt-6">
-        <Sparkles size={20} /> Overlay Effects
-      </h3>
-
-      <div className="grid grid-cols-4 gap-2 pb-4">
-        {EFFECTS.map((effect) => (
+      {/* Background Audio Control - Only show if current scene is YouTube */}
+      {currentScene.type === "youtube" && (
+        <div className="border-t border-white/10 pt-4 pb-4">
           <button
-            key={effect.id}
-            onClick={() => setEffect(effect.id)}
-            className={`flex flex-col items-center justify-center p-3 rounded-xl border transition-all ${
-              currentEffect === effect.id
-                ? "bg-white/20 border-white"
-                : "bg-white/5 border-transparent hover:bg-white/10"
+            onClick={() => setIsBgMuted(!isBgMuted)}
+            className={`w-full flex items-center justify-between p-3 rounded-lg border transition-all ${
+              !isBgMuted
+                ? "bg-white/20 border-white/20"
+                : "bg-white/5 border-white/10 hover:bg-white/10"
             }`}
           >
-            <span className="text-2xl mb-1">{effect.icon}</span>
-            <span className="text-xs font-medium text-white/80 whitespace-nowrap overflow-hidden text-ellipsis max-w-full">
-              {effect.name}
-            </span>
+            <div className="flex items-center gap-2">
+              {isBgMuted ? (
+                <VolumeX size={18} className="text-white/70" />
+              ) : (
+                <Volume2 size={18} className="text-white" />
+              )}
+              <span className="text-xs font-medium">Background Audio</span>
+            </div>
+            <div
+              className={`text-[10px] px-2 py-0.5 rounded font-bold ${
+                !isBgMuted
+                  ? "bg-green-500/20 text-green-300"
+                  : "bg-white/10 text-white/50"
+              }`}
+            >
+              {isBgMuted ? "OFF" : "ON"}
+            </div>
           </button>
-        ))}
+        </div>
+      )}
+
+      {/* Effects Section - Collapsible */}
+      <div className="border-t border-white/10 pt-4">
+        <button
+          onClick={() => setIsEffectsExpanded(!isEffectsExpanded)}
+          className="w-full flex items-center justify-between mb-3 hover:opacity-80 transition-opacity"
+        >
+          <h3 className="text-sm font-semibold flex items-center gap-2 text-white/70 uppercase tracking-wider">
+            <Sparkles size={16} /> Overlay Effects
+          </h3>
+          {isEffectsExpanded ? (
+            <ChevronUp size={16} className="text-white/50" />
+          ) : (
+            <ChevronDown size={16} className="text-white/50" />
+          )}
+        </button>
+
+        {isEffectsExpanded && (
+          <div className="grid grid-cols-4 gap-2 pb-4">
+            {EFFECTS.map((effect) => (
+              <button
+                key={effect.id}
+                onClick={() => setEffect(effect.id)}
+                className={`flex flex-col items-center justify-center p-3 rounded-xl border transition-all ${
+                  currentEffect === effect.id
+                    ? "bg-white/20 border-white"
+                    : "bg-white/5 border-transparent hover:bg-white/10"
+                }`}
+              >
+                <span className="text-2xl mb-1">{effect.icon}</span>
+                <span className="text-xs font-medium text-white/80 whitespace-nowrap overflow-hidden text-ellipsis max-w-full">
+                  {effect.name}
+                </span>
+              </button>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

@@ -18,6 +18,8 @@ interface AudioControllerProps {
   setYoutubeUrl: (url: string) => void;
   showYoutube: boolean;
   setShowYoutube: (show: boolean) => void;
+  showYoutubePlayer: boolean;
+  setShowYoutubePlayer: (show: boolean) => void;
   youtubeHistory: string[];
   addToHistory: (url: string) => void;
 }
@@ -48,7 +50,7 @@ export const AudioController: React.FC<AudioControllerProps> = ({
       }
 
       const audio = audioRefs.current[sound.id];
-      const soundState = soundStates.find(s => s.id === sound.id);
+      const soundState = soundStates.find((s) => s.id === sound.id);
 
       if (!soundState) return;
 
@@ -165,7 +167,7 @@ export const AudioController: React.FC<AudioControllerProps> = ({
         {activeTab === "sounds" && (
           <div className="grid grid-cols-2 gap-3 pb-4">
             {sounds.map((sound) => {
-              const soundState = soundStates.find(s => s.id === sound.id);
+              const soundState = soundStates.find((s) => s.id === sound.id);
               if (!soundState) return null;
 
               return (
@@ -225,9 +227,9 @@ export const AudioController: React.FC<AudioControllerProps> = ({
                 />
                 <button
                   type="submit"
-                  className="bg-white text-black p-2 rounded-lg hover:bg-white/90"
+                  className="bg-white/10 text-white p-2 rounded-lg hover:bg-white/20"
                 >
-                  <ExternalLink size={18} />
+                  <Play size={18} />
                 </button>
               </div>
             </form>
@@ -243,35 +245,22 @@ export const AudioController: React.FC<AudioControllerProps> = ({
                       : "YouTube"}{" "}
                     Player
                   </span>
-                  <button
-                    onClick={() => setShowYoutube(!showYoutube)}
-                    className="text-xs text-white/50 hover:text-white underline"
-                  >
-                    {showYoutube ? "Hide Player" : "Show Player"}
-                  </button>
                 </div>
 
-                {showYoutube && (
-                  <div
-                    className={`relative bg-black rounded-xl overflow-hidden shadow-lg border border-white/10 ${
-                      embedInfo.type === "youtube" ? "pt-[56.25%]" : "h-40"
-                    }`}
-                  >
-                    <iframe
-                      className="absolute top-0 left-0 w-full h-full"
-                      src={embedInfo.src}
-                      title="Media player"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                      allowFullScreen
-                      style={{ border: 0 }}
-                    ></iframe>
-                  </div>
-                )}
-                {!showYoutube && (
-                  <div className="p-4 bg-white/5 rounded-xl border border-white/10 text-center text-sm text-white/50">
-                    Media is playing in background (hidden)
-                  </div>
-                )}
+                <div
+                  className={`relative bg-black rounded-xl overflow-hidden shadow-lg border border-white/10 ${
+                    embedInfo.type === "youtube" ? "pt-[56.25%]" : "h-40"
+                  }`}
+                >
+                  <iframe
+                    className="absolute top-0 left-0 w-full h-full"
+                    src={embedInfo.src}
+                    title="Media player"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    allowFullScreen
+                    style={{ border: 0 }}
+                  ></iframe>
+                </div>
               </div>
             )}
 

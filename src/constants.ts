@@ -116,6 +116,12 @@ export const DEFAULT_SCENES: Scene[] = [
     url: "https://www.youtube.com/watch?v=-Xh4BNbxpI8",
     name: "City Night",
   },
+  {
+    id: "sontung",
+    type: "youtube",
+    url: "https://www.youtube.com/watch?v=IfYjuHnAAFU",
+    name: "SonTung MTP",
+  },
   { id: "solid-dark", type: "color", url: "#1a1a1a", name: "Dark Mode" },
   { id: "solid-warm", type: "color", url: "#2c241b", name: "Warm Brown" },
 ];
