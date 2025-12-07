@@ -115,7 +115,7 @@ function App() {
               <span className="font-bold text-white">F</span>
             </div>
             <span className="text-white font-semibold tracking-wide text-lg shadow-black drop-shadow-md">
-              IFocus
+              iFocus
             </span>
           </div>
 
@@ -146,7 +146,7 @@ function App() {
               activePanel !== "none" ? "lg:-translate-x-32" : ""
             }`}
           >
-            <div className="flex gap-4 p-2 bg-black/40 backdrop-blur-xl rounded-2xl border border-white/10 shadow-2xl">
+            <div className="flex gap-4 p-2 bg-black/40 opacity-80 hover:opacity-100 hover:backdrop-blur-xl transition-all rounded-2xl border border-white/10 shadow-2xl">
               <DockButton
                 icon={<ImageIcon size={20} />}
                 label="Scenes"
@@ -271,7 +271,7 @@ const DockButton = ({
     onClick={onClick}
     className={`group relative flex flex-col items-center justify-center w-14 h-14 rounded-xl transition-all duration-300 ${
       isActive
-        ? "bg-white text-black shadow-lg translate-y-[-4px]"
+        ? "bg-white text-black shadow-lg"
         : "text-white/70 hover:bg-white/10 hover:text-white hover:translate-y-[-2px]"
     }`}
   >

@@ -170,7 +170,7 @@ export const AudioController: React.FC<AudioControllerProps> = ({
                 <div
                   key={sound.id}
                   onClick={() => toggleSound(sound.id)}
-                  className={`cursor-pointer flex flex-col items-center p-4 rounded-2xl border transition-all duration-200 ${
+                  className={`cursor-pointer flex flex-col items-center p-2 rounded-2xl border transition-all duration-200 ${
                     soundState.isPlaying
                       ? "bg-white/20 border-white/40 shadow-lg scale-[1.02]"
                       : "bg-white/5 border-transparent hover:bg-white/10 hover:border-white/10"
@@ -179,28 +179,30 @@ export const AudioController: React.FC<AudioControllerProps> = ({
                   <div className="text-3xl mb-2 filter drop-shadow-md">
                     {sound.emoji}
                   </div>
-                  <div className="text-sm font-medium mb-3">{sound.name}</div>
+                  <div className="text-sm font-medium mb-2">{sound.name}</div>
 
-                  <div
-                    className="w-full h-6 flex items-center"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <input
-                      type="range"
-                      min="0"
-                      max="1"
-                      step="0.01"
-                      value={soundState.volume}
-                      onChange={(e) =>
-                        changeVolume(sound.id, parseFloat(e.target.value))
-                      }
-                      className={`w-full h-1 rounded-lg appearance-none cursor-pointer transition-colors ${
-                        soundState.isPlaying
-                          ? "bg-white/40 accent-white"
-                          : "bg-white/10 accent-white/50"
-                      }`}
-                    />
-                  </div>
+                  {soundState.isPlaying && (
+                    <div
+                      className="w-full h-6 flex items-center"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <input
+                        type="range"
+                        min="0"
+                        max="1"
+                        step="0.01"
+                        value={soundState.volume}
+                        onChange={(e) =>
+                          changeVolume(sound.id, parseFloat(e.target.value))
+                        }
+                        className={`w-full h-1 rounded-lg appearance-none cursor-pointer transition-colors ${
+                          soundState.isPlaying
+                            ? "bg-white/40 accent-white"
+                            : "bg-white/10 accent-white/50"
+                        }`}
+                      />
+                    </div>
+                  )}
                 </div>
               );
             })}

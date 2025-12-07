@@ -62,7 +62,12 @@ export const Timer: React.FC<TimerProps> = ({ mode, setMode }) => {
       interval = window.setInterval(() => {
         setTimeLeft((time) => time + 1);
       }, 1000);
-    } else if (mode !== "clock" && mode !== "stopwatch" && isActive && timeLeft > 0) {
+    } else if (
+      mode !== "clock" &&
+      mode !== "stopwatch" &&
+      isActive &&
+      timeLeft > 0
+    ) {
       // Regular timer counts down
       interval = window.setInterval(() => {
         setTimeLeft((time) => time - 1);
@@ -103,9 +108,9 @@ export const Timer: React.FC<TimerProps> = ({ mode, setMode }) => {
   // Update document title
   useEffect(() => {
     if (mode === "clock") {
-      document.title = `IFocus`;
+      document.title = `iFocus`;
     } else {
-      document.title = `${formatTimer(timeLeft)} - IFocus`;
+      document.title = `${formatTimer(timeLeft)} - iFocus`;
     }
   }, [timeLeft, mode]);
 
@@ -113,29 +118,35 @@ export const Timer: React.FC<TimerProps> = ({ mode, setMode }) => {
     <div className="group flex flex-col items-center justify-center p-8 transition-all duration-500 ease-in-out text-white w-full max-w-md mx-auto hover:bg-black/40 hover:backdrop-blur-md rounded-3xl font-sans">
       {/* Mode Selectors - Fades in on hover */}
       <div className="flex space-x-2 mb-8 p-1 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-4 group-hover:translate-y-0 bg-white/10">
-        {(["pomodoro", "shortBreak", "longBreak", "stopwatch", "clock"] as TimerMode[]).map(
-          (m) => (
-            <button
-              key={m}
-              onClick={() => setMode(m)}
-              className={`px-4 py-2 rounded-full text-sm font-semibold transition-all duration-300 ${
-                mode === m
-                  ? "bg-white text-black shadow-lg"
-                  : "text-white/70 hover:text-white hover:bg-white/10"
-              }`}
-            >
-              {m === "pomodoro"
-                ? "Focus"
-                : m === "shortBreak"
-                ? "Short"
-                : m === "longBreak"
-                ? "Long"
-                : m === "stopwatch"
-                ? "Stopwatch"
-                : "Clock"}
-            </button>
-          )
-        )}
+        {(
+          [
+            "pomodoro",
+            "shortBreak",
+            "longBreak",
+            "stopwatch",
+            "clock",
+          ] as TimerMode[]
+        ).map((m) => (
+          <button
+            key={m}
+            onClick={() => setMode(m)}
+            className={`px-4 py-2 rounded-full text-sm font-semibold transition-all duration-300 ${
+              mode === m
+                ? "bg-white text-black shadow-lg"
+                : "text-white/70 hover:text-white hover:bg-white/10"
+            }`}
+          >
+            {m === "pomodoro"
+              ? "Focus"
+              : m === "shortBreak"
+              ? "Short"
+              : m === "longBreak"
+              ? "Long"
+              : m === "stopwatch"
+              ? "Stopwatch"
+              : "Clock"}
+          </button>
+        ))}
       </div>
 
       {/* Timer Display - Always visible but enhances on hover */}
@@ -162,7 +173,9 @@ export const Timer: React.FC<TimerProps> = ({ mode, setMode }) => {
           )}
         </button>
 
-        {(mode === "stopwatch" ? timeLeft > 0 : timeLeft < TIMER_SETTINGS[mode]) && (
+        {(mode === "stopwatch"
+          ? timeLeft > 0
+          : timeLeft < TIMER_SETTINGS[mode]) && (
           <button
             onClick={resetTimer}
             className="bg-white/10 text-white p-4 rounded-full hover:bg-white/20 transition-colors"

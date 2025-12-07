@@ -15,13 +15,38 @@ interface Particle {
   spin: number;
   opacity: number;
   oscillation: number;
+  vx?: number; // velocity x for random walk
+  vy?: number; // velocity y for random walk
+}
+
+interface Ripple {
+  x: number;
+  y: number;
+  radius: number;
+  maxRadius: number;
+  opacity: number;
+  createdAt: number;
+}
+
+interface StackedParticle {
+  x: number;
+  y: number;
+  size: number;
+  angle: number;
+  opacity: number;
+  createdAt: number;
+  color: string;
 }
 
 type RenderFunction = (
   ctx: CanvasRenderingContext2D,
   canvas: HTMLCanvasElement,
   particles: Particle[],
-  config: EffectConfig
+  config: EffectConfig,
+  extras?: {
+    ripples?: Ripple[];
+    stacked?: StackedParticle[];
+  }
 ) => void;
 
 interface EffectConfig {
@@ -35,13 +60,56 @@ interface EffectConfig {
   lineWidth?: number;
   slant?: number;
   blur?: number;
+  hasRipples?: boolean;
+  hasStacking?: boolean;
+  stackDuration?: number; // milliseconds
 }
 
 // Generic render functions
-const renderRain: RenderFunction = (ctx, canvas, particles, config) => {
+const renderRain: RenderFunction = (ctx, canvas, particles, config, extras) => {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  ctx.strokeStyle = config.color || "rgba(174, 194, 224, 0.5)";
-  ctx.lineWidth = config.lineWidth || 1;
+
+  // Draw ripples with multiple expanding circles for realism
+  if (config.hasRipples && extras?.ripples) {
+    extras.ripples.forEach((ripple) => {
+      const age = Date.now() - ripple.createdAt;
+      const progress = ripple.radius / ripple.maxRadius;
+
+      // Draw multiple concentric ripples
+      for (let i = 0; i < 3; i++) {
+        const offset = i * 8;
+        const currentRadius = ripple.radius - offset;
+
+        if (currentRadius > 0) {
+          const rippleOpacity = ripple.opacity * (1 - i * 0.3) * (1 - progress);
+          ctx.strokeStyle = `rgba(174, 194, 224, ${rippleOpacity})`;
+          ctx.lineWidth = 1.5 - (i * 0.3);
+          ctx.beginPath();
+          ctx.arc(ripple.x, ripple.y, currentRadius, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+      }
+
+      // Add small splash particles
+      if (age < 100) {
+        const splashCount = 4;
+        for (let i = 0; i < splashCount; i++) {
+          const angle = (Math.PI * 2 * i) / splashCount;
+          const splashDist = age * 0.15;
+          const splashX = ripple.x + Math.cos(angle) * splashDist;
+          const splashY = ripple.y + Math.sin(angle) * splashDist - age * 0.1;
+          const splashOpacity = ripple.opacity * (1 - age / 100);
+
+          ctx.fillStyle = `rgba(174, 194, 224, ${splashOpacity})`;
+          ctx.beginPath();
+          ctx.arc(splashX, splashY, 1, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+    });
+  }
+
+  // Draw rain with slight transparency gradient
   ctx.lineCap = "round";
 
   particles.forEach((p) => {
@@ -49,11 +117,33 @@ const renderRain: RenderFunction = (ctx, canvas, particles, config) => {
     if (config.slant) p.x -= config.slant;
 
     if (p.y > canvas.height) {
+      // Create ripple when rain hits bottom
+      if (config.hasRipples && extras?.ripples) {
+        extras.ripples.push({
+          x: p.x,
+          y: canvas.height,
+          radius: 0,
+          maxRadius: 12 + Math.random() * 8,
+          opacity: 0.6 + Math.random() * 0.2,
+          createdAt: Date.now(),
+        });
+      }
+
       p.y = -p.length;
       p.x = Math.random() * canvas.width;
     }
     if (p.x < 0) p.x = canvas.width;
 
+    // Add gradient to rain drops for realism
+    const gradient = ctx.createLinearGradient(
+      p.x, p.y,
+      p.x - (config.slant || 0), p.y + p.length
+    );
+    gradient.addColorStop(0, config.color?.replace('0.5', '0.2') || "rgba(174, 194, 224, 0.2)");
+    gradient.addColorStop(1, config.color || "rgba(174, 194, 224, 0.5)");
+
+    ctx.strokeStyle = gradient;
+    ctx.lineWidth = config.lineWidth || 1;
     ctx.beginPath();
     ctx.moveTo(p.x, p.y);
     ctx.lineTo(p.x - (config.slant || 0), p.y + p.length);
@@ -61,15 +151,48 @@ const renderRain: RenderFunction = (ctx, canvas, particles, config) => {
   });
 };
 
-const renderSnow: RenderFunction = (ctx, canvas, particles, config) => {
+const renderSnow: RenderFunction = (ctx, canvas, particles, config, extras) => {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Draw stacked snow at bottom
+  if (config.hasStacking && extras?.stacked) {
+    extras.stacked.forEach((s) => {
+      const age = Date.now() - s.createdAt;
+      const fadeStart = (config.stackDuration || 3000) * 0.7;
+      const fadeOpacity = age > fadeStart
+        ? s.opacity * (1 - (age - fadeStart) / ((config.stackDuration || 3000) * 0.3))
+        : s.opacity;
+
+      ctx.globalAlpha = fadeOpacity;
+      ctx.fillStyle = config.color || "rgba(255, 255, 255, 0.8)";
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
+      ctx.fill();
+    });
+    ctx.globalAlpha = 1;
+  }
+
+  // Draw falling snow
   ctx.fillStyle = config.color || "rgba(255, 255, 255, 0.8)";
 
   particles.forEach((p) => {
     p.y += p.speed;
     p.x += Math.sin(p.y * 0.01) * 0.5;
 
-    if (p.y > canvas.height) {
+    if (p.y > canvas.height - 5) {
+      // Stack at bottom
+      if (config.hasStacking && extras?.stacked) {
+        extras.stacked.push({
+          x: p.x,
+          y: canvas.height - p.size,
+          size: p.size,
+          angle: 0,
+          opacity: p.opacity,
+          createdAt: Date.now(),
+          color: config.color || "rgba(255, 255, 255, 0.8)",
+        });
+      }
+
       p.y = -5;
       p.x = Math.random() * canvas.width;
     }
@@ -82,17 +205,52 @@ const renderSnow: RenderFunction = (ctx, canvas, particles, config) => {
   ctx.globalAlpha = 1;
 };
 
-const renderLeaves: RenderFunction = (ctx, canvas, particles, config) => {
+const renderLeaves: RenderFunction = (ctx, canvas, particles, config, extras) => {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+  // Draw stacked leaves at bottom
+  if (config.hasStacking && extras?.stacked) {
+    extras.stacked.forEach((s) => {
+      const age = Date.now() - s.createdAt;
+      const fadeStart = (config.stackDuration || 3000) * 0.7;
+      const fadeOpacity = age > fadeStart
+        ? s.opacity * (1 - (age - fadeStart) / ((config.stackDuration || 3000) * 0.3))
+        : s.opacity;
+
+      ctx.save();
+      ctx.translate(s.x, s.y);
+      ctx.rotate(s.angle);
+      ctx.fillStyle = s.color.replace(/,\s*$/, `, ${fadeOpacity})`);
+      ctx.beginPath();
+      ctx.ellipse(0, 0, s.size * 2, s.size, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    });
+  }
+
+  // Draw falling leaves
   particles.forEach((p) => {
     p.y += p.speed * 0.5;
     p.x += Math.sin(p.y * 0.005 + p.angle) * 1;
     p.angle += p.spin;
 
-    if (p.y > canvas.height) {
+    if (p.y > canvas.height - 10) {
+      // Stack at bottom
+      if (config.hasStacking && extras?.stacked) {
+        extras.stacked.push({
+          x: p.x,
+          y: canvas.height - p.size,
+          size: p.size,
+          angle: p.angle,
+          opacity: p.opacity,
+          createdAt: Date.now(),
+          color: config.color || "rgba(218, 165, 32,",
+        });
+      }
+
       p.y = -10;
       p.x = Math.random() * canvas.width;
+      p.angle = Math.random() * Math.PI * 2;
     }
 
     ctx.save();
@@ -106,27 +264,75 @@ const renderLeaves: RenderFunction = (ctx, canvas, particles, config) => {
   });
 };
 
-const renderFireflies: RenderFunction = (ctx, canvas, particles, config) => {
+const renderFireflies: RenderFunction = (ctx, canvas, particles) => {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
   particles.forEach((p) => {
-    p.y += Math.sin(p.oscillation) * 0.5;
-    p.x += Math.cos(p.oscillation) * 0.5;
+    // Initialize velocities if not present
+    if (p.vx === undefined) p.vx = (Math.random() - 0.5) * 2;
+    if (p.vy === undefined) p.vy = (Math.random() - 0.5) * 2;
+
+    // Random walk with smoothing
+    // Add random acceleration
+    p.vx += (Math.random() - 0.5) * 0.3;
+    p.vy += (Math.random() - 0.5) * 0.3;
+
+    // Apply damping to keep speed reasonable
+    p.vx *= 0.95;
+    p.vy *= 0.95;
+
+    // Clamp velocity
+    const maxSpeed = 2;
+    const speed = Math.sqrt(p.vx * p.vx + p.vy * p.vy);
+    if (speed > maxSpeed) {
+      p.vx = (p.vx / speed) * maxSpeed;
+      p.vy = (p.vy / speed) * maxSpeed;
+    }
+
+    // Update position with random walk
+    p.x += p.vx;
+    p.y += p.vy;
+
+    // Add slight oscillation on top of random walk for organic feel
     p.oscillation += 0.02;
+    p.x += Math.sin(p.oscillation * 0.5) * 0.2;
+    p.y += Math.cos(p.oscillation * 0.3) * 0.2;
 
-    // Wrap around
-    if (p.x > canvas.width + 10) p.x = -10;
-    if (p.x < -10) p.x = canvas.width + 10;
-    if (p.y > canvas.height + 10) p.y = -10;
-    if (p.y < -10) p.y = canvas.height + 10;
+    // Soft boundaries - turn around when near edge
+    const margin = 50;
+    if (p.x < margin) p.vx += 0.2;
+    if (p.x > canvas.width - margin) p.vx -= 0.2;
+    if (p.y < margin) p.vy += 0.2;
+    if (p.y > canvas.height - margin) p.vy -= 0.2;
 
-    // Twinkle
-    const currentOpacity =
-      Math.abs(Math.sin(p.oscillation * 2)) * p.opacity + 0.2;
+    // Hard wrap around
+    if (p.x > canvas.width + 20) p.x = -20;
+    if (p.x < -20) p.x = canvas.width + 20;
+    if (p.y > canvas.height + 20) p.y = -20;
+    if (p.y < -20) p.y = canvas.height + 20;
 
-    ctx.fillStyle = `rgba(255, 255, 150, ${currentOpacity})`;
-    ctx.shadowBlur = 10;
-    ctx.shadowColor = "yellow";
+    // Twinkle effect with more variation
+    const twinkle = Math.abs(Math.sin(p.oscillation * 2)) * 0.7 + 0.3;
+    const currentOpacity = p.opacity * twinkle;
+
+    // Draw firefly with glow
+    const glowSize = p.size * (1 + twinkle);
+
+    // Outer glow
+    const gradient = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, glowSize * 3);
+    gradient.addColorStop(0, `rgba(255, 255, 150, ${currentOpacity * 0.8})`);
+    gradient.addColorStop(0.4, `rgba(255, 255, 150, ${currentOpacity * 0.3})`);
+    gradient.addColorStop(1, `rgba(255, 255, 150, 0)`);
+
+    ctx.fillStyle = gradient;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, glowSize * 3, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Core light
+    ctx.fillStyle = `rgba(255, 255, 200, ${currentOpacity})`;
+    ctx.shadowBlur = 8;
+    ctx.shadowColor = "rgba(255, 255, 150, 0.8)";
     ctx.beginPath();
     ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
     ctx.fill();
@@ -168,6 +374,7 @@ const EFFECT_CONFIGS: Record<
     renderFunction: renderRain,
     color: "rgba(174, 194, 224, 0.5)",
     lineWidth: 1,
+    hasRipples: true,
   },
   "heavy-rain": {
     count: 800,
@@ -179,6 +386,7 @@ const EFFECT_CONFIGS: Record<
     color: "rgba(174, 194, 224, 0.5)",
     lineWidth: 2,
     slant: 1,
+    hasRipples: true,
   },
   snow: {
     count: 150,
@@ -188,6 +396,8 @@ const EFFECT_CONFIGS: Record<
     opacityRange: { min: 0.1, max: 0.6 },
     renderFunction: renderSnow,
     color: "rgba(255, 255, 255, 0.8)",
+    hasStacking: true,
+    stackDuration: 4000,
   },
   leaves: {
     count: 50,
@@ -197,6 +407,8 @@ const EFFECT_CONFIGS: Record<
     opacityRange: { min: 0.1, max: 0.6 },
     renderFunction: renderLeaves,
     color: "rgba(218, 165, 32,",
+    hasStacking: true,
+    stackDuration: 5000,
   },
   "cherry-blossom": {
     count: 50,
@@ -206,6 +418,8 @@ const EFFECT_CONFIGS: Record<
     opacityRange: { min: 0.1, max: 0.6 },
     renderFunction: renderLeaves,
     color: "rgba(255, 183, 197,",
+    hasStacking: true,
+    stackDuration: 5000,
   },
   fireflies: {
     count: 40,
@@ -229,6 +443,8 @@ const EFFECT_CONFIGS: Record<
 
 export const EffectsLayer: React.FC<EffectsLayerProps> = ({ type }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const ripplesRef = useRef<Ripple[]>([]);
+  const stackedRef = useRef<StackedParticle[]>([]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -283,7 +499,31 @@ export const EffectsLayer: React.FC<EffectsLayerProps> = ({ type }) => {
     initParticles();
 
     const render = () => {
-      config.renderFunction(ctx, canvas, particles, config);
+      // Update ripples
+      if (config.hasRipples) {
+        ripplesRef.current.forEach((ripple) => {
+          ripple.radius += 0.5;
+          ripple.opacity -= 0.01;
+        });
+        // Remove old ripples
+        ripplesRef.current = ripplesRef.current.filter(
+          (r) => r.opacity > 0 && r.radius < r.maxRadius
+        );
+      }
+
+      // Update stacked particles
+      if (config.hasStacking) {
+        const now = Date.now();
+        stackedRef.current = stackedRef.current.filter(
+          (s) => now - s.createdAt < (config.stackDuration || 3000)
+        );
+      }
+
+      config.renderFunction(ctx, canvas, particles, config, {
+        ripples: ripplesRef.current,
+        stacked: stackedRef.current,
+      });
+
       animationFrameId = requestAnimationFrame(render);
     };
 
@@ -292,6 +532,8 @@ export const EffectsLayer: React.FC<EffectsLayerProps> = ({ type }) => {
     return () => {
       window.removeEventListener("resize", resize);
       cancelAnimationFrame(animationFrameId);
+      ripplesRef.current = [];
+      stackedRef.current = [];
     };
   }, [type]);
 

@@ -34,7 +34,7 @@ export const Background: React.FC<BackgroundProps> = ({
     }
   }, [isMuted, scene.type]);
 
-  const onPlayerReady: YouTubeProps['onReady'] = (event) => {
+  const onPlayerReady: YouTubeProps["onReady"] = (event) => {
     playerRef.current = event.target;
     // Set initial mute state
     if (isMuted) {
@@ -46,12 +46,13 @@ export const Background: React.FC<BackgroundProps> = ({
     event.target.playVideo();
   };
 
-  const youtubeOpts: YouTubeProps['opts'] = {
+  const youtubeOpts: YouTubeProps["opts"] = {
     playerVars: {
       autoplay: 1,
       controls: 0,
       loop: 1,
-      playlist: scene.type === "youtube" ? getYoutubeVideoId(scene.url) || "" : "",
+      playlist:
+        scene.type === "youtube" ? getYoutubeVideoId(scene.url) || "" : "",
       playsinline: 1,
       showinfo: 0,
       rel: 0,
@@ -97,14 +98,14 @@ export const Background: React.FC<BackgroundProps> = ({
 
       {scene.type === "youtube" && (
         <>
-          <div className="absolute inset-0 w-full h-full pointer-events-none scale-[1.5]">
+          <div className="absolute inset-0 w-full h-full pointer-events-none">
             <YouTube
               videoId={getYoutubeVideoId(scene.url) || ""}
               opts={youtubeOpts}
               onReady={onPlayerReady}
               className="w-full h-full"
               iframeClassName="w-full h-full pointer-events-none"
-              style={{ width: '100%', height: '100%' }}
+              style={{ width: "100%", height: "100%" }}
             />
           </div>
           <div className="absolute inset-0 bg-black/20" />
