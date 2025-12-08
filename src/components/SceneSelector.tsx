@@ -157,13 +157,15 @@ export const SceneSelector: React.FC<SceneSelectorProps> = ({
                     src={`https://img.youtube.com/vi/${
                       scene.url.split("v=")[1]
                     }/hqdefault.jpg`}
+                    loading="lazy"
                     className="w-full h-full object-cover opacity-80"
                     alt={scene.name}
                   />
                 ) : (
                   <img
-                    src={scene.url}
+                    src={scene.thumbnail || scene.url}
                     alt={scene.name}
+                    loading="lazy"
                     className="w-full h-full object-cover"
                   />
                 )}
@@ -240,6 +242,7 @@ export const SceneSelector: React.FC<SceneSelectorProps> = ({
                       <img
                         src={scene.url}
                         alt={scene.name}
+                        loading="lazy"
                         className="w-full h-full object-cover"
                       />
                       <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">

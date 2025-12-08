@@ -31,20 +31,21 @@ export const AudioController: React.FC<AudioControllerProps> = ({
   useEffect(() => {
     // Sync audio elements with state
     DEFAULT_SOUNDS.forEach((sound) => {
-      if (!audioRefs.current[sound.id]) {
-        audioRefs.current[sound.id] = new Audio(sound.url);
-        audioRefs.current[sound.id].loop = true;
-      }
-
-      const audio = audioRefs.current[sound.id];
       const soundState = soundStates.find((s) => s.id === sound.id);
-
       if (!soundState) return;
 
-      // Update volume
-      audio.volume = soundState.volume;
-
+      // Only create audio element if user wants to play it
       if (soundState.isPlaying) {
+        if (!audioRefs.current[sound.id]) {
+          audioRefs.current[sound.id] = new Audio(sound.url);
+          audioRefs.current[sound.id].loop = true;
+        }
+
+        const audio = audioRefs.current[sound.id];
+
+        // Update volume
+        audio.volume = soundState.volume;
+
         // Only play if not already playing
         if (audio.paused) {
           const playPromise = audio.play();
@@ -54,9 +55,9 @@ export const AudioController: React.FC<AudioControllerProps> = ({
             );
           }
         }
-      } else {
-        // Pause the audio immediately
-        audio.pause();
+      } else if (audioRefs.current[sound.id]) {
+        // Pause the audio if it exists
+        audioRefs.current[sound.id].pause();
       }
     });
 

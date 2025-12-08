@@ -30,6 +30,7 @@ export interface Scene {
   type: "image" | "video" | "color" | "youtube";
   url: string; // URL for image/video/youtube or Hex code for color
   name: string;
+  thumbnail?: string; // Optional thumbnail URL for lazy loading
 }
 
 export interface SoundTrack {

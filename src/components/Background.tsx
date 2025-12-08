@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from "react";
+import React, { useRef, useEffect, useState } from "react";
 import YouTube, { YouTubeProps } from "react-youtube";
 import { Scene, EffectType } from "../types";
 import { EffectsLayer } from "./EffectsLayer";
@@ -15,6 +15,7 @@ export const Background: React.FC<BackgroundProps> = ({
   isMuted = true,
 }) => {
   const playerRef = useRef<any>(null);
+  const [imageLoaded, setImageLoaded] = useState(false);
 
   const getYoutubeVideoId = (url: string) => {
     const regExp =
@@ -22,6 +23,11 @@ export const Background: React.FC<BackgroundProps> = ({
     const match = url.match(regExp);
     return match && match[2].length === 11 ? match[2] : null;
   };
+
+  // Reset image loaded state when scene changes
+  useEffect(() => {
+    setImageLoaded(false);
+  }, [scene.url]);
 
   // Handle mute/unmute changes
   useEffect(() => {
@@ -70,11 +76,27 @@ export const Background: React.FC<BackgroundProps> = ({
 
       {scene.type === "image" && (
         <>
+          {/* Thumbnail layer - shows immediately */}
+          {scene.thumbnail && !imageLoaded && (
+            <img
+              src={scene.thumbnail}
+              alt="background thumbnail"
+              className="w-full h-full object-cover blur-sm scale-105"
+            />
+          )}
+
+          {/* Full resolution image - fades in when loaded */}
           <img
             src={scene.url}
             alt="background"
-            className="w-full h-full object-cover transition-opacity duration-700"
+            loading="eager"
+            onLoad={() => setImageLoaded(true)}
+            className={`w-full h-full object-cover transition-opacity duration-700 ${
+              imageLoaded ? "opacity-100" : "opacity-0"
+            }`}
+            style={{ position: scene.thumbnail ? "absolute" : "relative" }}
           />
+
           {/* Dark Overlay for readability */}
           <div className="absolute inset-0 bg-black/20" />
         </>
