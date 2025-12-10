@@ -44,15 +44,25 @@ function useDebounce<T extends (...args: any[]) => void>(
   );
 }
 
+type TabType = "image" | "color" | "video" | "custom";
+
 export const SceneSelector: React.FC<SceneSelectorProps> = ({
   currentScene,
   setScene,
   isBgMuted,
   setIsBgMuted,
 }) => {
-  const [activeTab, setActiveTab] = useState<
-    "image" | "color" | "video" | "custom"
-  >("image");
+  const [activeTab, setActiveTab] = useState<TabType>("image");
+
+  const [visitedTabs, setVisitedTabs] = useState<Set<TabType>>(
+    new Set(["image"])
+  );
+
+  useEffect(() => {
+    if (!visitedTabs.has(activeTab)) {
+      setVisitedTabs((prev) => new Set([...prev, activeTab]));
+    }
+  }, [activeTab, visitedTabs]);
   const [customVideoUrl, setCustomVideoUrl] = useState("");
   const [customImageUrl, setCustomImageUrl] = useState("");
   const [customColor, setCustomColorRaw] = useState("#1a1a1a");
@@ -776,16 +786,24 @@ export const SceneSelector: React.FC<SceneSelectorProps> = ({
 
       <div className="flex-1 overflow-y-auto custom-scrollbar p-2">
         {/* COLOR TAB */}
-        {activeTab === "color" && renderColorTab()}
+        <div className={activeTab === "color" ? "block" : "hidden"}>
+          {visitedTabs.has("color") && renderColorTab()}
+        </div>
 
         {/* IMAGE TAB */}
-        {activeTab === "image" && renderImageTab()}
+        <div className={activeTab === "image" ? "block" : "hidden"}>
+          {visitedTabs.has("image") && renderImageTab()}
+        </div>
 
         {/* VIDEO TAB */}
-        {activeTab === "video" && renderVideoTab()}
+        <div className={activeTab === "video" ? "block" : "hidden"}>
+          {visitedTabs.has("video") && renderVideoTab()}
+        </div>
 
         {/* CUSTOM TAB */}
-        {activeTab === "custom" && renderCustomTab()}
+        <div className={activeTab === "custom" ? "block" : "hidden"}>
+          {visitedTabs.has("custom") && renderCustomTab()}
+        </div>
       </div>
     </div>
   );

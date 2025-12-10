@@ -140,9 +140,9 @@ const renderRain: RenderFunction = (ctx, canvas, particles, config, extras) => {
   if (config.hasLightning) {
     const timeSinceLightning = now - lastLightning;
 
-    // Trigger new lightning every 10-30 seconds
+    // Trigger new lightning every 5-25 seconds
     if (
-      timeSinceLightning > 10000 + Math.random() * 20000 &&
+      timeSinceLightning > 5000 + Math.random() * 20000 &&
       lightningPhase === 0
     ) {
       lightningPhase = 1;

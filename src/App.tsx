@@ -72,6 +72,15 @@ function App() {
     "pomodoro"
   );
   const [activePanel, setActivePanel] = useState<PanelType>("none");
+  const [visitedPanels, setVisitedPanels] = useState<Set<PanelType>>(new Set());
+
+  // Lazy load panels
+  useEffect(() => {
+    if (activePanel !== "none" && !visitedPanels.has(activePanel)) {
+      setVisitedPanels((prev) => new Set([...prev, activePanel]));
+    }
+  }, [activePanel, visitedPanels]);
+
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isPiP, setIsPiP] = useState(false);
   const pipWindowRef = useRef<Window | null>(null);
@@ -305,45 +314,53 @@ function App() {
                 activePanel === "audio" ? "block" : "hidden"
               }`}
             >
-              <AudioController />
+              {visitedPanels.has("audio") && <AudioController />}
             </div>
             <div
               className={`absolute inset-0 ${
                 activePanel === "tasks" ? "block" : "hidden"
               }`}
             >
-              <Tasks tasks={tasks} setTasks={setTasks} />
+              {visitedPanels.has("tasks") && (
+                <Tasks tasks={tasks} setTasks={setTasks} />
+              )}
             </div>
             <div
               className={`absolute inset-0 ${
                 activePanel === "notes" ? "block" : "hidden"
               }`}
             >
-              <Notes notes={notes} setNotes={setNotes} />
+              {visitedPanels.has("notes") && (
+                <Notes notes={notes} setNotes={setNotes} />
+              )}
             </div>
             <div
               className={`absolute inset-0 ${
                 activePanel === "scenes" ? "block" : "hidden"
               }`}
             >
-              <SceneSelector
-                currentScene={currentScene}
-                setScene={setCurrentScene}
-                isBgMuted={isBgMuted}
-                setIsBgMuted={setIsBgMuted}
-              />
+              {visitedPanels.has("scenes") && (
+                <SceneSelector
+                  currentScene={currentScene}
+                  setScene={setCurrentScene}
+                  isBgMuted={isBgMuted}
+                  setIsBgMuted={setIsBgMuted}
+                />
+              )}
             </div>
             <div
               className={`absolute inset-0 ${
                 activePanel === "effects" ? "block" : "hidden"
               }`}
             >
-              <EffectsSelector
-                currentEffect={currentEffect}
-                setEffect={setCurrentEffect}
-                showVisualizer={showVisualizer}
-                setShowVisualizer={setShowVisualizer}
-              />
+              {visitedPanels.has("effects") && (
+                <EffectsSelector
+                  currentEffect={currentEffect}
+                  setEffect={setCurrentEffect}
+                  showVisualizer={showVisualizer}
+                  setShowVisualizer={setShowVisualizer}
+                />
+              )}
             </div>
           </div>
         </div>
