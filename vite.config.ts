@@ -15,18 +15,20 @@ export default defineConfig(({ mode }) => {
           manualChunks(id) {
             // Vendor chunks
             if (id.includes("node_modules")) {
-              if (id.includes("react-dom") || id.includes("react/")) {
-                return "react-vendor";
-              }
-              if (id.includes("lucide-react")) {
-                return "ui-vendor";
-              }
-              if (id.includes("uuid")) {
-                return "helper-vendor";
-              }
-              if (id.includes("@loadable")) {
-                return "loadable-vendor";
-              }
+              // if (
+              //   id.includes("react-dom") ||
+              //   id.includes("react/") ||
+              //   id.includes("react-youtube") ||
+              //   id.includes("@loadable")
+              // ) {
+              //   return "react-vendor";
+              // }
+              // if (id.includes("lucide-react")) {
+              //   return "ui-vendor";
+              // }
+              // if (id.includes("uuid")) {
+              //   return "helper-vendor";
+              // }
               // Other node_modules go to common vendor
               return "vendor";
             }
@@ -34,7 +36,7 @@ export default defineConfig(({ mode }) => {
             if (id.includes("/components/")) {
               const componentName = id.split("/components/")[1]?.split(".")[0];
               if (componentName) {
-                return `component-${componentName.toLowerCase()}`;
+                return `comp-${componentName.toLowerCase()}`;
               }
             }
           },
