@@ -40,6 +40,24 @@ export const Background: React.FC<BackgroundProps> = ({
     }
   }, [isMuted, scene.type]);
 
+  // Handle window click for YouTube autoplay
+  useEffect(() => {
+    if (scene.type !== "youtube") return;
+
+    const handleWindowClick = () => {
+      if (playerRef.current) {
+        const playerState = playerRef.current.getPlayerState();
+        // YouTube player states: -1 (unstarted), 0 (ended), 1 (playing), 2 (paused), 3 (buffering), 5 (cued)
+        if (playerState !== 1) {
+          playerRef.current.playVideo();
+        }
+      }
+    };
+
+    window.addEventListener("click", handleWindowClick);
+    return () => window.removeEventListener("click", handleWindowClick);
+  }, [scene.type]);
+
   const onPlayerReady: YouTubeProps["onReady"] = (event) => {
     playerRef.current = event.target;
     // Set initial mute state
