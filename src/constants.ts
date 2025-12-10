@@ -9,96 +9,243 @@ export const TIMER_SETTINGS: Record<TimerMode, number> = {
 };
 
 export const DEFAULT_SCENES: Scene[] = [
+  // image
   {
     id: "rain-window",
     type: "image",
     url: "https://images.unsplash.com/photo-1515694346937-94d85e41e6f0?q=80&w=2560&auto=format&fit=crop",
-    thumbnail: "https://images.unsplash.com/photo-1515694346937-94d85e41e6f0?w=150&auto=format&fit=crop",
+    thumbnail:
+      "https://images.unsplash.com/photo-1515694346937-94d85e41e6f0?w=150&auto=format&fit=crop",
     name: "Rainy Window",
   },
   {
     id: "forest-fog",
     type: "image",
     url: "https://images.unsplash.com/photo-1542273917363-3b1817f69a2d?q=80&w=2560&auto=format&fit=crop",
-    thumbnail: "https://images.unsplash.com/photo-1542273917363-3b1817f69a2d?w=150&auto=format&fit=crop",
+    thumbnail:
+      "https://images.unsplash.com/photo-1542273917363-3b1817f69a2d?w=150&auto=format&fit=crop",
     name: "Foggy Forest",
   },
   {
     id: "coffee-shop",
     type: "image",
     url: "https://images.unsplash.com/photo-1509042239860-f550ce710b93?q=80&w=2560&auto=format&fit=crop",
-    thumbnail: "https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=150&auto=format&fit=crop",
+    thumbnail:
+      "https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=150&auto=format&fit=crop",
     name: "Coffee Shop",
   },
   {
     id: "japan-street",
     type: "image",
     url: "https://images.unsplash.com/photo-1542051841857-5f90071e7989?q=80&w=2560&auto=format&fit=crop",
-    thumbnail: "https://images.unsplash.com/photo-1542051841857-5f90071e7989?w=150&auto=format&fit=crop",
+    thumbnail:
+      "https://images.unsplash.com/photo-1542051841857-5f90071e7989?w=150&auto=format&fit=crop",
     name: "Tokyo Street",
   },
   {
     id: "train-journey",
     type: "image",
     url: "https://images.unsplash.com/photo-1531266752426-aad472b7bbf4?q=80&w=2560&auto=format&fit=crop",
-    thumbnail: "https://images.unsplash.com/photo-1531266752426-aad472b7bbf4?w=150&auto=format&fit=crop",
+    thumbnail:
+      "https://images.unsplash.com/photo-1531266752426-aad472b7bbf4?w=150&auto=format&fit=crop",
     name: "Train Journey",
   },
   {
     id: "beach-sunset",
     type: "image",
     url: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=2560&auto=format&fit=crop",
-    thumbnail: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=150&auto=format&fit=crop",
+    thumbnail:
+      "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=150&auto=format&fit=crop",
     name: "Beach Sunset",
   },
   {
     id: "mountain-peak",
     type: "image",
     url: "https://images.unsplash.com/photo-1519681393784-d120267933ba?q=80&w=2560&auto=format&fit=crop",
-    thumbnail: "https://images.unsplash.com/photo-1519681393784-d120267933ba?w=150&auto=format&fit=crop",
+    thumbnail:
+      "https://images.unsplash.com/photo-1519681393784-d120267933ba?w=150&auto=format&fit=crop",
     name: "Mountain Peak",
   },
   {
     id: "autumn-road",
     type: "image",
     url: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=80&w=2560&auto=format&fit=crop",
-    thumbnail: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=150&auto=format&fit=crop",
+    thumbnail:
+      "https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=150&auto=format&fit=crop",
     name: "Autumn Road",
   },
   {
     id: "desk-setup",
     type: "image",
     url: "https://images.unsplash.com/photo-1497215728101-856f4ea42174?q=80&w=2560&auto=format&fit=crop",
-    thumbnail: "https://images.unsplash.com/photo-1497215728101-856f4ea42174?w=150&auto=format&fit=crop",
+    thumbnail:
+      "https://images.unsplash.com/photo-1497215728101-856f4ea42174?w=150&auto=format&fit=crop",
     name: "Workspace",
   },
   {
     id: "books",
     type: "image",
     url: "https://images.unsplash.com/photo-1507721999472-8ed4421c4af2?q=80&w=2560&auto=format&fit=crop",
-    thumbnail: "https://images.unsplash.com/photo-1507721999472-8ed4421c4af2?w=150&auto=format&fit=crop",
+    thumbnail:
+      "https://images.unsplash.com/photo-1507721999472-8ed4421c4af2?w=150&auto=format&fit=crop",
     name: "Books",
   },
   {
     id: "city-sky",
     type: "image",
     url: "https://images.unsplash.com/photo-1587162146766-e06b1189b907?q=80&w=2560&auto=format&fit=crop",
-    thumbnail: "https://images.unsplash.com/photo-1587162146766-e06b1189b907?w=150&auto=format&fit=crop",
+    thumbnail:
+      "https://images.unsplash.com/photo-1587162146766-e06b1189b907?w=150&auto=format&fit=crop",
     name: "City Sky",
   },
   {
     id: "night-city",
     type: "image",
     url: "https://images.unsplash.com/photo-1519501025264-65ba15a82390?q=80&w=2560&auto=format&fit=crop",
-    thumbnail: "https://images.unsplash.com/photo-1519501025264-65ba15a82390?w=150&auto=format&fit=crop",
+    thumbnail:
+      "https://images.unsplash.com/photo-1519501025264-65ba15a82390?w=150&auto=format&fit=crop",
     name: "Night City",
   },
   {
     id: "loom-sky",
     type: "image",
     url: "https://images.unsplash.com/photo-1444080748397-f442aa95c3e5?q=80&w=2560&auto=format&fit=crop",
-    thumbnail: "https://images.unsplash.com/photo-1444080748397-f442aa95c3e5?w=150&auto=format&fit=crop",
+    thumbnail:
+      "https://images.unsplash.com/photo-1444080748397-f442aa95c3e5?w=150&auto=format&fit=crop",
     name: "Starry Sky",
+  },
+
+  // video
+  {
+    id: "202004-916894674",
+    name: "studyfoc.us",
+    type: "video",
+    url: "https://cdn.studyfoc.us/studyfocus-1/202004-916894674/1080p/index.m3u8",
+    thumbnail:
+      "https://cdn.studyfoc.us/studyfocus-1/202004-916894674/480p/thumb.jpg",
+  },
+  {
+    id: "1448735-uhd_4096_2160_24fps",
+    name: "studyfoc.us",
+    type: "video",
+    url: "https://cdn.studyfoc.us/studyfocus-1/1448735-uhd_4096_2160_24fps/1080p/index.m3u8",
+    thumbnail:
+      "https://cdn.studyfoc.us/studyfocus-1/1448735-uhd_4096_2160_24fps/480p/thumb.jpg",
+  },
+  {
+    id: "1720220-uhd_3840_2160_25fps",
+    name: "studyfoc.us",
+    type: "video",
+    url: "https://cdn.studyfoc.us/studyfocus-1/1720220-uhd_3840_2160_25fps/1080p/index.m3u8",
+    thumbnail:
+      "https://cdn.studyfoc.us/studyfocus-1/1720220-uhd_3840_2160_25fps/480p/thumb.jpg",
+  },
+  {
+    id: "266786",
+    name: "studyfoc.us",
+    type: "video",
+    url: "https://cdn.studyfoc.us/studyfocus-1/266786/1080p/index.m3u8",
+    thumbnail: "https://cdn.studyfoc.us/studyfocus-1/266786/480p/thumb.jpg",
+  },
+  {
+    id: "7094565-uhd_3840_2160_25fps",
+    name: "studyfoc.us",
+    type: "video",
+    url: "https://cdn.studyfoc.us/studyfocus-1/7094565-uhd_3840_2160_25fps/1080p/index.m3u8",
+    thumbnail:
+      "https://cdn.studyfoc.us/studyfocus-1/7094565-uhd_3840_2160_25fps/480p/thumb.jpg",
+  },
+  {
+    id: "118087-713900116",
+    name: "studyfoc.us",
+    type: "video",
+    url: "https://cdn.studyfoc.us/studyfocus-1/118087-713900116/1080p/index.m3u8",
+    thumbnail:
+      "https://cdn.studyfoc.us/studyfocus-1/118087-713900116/480p/thumb.jpg",
+  },
+  {
+    id: "148134-793525322",
+    name: "studyfoc.us",
+    type: "video",
+    url: "https://cdn.studyfoc.us/studyfocus-1/148134-793525322/1080p/index.m3u8",
+    thumbnail:
+      "https://cdn.studyfoc.us/studyfocus-1/148134-793525322/480p/thumb.jpg",
+  },
+  {
+    id: "176303-855196335",
+    name: "studyfoc.us",
+    type: "video",
+    url: "https://cdn.studyfoc.us/studyfocus-1/176303-855196335/1080p/index.m3u8",
+    thumbnail:
+      "https://cdn.studyfoc.us/studyfocus-1/176303-855196335/480p/thumb.jpg",
+  },
+  {
+    id: "203878-922675732",
+    name: "studyfoc.us",
+    type: "video",
+    url: "https://cdn.studyfoc.us/studyfocus-1/203878-922675732/1080p/index.m3u8",
+    thumbnail:
+      "https://cdn.studyfoc.us/studyfocus-1/203878-922675732/480p/thumb.jpg",
+  },
+  {
+    id: "226711",
+    name: "studyfoc.us",
+    type: "video",
+    url: "https://cdn.studyfoc.us/studyfocus-1/226711/1080p/index.m3u8",
+    thumbnail: "https://cdn.studyfoc.us/studyfocus-1/226711/480p/thumb.jpg",
+  },
+  {
+    id: "270507",
+    name: "studyfoc.us",
+    type: "video",
+    url: "https://cdn.studyfoc.us/studyfocus-1/270507/1080p/index.m3u8",
+    thumbnail: "https://cdn.studyfoc.us/studyfocus-1/270507/480p/thumb.jpg",
+  },
+  {
+    id: "270940",
+    name: "studyfoc.us",
+    type: "video",
+    url: "https://cdn.studyfoc.us/studyfocus-1/270940/1080p/index.m3u8",
+    thumbnail: "https://cdn.studyfoc.us/studyfocus-1/270940/480p/thumb.jpg",
+  },
+  {
+    id: "270983",
+    name: "studyfoc.us",
+    type: "video",
+    url: "https://cdn.studyfoc.us/studyfocus-1/270983/1080p/index.m3u8",
+    thumbnail: "https://cdn.studyfoc.us/studyfocus-1/270983/480p/thumb.jpg",
+  },
+  {
+    id: "6847-196978755",
+    name: "studyfoc.us",
+    type: "video",
+    url: "https://cdn.studyfoc.us/studyfocus-1/6847-196978755/1080p/index.m3u8",
+    thumbnail:
+      "https://cdn.studyfoc.us/studyfocus-1/6847-196978755/480p/thumb.jpg",
+  },
+  {
+    id: "856171-hd_1920_1080_30fps",
+    name: "studyfoc.us",
+    type: "video",
+    url: "https://cdn.studyfoc.us/studyfocus-1/856171-hd_1920_1080_30fps/720p/index.m3u8",
+    thumbnail:
+      "https://cdn.studyfoc.us/studyfocus-1/856171-hd_1920_1080_30fps/480p/thumb.jpg",
+  },
+  {
+    id: "91562-629172467",
+    name: "studyfoc.us",
+    type: "video",
+    url: "https://cdn.studyfoc.us/studyfocus-1/91562-629172467/1080p/index.m3u8",
+    thumbnail:
+      "https://cdn.studyfoc.us/studyfocus-1/91562-629172467/480p/thumb.jpg",
+  },
+  {
+    id: "9584-220312371",
+    name: "studyfoc.us",
+    type: "video",
+    url: "https://cdn.studyfoc.us/studyfocus-1/9584-220312371/1080p/index.m3u8",
+    thumbnail:
+      "https://cdn.studyfoc.us/studyfocus-1/9584-220312371/480p/thumb.jpg",
   },
 
   // youtube

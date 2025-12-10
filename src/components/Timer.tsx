@@ -117,7 +117,7 @@ export const Timer: React.FC<TimerProps> = ({ mode, setMode }) => {
   return (
     <div className="group flex flex-col items-center justify-center p-8 transition-all duration-500 ease-in-out text-white w-full max-w-md mx-auto hover:bg-black/40 hover:backdrop-blur-md rounded-3xl font-sans">
       {/* Mode Selectors - Fades in on hover */}
-      <div className="flex space-x-2 mb-8 p-1 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-4 group-hover:translate-y-0 bg-white/10">
+      <div className="flex sm:space-x-2 space-x-1 mb-8 p-1 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-4 group-hover:translate-y-0 bg-white/10">
         {(
           [
             "pomodoro",
@@ -130,7 +130,7 @@ export const Timer: React.FC<TimerProps> = ({ mode, setMode }) => {
           <button
             key={m}
             onClick={() => setMode(m)}
-            className={`px-4 py-2 rounded-full text-sm font-semibold transition-all duration-300 ${
+            className={`px-2 py-1 sm:px-4 sm:py-2 rounded-full text-sm font-semibold transition-all duration-300 ${
               mode === m
                 ? "bg-white text-black shadow-lg"
                 : "text-white/70 hover:text-white hover:bg-white/10"
@@ -151,20 +151,20 @@ export const Timer: React.FC<TimerProps> = ({ mode, setMode }) => {
 
       {/* Timer Display - Always visible but enhances on hover */}
       {/* Changed font-thin to font-bold as requested */}
-      <div className="timer-display text-9xl font-bold tracking-tight mb-8 select-none drop-shadow-2xl transition-transform duration-500 group-hover:scale-105">
+      <div className="timer-display text-7xl sm:text-9xl font-bold tracking-tight mb-8 select-none drop-shadow-2xl transition-transform duration-500 group-hover:scale-105">
         {mode === "clock" ? formatClock(currentTime) : formatTimer(timeLeft)}
       </div>
 
       {/* Controls - Fades in on hover */}
       {/* Only show controls if NOT in clock mode */}
       <div
-        className={`flex items-center space-x-6 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-4 group-hover:translate-y-0 ${
+        className={`flex items-center sm:space-x-6 space-x-3 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-4 group-hover:translate-y-0 ${
           mode === "clock" ? "invisible" : ""
         }`}
       >
         <button
           onClick={toggleTimer}
-          className="bg-white text-black p-6 rounded-full hover:scale-105 transition-transform shadow-lg active:scale-95"
+          className="bg-white text-black sm:p-6 p-4 rounded-full hover:scale-105 transition-transform shadow-lg active:scale-95"
         >
           {isActive ? (
             <Pause size={32} fill="black" />
@@ -178,7 +178,7 @@ export const Timer: React.FC<TimerProps> = ({ mode, setMode }) => {
           : timeLeft < TIMER_SETTINGS[mode]) && (
           <button
             onClick={resetTimer}
-            className="bg-white/10 text-white p-4 rounded-full hover:bg-white/20 transition-colors"
+            className="bg-white/10 text-white sm:p-4 p-3 rounded-full hover:bg-white/20 transition-colors"
           >
             <RotateCcw size={24} />
           </button>

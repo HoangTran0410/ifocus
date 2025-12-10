@@ -167,6 +167,10 @@ function App() {
     }
   };
 
+  const openGithub = () => {
+    window.open("https://github.com/hoangtran0410/ifocus", "_blank");
+  };
+
   // Cleanup PiP window on unmount
   useEffect(() => {
     return () => {
@@ -198,7 +202,7 @@ function App() {
       <div className="relative z-10 w-full h-full flex flex-col pointer-events-none">
         {/* Header / Top Bar */}
         <div className="flex justify-between items-center p-6 pointer-events-auto">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3" onClick={openGithub}>
             <div className="w-8 h-8 rounded-lg bg-white/20 backdrop-blur-md flex items-center justify-center">
               <span className="font-bold text-white">F</span>
             </div>
@@ -246,7 +250,7 @@ function App() {
               activePanel !== "none" ? "lg:-translate-x-32" : ""
             }`}
           >
-            <div className="flex gap-4 p-2 bg-black/40 opacity-80 hover:opacity-100 hover:backdrop-blur-xl transition-all rounded-2xl border border-white/10 shadow-2xl">
+            <div className="flex gap-0 sm:gap-4 p-2 bg-black/40 opacity-80 hover:opacity-100 hover:backdrop-blur-xl transition-all rounded-2xl border border-white/10 shadow-2xl">
               <DockButton
                 icon={<ImageIcon size={20} />}
                 label="Scenes"
