@@ -55,6 +55,7 @@ export const Background: React.FC<BackgroundProps> = ({
   const youtubeOpts: YouTubeProps["opts"] = {
     playerVars: {
       autoplay: 1,
+      mute: 1, // Explicitly mute for autoplay to work in iframes
       controls: 0,
       loop: 1,
       playlist:
