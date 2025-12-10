@@ -536,6 +536,7 @@ export const EFFECTS: { id: EffectType; name: string; icon: string }[] = [
   { id: "fireflies", name: "Fireflies", icon: "✨" },
   { id: "cloud-shadows", name: "Clouds", icon: "☁️" },
   { id: "sun-rays", name: "Sun Rays", icon: "🌅" },
+  { id: "visualize", name: "Visualizer", icon: "📊" },
 ];
 
 export const DEFAULT_SOUNDS: SoundTrack[] = [

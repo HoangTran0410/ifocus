@@ -32,6 +32,7 @@ import { PiPContent } from "./components/PiPContent";
 import { Notes } from "./components/Notes";
 import { SceneSelector } from "./components/SceneSelector";
 import { EffectsSelector } from "./components/EffectsSelector";
+import { Visualizer } from "./components/Visualizer";
 import { useLocalStorage } from "./hooks/useLocalStorage";
 import { DEFAULT_SOUNDS, DEFAULT_IMAGES } from "./constants";
 import { Scene, SoundState, Task, Note, TimerMode, EffectType } from "./types";
@@ -201,6 +202,9 @@ function App() {
         effect={currentEffect}
         isMuted={isBgMuted}
       />
+
+      {/* Visualizer Effect - rendered separately with portal */}
+      {currentEffect === "visualize" && <Visualizer />}
 
       {/* Main Content Layer */}
       <div className="relative z-10 w-full h-full flex flex-col">

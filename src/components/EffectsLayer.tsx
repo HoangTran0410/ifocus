@@ -509,7 +509,7 @@ const renderClouds: RenderFunction = (ctx, canvas, particles, config) => {
 
 // Configuration for each effect type
 const EFFECT_CONFIGS: Record<
-  Exclude<EffectType, "none" | "sun-rays">,
+  Exclude<EffectType, "none" | "sun-rays" | "visualize">,
   EffectConfig
 > = {
   rain: {
@@ -596,7 +596,13 @@ export const EffectsLayer: React.FC<EffectsLayerProps> = ({ type }) => {
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas || type === "none" || type === "sun-rays") return;
+    if (
+      !canvas ||
+      type === "none" ||
+      type === "sun-rays" ||
+      type === "visualize"
+    )
+      return;
 
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
@@ -685,7 +691,8 @@ export const EffectsLayer: React.FC<EffectsLayerProps> = ({ type }) => {
     };
   }, [type]);
 
-  if (type === "none" || type === "sun-rays") return null;
+  if (type === "none" || type === "sun-rays" || type === "visualize")
+    return null;
 
   return (
     <canvas
