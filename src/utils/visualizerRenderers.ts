@@ -221,7 +221,8 @@ export const renderTrapNation = (
   canvas: HTMLCanvasElement,
   data: number[],
   barCount: number,
-  spectrumCache: number[][]
+  spectrumCache: number[][],
+  logoImage?: HTMLImageElement | null
 ) => {
   const centerX = canvas.width / 2;
   const centerY = canvas.height / 2; // Center vertically like original
@@ -307,4 +308,25 @@ export const renderTrapNation = (
 
   // Reset shadow
   ctx.shadowBlur = 0;
+
+  // Draw logo at center if provided (cropped to circle)
+  if (logoImage) {
+    const logoSize = curRadius * 2; // Logo size scales with audio intensity
+    const logoRadius = logoSize / 2;
+
+    ctx.save();
+
+    // Create circular clipping path
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, logoRadius, 0, Math.PI * 2);
+    ctx.closePath();
+    ctx.clip();
+
+    // Draw the image within the circular clip
+    const logoX = centerX - logoRadius;
+    const logoY = centerY - logoRadius;
+    ctx.drawImage(logoImage, logoX, logoY, logoSize, logoSize);
+
+    ctx.restore();
+  }
 };

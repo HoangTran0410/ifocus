@@ -24,6 +24,8 @@ import {
   X,
   Move,
   Maximize,
+  Upload,
+  Trash2,
 } from "lucide-react";
 
 type VisualizerMode = "bars" | "wave" | "circular" | "trap-nation";
@@ -118,6 +120,47 @@ export default function Visualizer({
   // Spectrum cache for ghost delay effect
   const spectrumCacheRef = useRef<number[][]>([]);
 
+  // Logo image for trap nation mode
+  const [logoDataUrl, setLogoDataUrl] = useLocalStorage<string | null>(
+    "zen_visualizer_logo",
+    null
+  );
+  const logoImageRef = useRef<HTMLImageElement | null>(null);
+
+  // Load logo image when dataUrl changes
+  useEffect(() => {
+    if (logoDataUrl) {
+      const img = new Image();
+      img.onload = () => {
+        logoImageRef.current = img;
+      };
+      img.src = logoDataUrl;
+    } else {
+      logoImageRef.current = null;
+    }
+  }, [logoDataUrl]);
+
+  // Handle logo upload
+  const handleLogoUpload = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const dataUrl = event.target?.result as string;
+          setLogoDataUrl(dataUrl);
+        };
+        reader.readAsDataURL(file);
+      }
+    },
+    [setLogoDataUrl]
+  );
+
+  // Handle logo removal
+  const handleLogoRemove = useCallback(() => {
+    setLogoDataUrl(null);
+  }, [setLogoDataUrl]);
+
   // Hover state for opacity effect
   const [isHovered, setIsHovered] = useState(false);
 
@@ -139,8 +182,8 @@ export default function Visualizer({
     [onClose]
   );
 
-  // Audio capture state
-  const [isCapturing, setIsCapturing] = useState(false);
+  // Audio capture state - initialize with current capture status (persists across mode switches)
+  const [isCapturing, setIsCapturing] = useState(() => isAudioCaptureActive());
 
   // Handle audio capture toggle
   const handleCaptureClick = useCallback(
@@ -269,13 +312,12 @@ export default function Visualizer({
     [size]
   );
 
-  // Cleanup PiP window on unmount
+  // Cleanup PiP window on unmount (don't stop audio capture - it's a singleton that should persist)
   useEffect(() => {
     return () => {
       if (pipWindowRef.current && !pipWindowRef.current.closed) {
         pipWindowRef.current.close();
       }
-      stopAudioCapture();
     };
   }, []);
 
@@ -431,7 +473,14 @@ export default function Visualizer({
       } else if (mode === "circular") {
         renderCircular(ctx, canvas, data, barCount);
       } else if (mode === "trap-nation") {
-        renderTrapNation(ctx, canvas, data, barCount, spectrumCacheRef.current);
+        renderTrapNation(
+          ctx,
+          canvas,
+          data,
+          barCount,
+          spectrumCacheRef.current,
+          logoImageRef.current
+        );
       }
 
       // Also render to PiP canvas if active
@@ -456,7 +505,8 @@ export default function Visualizer({
               pipCanvasRef.current,
               data,
               barCount,
-              spectrumCacheRef.current
+              spectrumCacheRef.current,
+              logoImageRef.current
             );
           }
         }
@@ -604,6 +654,40 @@ export default function Visualizer({
             }
             className="w-full h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer accent-purple-500"
           />
+        </div>
+
+        {/* Logo Upload for Trap Nation */}
+        <div className="pt-2 border-t border-white/10">
+          <label className="flex justify-between text-xs text-white/70 mb-2">
+            <span>Center Logo (Trap Nation)</span>
+          </label>
+          {logoDataUrl ? (
+            <div className="flex items-center gap-2">
+              <img
+                src={logoDataUrl}
+                alt="Logo preview"
+                className="w-12 h-12 object-contain rounded bg-white/10"
+              />
+              <button
+                onClick={handleLogoRemove}
+                className="flex-1 px-3 py-1.5 text-xs font-medium text-red-400 bg-red-500/10 hover:bg-red-500/20 rounded-md transition-colors cursor-pointer flex items-center justify-center gap-2"
+              >
+                <Trash2 size={14} />
+                Remove
+              </button>
+            </div>
+          ) : (
+            <label className="w-full px-3 py-2 text-xs font-medium text-white/80 bg-white/10 hover:bg-white/20 rounded-md transition-colors cursor-pointer flex items-center justify-center gap-2">
+              <Upload size={14} />
+              Upload Image
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleLogoUpload}
+                className="hidden"
+              />
+            </label>
+          )}
         </div>
 
         {/* Reset Button */}
