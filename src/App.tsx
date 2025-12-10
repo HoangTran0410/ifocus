@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
+import loadable from "@loadable/component";
 import {
   X,
   Music,
@@ -11,18 +12,39 @@ import {
   Sparkles,
   PictureInPicture2,
 } from "lucide-react";
-import { Background } from "./components/Background";
-import { Timer } from "./components/Timer";
-import { AudioController } from "./components/AudioController";
-import { Tasks } from "./components/Tasks";
-import { PiPContent } from "./components/PiPContent";
-import { Notes } from "./components/Notes";
-import { SceneSelector } from "./components/SceneSelector";
-import { EffectsSelector } from "./components/EffectsSelector";
-import { Visualizer } from "./components/Visualizer";
 import { useLocalStorage } from "./hooks/useLocalStorage";
 import { DEFAULT_IMAGES } from "./constants";
 import { Scene, Task, Note, TimerMode, EffectType } from "./types";
+import { LoadingFallback } from "./utils/loader";
+
+// Lazy load all components with @loadable/component
+const Background = loadable(() => import("./components/Background"), {
+  fallback: LoadingFallback,
+});
+const Timer = loadable(() => import("./components/Timer"), {
+  fallback: LoadingFallback,
+});
+const AudioController = loadable(() => import("./components/AudioController"), {
+  fallback: LoadingFallback,
+});
+const Tasks = loadable(() => import("./components/Tasks"), {
+  fallback: LoadingFallback,
+});
+const PiPContent = loadable(() => import("./components/PiPContent"), {
+  fallback: LoadingFallback,
+});
+const Notes = loadable(() => import("./components/Notes"), {
+  fallback: LoadingFallback,
+});
+const SceneSelector = loadable(() => import("./components/SceneSelector"), {
+  fallback: LoadingFallback,
+});
+const EffectsSelector = loadable(() => import("./components/EffectsSelector"), {
+  fallback: LoadingFallback,
+});
+const Visualizer = loadable(() => import("./components/Visualizer"), {
+  fallback: LoadingFallback,
+});
 
 // Extend Window interface for Document Picture-in-Picture API
 declare global {
@@ -83,6 +105,7 @@ function App() {
 
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isPiP, setIsPiP] = useState(false);
+  const [showVideoModal, setShowVideoModal] = useState(false);
   const pipWindowRef = useRef<Window | null>(null);
 
   const toggleFullscreen = () => {
@@ -189,10 +212,14 @@ function App() {
         scene={currentScene}
         effect={currentEffect}
         isMuted={isBgMuted}
+        showVideoModal={showVideoModal}
+        setShowVideoModal={setShowVideoModal}
       />
 
       {/* Visualizer - independent of other effects */}
-      {showVisualizer && <Visualizer />}
+      {showVisualizer && (
+        <Visualizer onClose={() => setShowVisualizer(false)} />
+      )}
 
       {/* Main Content Layer */}
       <div className="relative z-10 w-full h-full flex flex-col">
@@ -345,6 +372,7 @@ function App() {
                   setScene={setCurrentScene}
                   isBgMuted={isBgMuted}
                   setIsBgMuted={setIsBgMuted}
+                  setShowVideoModal={setShowVideoModal}
                 />
               )}
             </div>

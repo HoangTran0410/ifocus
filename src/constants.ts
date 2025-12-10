@@ -113,6 +113,14 @@ export const DEFAULT_IMAGES: Scene[] = [
       "https://images.unsplash.com/photo-1444080748397-f442aa95c3e5?w=150&auto=format&fit=crop",
     name: "Starry Sky",
   },
+  {
+    id: "purple",
+    type: "image",
+    url: "https://images.unsplash.com/photo-1511300636408-a63a89df3482?q=80&w=2560&auto=format&fit=crop",
+    thumbnail:
+      "https://images.unsplash.com/photo-1511300636408-a63a89df3482?w=150&auto=format&fit=crop",
+    name: "Purple",
+  },
 ];
 
 export const DEFAULT_COLORS: Scene[] = [

@@ -1,6 +1,6 @@
 import React from "react";
 import { BarChart } from "lucide-react";
-import { EffectType } from "../types";
+import type { EffectType } from "../types";
 import { EFFECTS } from "../constants";
 
 interface EffectsSelectorProps {
@@ -10,12 +10,12 @@ interface EffectsSelectorProps {
   setShowVisualizer: (show: boolean) => void;
 }
 
-export const EffectsSelector: React.FC<EffectsSelectorProps> = ({
+export default function EffectsSelector({
   currentEffect,
   setEffect,
   showVisualizer,
   setShowVisualizer,
-}) => {
+}: EffectsSelectorProps) {
   return (
     <div className="flex flex-col h-full text-white">
       <div className="flex-1 overflow-y-auto custom-scrollbar p-2">
@@ -77,4 +77,4 @@ export const EffectsSelector: React.FC<EffectsSelectorProps> = ({
       </div>
     </div>
   );
-};
+}

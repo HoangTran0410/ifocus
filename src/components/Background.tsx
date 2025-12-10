@@ -1,29 +1,49 @@
 import React, { useRef, useEffect, useState, useCallback } from "react";
 import { createPortal } from "react-dom";
-import YouTube, { YouTubeProps } from "react-youtube";
+import type { YouTubeProps } from "react-youtube";
 import { Scene, EffectType } from "../types";
-import { EffectsLayer } from "./EffectsLayer";
+import loadable from "@loadable/component";
+import { LoadingFallback } from "../utils/loader";
+
+const YouTube = loadable(() => import("react-youtube"), {
+  fallback: LoadingFallback,
+});
+const EffectsLayer = loadable(() => import("./EffectsLayer"), {
+  fallback: LoadingFallback,
+});
 
 interface BackgroundProps {
   scene: Scene;
   effect?: EffectType;
   isMuted?: boolean;
   disableYouTube?: boolean; // Option to disable YouTube for PiP
+  showVideoModal?: boolean;
+  setShowVideoModal?: (show: boolean) => void;
 }
 
-export const Background: React.FC<BackgroundProps> = ({
+export default function Background({
   scene,
   effect = "none",
   isMuted = true,
   disableYouTube = false,
-}) => {
+  showVideoModal = false,
+  setShowVideoModal = (_: boolean) => {},
+}: BackgroundProps) {
   const playerRef = useRef<any>(null);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [youtubeError, setYoutubeError] = useState(false);
   // State to control whether YouTube player should be shown in modal for user interaction
-  const [showYoutubeModal, setShowYoutubeModal] = useState(false);
+  const [internalShowYoutubeModal, setInternalShowYoutubeModal] =
+    useState(false);
   // Track if we've ever successfully started playback
   const hasStartedPlayingRef = useRef(false);
+
+  const isModal = showVideoModal || internalShowYoutubeModal;
+
+  const handleCloseModal = () => {
+    setShowVideoModal(false);
+    setInternalShowYoutubeModal(false);
+  };
 
   const getYoutubeVideoId = (url: string) => {
     const regExp =
@@ -35,7 +55,8 @@ export const Background: React.FC<BackgroundProps> = ({
   // Reset states when scene changes
   useEffect(() => {
     setImageLoaded(false);
-    setShowYoutubeModal(false);
+    setShowVideoModal(false);
+    setInternalShowYoutubeModal(false);
     hasStartedPlayingRef.current = false;
 
     // Clear player ref when scene changes to prevent stale references
@@ -43,7 +64,7 @@ export const Background: React.FC<BackgroundProps> = ({
     return () => {
       playerRef.current = null;
     };
-  }, [scene.url]);
+  }, [scene.url, setShowVideoModal]);
 
   // Handle mute/unmute changes
   useEffect(() => {
@@ -62,7 +83,6 @@ export const Background: React.FC<BackgroundProps> = ({
 
   // Check if YouTube is playing and handle modal visibility
   const checkAndShowModal = useCallback(() => {
-    // setShowYoutubeModal(true);
     if (!playerRef.current || hasStartedPlayingRef.current) return;
 
     try {
@@ -86,7 +106,7 @@ export const Background: React.FC<BackgroundProps> = ({
               !hasStartedPlayingRef.current
             ) {
               // Playback didn't start, show the modal for user to click directly
-              setShowYoutubeModal(true);
+              setInternalShowYoutubeModal(true);
             }
           } catch (e) {
             console.warn("Error checking player state:", e);
@@ -132,7 +152,7 @@ export const Background: React.FC<BackgroundProps> = ({
       // If playing (state 1), hide modal and mark as started
       if (event.data === 1) {
         hasStartedPlayingRef.current = true;
-        setShowYoutubeModal(false);
+        setInternalShowYoutubeModal(false);
       }
     } catch (e) {
       console.warn("Error in onPlayerStateChange:", e);
@@ -145,7 +165,7 @@ export const Background: React.FC<BackgroundProps> = ({
     // Don't set youtubeError for recoverable errors (like video unavailable)
     // Only set it for fatal errors that prevent any playback
     if (event.data === 150 || event.data === 101) {
-      // Video unavailable or embedding not allowed - these are recoverable
+      // Video unavailable or embedding restricted - these are recoverable
       console.warn("Video may be unavailable or embedding restricted");
     } else {
       setYoutubeError(true);
@@ -155,8 +175,8 @@ export const Background: React.FC<BackgroundProps> = ({
   const youtubeOpts: YouTubeProps["opts"] = {
     playerVars: {
       autoplay: 1,
-      mute: 1, // Explicitly mute for autoplay to work in iframes
-      controls: 0,
+      mute: 1,
+      controls: 1,
       loop: 1,
       playlist:
         scene.type === "youtube" ? getYoutubeVideoId(scene.url) || "" : "",
@@ -207,63 +227,48 @@ export const Background: React.FC<BackgroundProps> = ({
         </>
       )}
 
-      {scene.type === "video" && (
+      {(scene.type === "video" ||
+        (scene.type === "youtube" && !disableYouTube && !youtubeError)) && (
         <>
-          <video
-            autoPlay
-            loop
-            muted
-            playsInline
-            className="w-full h-full object-cover"
-            key={scene.url} // Key forces reload on change
-          >
-            <source src={scene.url} type="video/mp4" />
-          </video>
-          <div className="absolute inset-0 bg-black/20" />
-        </>
-      )}
-
-      {scene.type === "youtube" && !disableYouTube && !youtubeError && (
-        <>
-          {/* Placeholder for where the YouTube player would appear in background */}
+          {/* Placeholder for where the video/YouTube player would appear in background */}
           <div className="absolute inset-0 bg-black/20" />
 
-          {/* Single YouTube player rendered via Portal - styling changes based on modal state */}
+          {/* Single Video/YouTube player rendered via Portal - styling changes based on modal state */}
           {createPortal(
             <>
               {/* CSS keyframes for animation */}
               <style>{`
-                @keyframes ytModalFadeIn {
+                @keyframes modalFadeIn {
                   from { opacity: 0; }
                   to { opacity: 1; }
                 }
               `}</style>
 
               {/* Modal backdrop - only visible in modal mode */}
-              {showYoutubeModal && (
+              {isModal && (
                 <div
                   className="fixed inset-0 bg-black/80 backdrop-blur-sm"
                   style={{
                     zIndex: 99998,
-                    animation: "ytModalFadeIn 0.3s ease-out forwards",
+                    animation: "modalFadeIn 0.3s ease-out forwards",
                   }}
-                  onClick={() => setShowYoutubeModal(false)}
+                  onClick={handleCloseModal}
                 />
               )}
 
-              {/* YouTube player container - changes position based on modal state */}
+              {/* Video/YouTube player container - changes position based on modal state */}
               <div
                 className={
-                  showYoutubeModal
+                  isModal
                     ? "fixed w-[80vw] max-w-4xl aspect-video left-1/2 top-1/2 rounded-xl overflow-hidden shadow-2xl border border-white/10 bg-black"
                     : "fixed inset-0 w-full h-full"
                 }
                 style={
-                  showYoutubeModal
+                  isModal
                     ? {
                         zIndex: 99999,
                         transform: "translate(-50%, -50%)",
-                        animation: "ytModalFadeIn 0.3s ease-out forwards",
+                        animation: "modalFadeIn 0.3s ease-out forwards",
                       }
                     : {
                         zIndex: -1, // Behind everything when in background mode
@@ -272,13 +277,17 @@ export const Background: React.FC<BackgroundProps> = ({
                 }
               >
                 {/* Instructional text & close button - only in modal mode */}
-                {showYoutubeModal && (
+                {isModal && (
                   <>
-                    <div className="absolute top-3 left-3 z-10 px-3 py-1.5 rounded-lg bg-black/60 text-white/90 text-sm">
-                      Click the video to start playback
-                    </div>
+                    {scene.type === "youtube" &&
+                      internalShowYoutubeModal &&
+                      !hasStartedPlayingRef.current && (
+                        <div className="absolute top-3 left-3 z-10 px-3 py-1.5 rounded-lg bg-black/60 text-white/90 text-sm">
+                          Click the video to start playback
+                        </div>
+                      )}
                     <button
-                      onClick={() => setShowYoutubeModal(false)}
+                      onClick={handleCloseModal}
                       className="absolute top-3 right-3 z-10 w-8 h-8 flex items-center justify-center rounded-full bg-black/60 hover:bg-black/80 text-white/80 hover:text-white transition-all cursor-pointer"
                     >
                       ✕
@@ -286,19 +295,34 @@ export const Background: React.FC<BackgroundProps> = ({
                   </>
                 )}
 
-                {/* Single YouTube player */}
-                <YouTube
-                  videoId={getYoutubeVideoId(scene.url) || ""}
-                  opts={youtubeOpts}
-                  onReady={onPlayerReady}
-                  onStateChange={onPlayerStateChange}
-                  onError={onPlayerError}
-                  className="w-full h-full"
-                  iframeClassName={`w-full h-full ${
-                    showYoutubeModal ? "" : "pointer-events-none"
-                  }`}
-                  style={{ width: "100%", height: "100%" }}
-                />
+                {scene.type === "video" ? (
+                  <video
+                    autoPlay
+                    loop
+                    muted={isMuted}
+                    controls={isModal}
+                    playsInline
+                    className="w-full h-full object-cover"
+                    key={scene.url}
+                  >
+                    <source src={scene.url} type="video/mp4" />
+                  </video>
+                ) : (
+                  /* Single YouTube player */
+                  <YouTube
+                    videoId={getYoutubeVideoId(scene.url) || ""}
+                    opts={youtubeOpts}
+                    onReady={onPlayerReady}
+                    onStateChange={onPlayerStateChange}
+                    onError={onPlayerError}
+                    className="w-full h-full"
+                    iframeClassName={`w-full h-full ${
+                      isModal ? "" : "pointer-events-none"
+                    }`}
+                    style={{ width: "100%", height: "100%" }}
+                    key={scene.url} // Only reload when scene URL changes
+                  />
+                )}
               </div>
             </>,
             document.body
@@ -352,4 +376,4 @@ export const Background: React.FC<BackgroundProps> = ({
       )}
     </div>
   );
-};
+}

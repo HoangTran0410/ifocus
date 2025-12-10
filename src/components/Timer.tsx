@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { Play, Pause, RotateCcw } from "lucide-react";
-import { TimerMode } from "../types";
 import { TIMER_SETTINGS } from "../constants";
 import { useLocalStorage } from "../hooks/useLocalStorage";
+import type { TimerMode } from "../types";
 
 interface TimerProps {
   mode: TimerMode;
@@ -13,7 +13,7 @@ interface TimerProps {
 // Type for storing time left for each mode
 type TimerStates = Record<TimerMode, number>;
 
-export const Timer: React.FC<TimerProps> = ({ mode, setMode }) => {
+export default function Timer({ mode, setMode }: TimerProps) {
   // Store timeLeft for each mode separately
   const [timerStates, setTimerStates] = useLocalStorage<TimerStates>(
     "zen_timer_states",
@@ -158,11 +158,7 @@ export const Timer: React.FC<TimerProps> = ({ mode, setMode }) => {
       {/* Controls - Fades in on hover */}
       {/* Only show controls if NOT in clock mode */}
       {mode !== "clock" && (
-        <div
-          className={`flex items-center space-x-3 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-4 group-hover:translate-y-0 ${
-            mode === "clock" ? "invisible" : ""
-          }`}
-        >
+        <div className="flex items-center space-x-3 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-4 group-hover:translate-y-0">
           <button
             onClick={toggleTimer}
             className="bg-white text-black sm:p-6 p-4 rounded-full hover:scale-105 transition-transform shadow-lg active:scale-95"
@@ -193,4 +189,4 @@ export const Timer: React.FC<TimerProps> = ({ mode, setMode }) => {
       </div> */}
     </div>
   );
-};
+}

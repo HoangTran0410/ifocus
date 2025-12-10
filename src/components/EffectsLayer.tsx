@@ -1,10 +1,6 @@
 import React, { useEffect, useRef } from "react";
 import { EffectType } from "../types";
 
-interface EffectsLayerProps {
-  type: EffectType;
-}
-
 interface Particle {
   x: number;
   y: number;
@@ -589,20 +585,18 @@ const EFFECT_CONFIGS: Record<
   },
 };
 
-export const EffectsLayer: React.FC<EffectsLayerProps> = ({ type }) => {
+interface EffectsLayerProps {
+  type: EffectType;
+}
+
+export default function EffectsLayer({ type }: EffectsLayerProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const ripplesRef = useRef<Ripple[]>([]);
   const stackedRef = useRef<StackedParticle[]>([]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (
-      !canvas ||
-      type === "none" ||
-      type === "sun-rays" ||
-      type === "visualize"
-    )
-      return;
+    if (!canvas || type === "none" || type === "sun-rays") return;
 
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
@@ -699,4 +693,4 @@ export const EffectsLayer: React.FC<EffectsLayerProps> = ({ type }) => {
       className="absolute inset-0 w-full h-full pointer-events-none z-10"
     />
   );
-};
+}

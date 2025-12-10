@@ -1,14 +1,13 @@
 import React, { useState } from "react";
-import { Plus, Trash2, CheckCircle, Circle, Clock } from "lucide-react";
-import { Task } from "../types";
-import { v4 as uuidv4 } from "uuid"; // We'll implement a simple ID generator helper instead
+import { Trash2, CheckCircle, Circle, Clock } from "lucide-react";
+import type { Task } from "../types";
 
 interface TasksProps {
   tasks: Task[];
   setTasks: (tasks: Task[]) => void;
 }
 
-export const Tasks: React.FC<TasksProps> = ({ tasks, setTasks }) => {
+export default function Tasks({ tasks, setTasks }: TasksProps) {
   const [newTaskText, setNewTaskText] = useState("");
   const [estPomos, setEstPomos] = useState(1);
 
@@ -125,4 +124,4 @@ export const Tasks: React.FC<TasksProps> = ({ tasks, setTasks }) => {
       </div>
     </div>
   );
-};
+}

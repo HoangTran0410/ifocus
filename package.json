@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@loadable/component": "^5.16.7",
     "lucide-react": "^0.556.0",
     "react": "^19.2.1",
     "react-dom": "^19.2.1",
@@ -16,6 +17,7 @@
     "uuid": "^13.0.0"
   },
   "devDependencies": {
+    "@types/loadable__component": "^5.13.10",
     "@types/node": "^22.14.0",
     "@vitejs/plugin-react": "^5.0.0",
     "typescript": "~5.8.2",

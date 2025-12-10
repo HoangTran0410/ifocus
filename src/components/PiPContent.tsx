@@ -1,7 +1,14 @@
 import React, { useEffect, useState } from "react";
-import { Background } from "./Background";
-import { Timer } from "./Timer";
 import { Scene, EffectType, TimerMode } from "../types";
+import loadable from "@loadable/component";
+import { LoadingFallback } from "../utils/loader";
+
+const Background = loadable(() => import("./Background"), {
+  fallback: LoadingFallback,
+});
+const Timer = loadable(() => import("./Timer"), {
+  fallback: LoadingFallback,
+});
 
 interface PiPContentProps {
   currentScene: Scene;
@@ -11,13 +18,13 @@ interface PiPContentProps {
   setTimerMode: (mode: TimerMode) => void;
 }
 
-export const PiPContent: React.FC<PiPContentProps> = ({
+export default function PiPContent({
   currentScene,
   currentEffect,
   isBgMuted,
   timerMode,
   setTimerMode,
-}) => {
+}: PiPContentProps) {
   const [isReady, setIsReady] = useState(false);
 
   // Wait for the PiP window to be fully ready
@@ -57,4 +64,4 @@ export const PiPContent: React.FC<PiPContentProps> = ({
       </div>
     </div>
   );
-};
+}

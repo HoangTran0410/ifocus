@@ -1,12 +1,10 @@
 import React, { useState, useRef, useEffect } from "react";
 import { History, Play, Music as MusicIcon, X } from "lucide-react";
-import { SoundState } from "../types";
+import type { SoundState } from "../types";
 import { DEFAULT_SOUNDS } from "../constants";
 import { useLocalStorage } from "../hooks/useLocalStorage";
 
-interface AudioControllerProps {}
-
-export const AudioController: React.FC<AudioControllerProps> = () => {
+export default function AudioController() {
   const [soundStates, setSoundStates] = useLocalStorage<SoundState[]>(
     "zen_sound_states",
     DEFAULT_SOUNDS.map((sound) => ({
@@ -355,4 +353,4 @@ export const AudioController: React.FC<AudioControllerProps> = () => {
       </div>
     </div>
   );
-};
+}

@@ -16,7 +16,7 @@ import {
   renderCircular,
   renderTrapNation,
 } from "../utils/visualizerRenderers";
-import { Mic, PictureInPicture2, Settings, RotateCcw } from "lucide-react";
+import { Mic, PictureInPicture2, Settings, RotateCcw, X } from "lucide-react";
 
 type VisualizerMode = "bars" | "wave" | "circular" | "trap-nation";
 
@@ -43,7 +43,11 @@ const MIN_HEIGHT = 120;
 const DEFAULT_WIDTH = 400;
 const DEFAULT_HEIGHT = 200;
 
-export const Visualizer: React.FC = () => {
+interface VisualizerProps {
+  onClose?: () => void;
+}
+
+export default function Visualizer({ onClose }: VisualizerProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const animationRef = useRef<number>(0);
@@ -94,15 +98,25 @@ export const Visualizer: React.FC = () => {
   // Spectrum cache for ghost delay effect
   const spectrumCacheRef = useRef<number[][]>([]);
 
-  // Cycle mode on click
-  const handleModeClick = useCallback(
+  // Hover state for opacity effect
+  const [isHovered, setIsHovered] = useState(false);
+
+  // Handle mode change from selector
+  const handleModeChange = useCallback(
+    (e: React.ChangeEvent<HTMLSelectElement>) => {
+      e.stopPropagation();
+      setMode(e.target.value as VisualizerMode);
+    },
+    [setMode]
+  );
+
+  // Handle close button click
+  const handleCloseClick = useCallback(
     (e: React.MouseEvent) => {
       e.stopPropagation();
-      const currentIndex = MODES.indexOf(mode);
-      const nextMode = MODES[(currentIndex + 1) % MODES.length];
-      setMode(nextMode);
+      onClose?.();
     },
-    [mode, setMode]
+    [onClose]
   );
 
   // Audio capture state
@@ -241,6 +255,7 @@ export const Visualizer: React.FC = () => {
       if (pipWindowRef.current && !pipWindowRef.current.closed) {
         pipWindowRef.current.close();
       }
+      stopAudioCapture();
     };
   }, []);
 
@@ -596,10 +611,12 @@ export const Visualizer: React.FC = () => {
         zIndex: 9999,
       }}
       onMouseDown={handleDragStart}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
     >
       {/* Main visualizer container */}
       <div
-        className="relative w-full h-full rounded-2xl overflow-hidden backdrop-blur-md"
+        className="relative w-full h-full rounded-2xl overflow-hidden backdrop-blur-md transition-opacity duration-300"
         style={{
           background:
             "linear-gradient(135deg, rgba(15, 15, 30, 0.85), rgba(30, 20, 50, 0.85))",
@@ -610,9 +627,10 @@ export const Visualizer: React.FC = () => {
       >
         {/* Header */}
         <div
-          className="absolute top-0 left-0 right-0 flex items-center justify-between px-3 py-2 z-10"
+          className="absolute top-0 left-0 right-0 flex items-center justify-between px-3 py-2 z-10 transition-opacity duration-300"
           style={{
             background: "linear-gradient(180deg, rgba(0,0,0,0.4), transparent)",
+            opacity: showSettings || isHovered ? 1 : 0.4,
           }}
         >
           <span className="text-xs font-medium text-white/60 uppercase tracking-wider">
@@ -655,11 +673,26 @@ export const Visualizer: React.FC = () => {
             >
               <Settings size={14} />
             </button>
-            <button
-              onClick={handleModeClick}
-              className="px-2 py-1 text-xs font-medium text-white/80 bg-white/10 hover:bg-white/20 rounded-md transition-colors cursor-pointer"
+            {/* Mode Selector */}
+            <select
+              value={mode}
+              onChange={handleModeChange}
+              onMouseDown={(e) => e.stopPropagation()}
+              className="px-2 py-1 text-xs font-medium text-white/80 bg-white/10 hover:bg-white/20 rounded-md transition-colors cursor-pointer border-none focus:outline-none"
             >
-              {MODE_LABELS[mode]}
+              {MODES.map((m) => (
+                <option key={m} value={m} className="bg-gray-900 text-white">
+                  {MODE_LABELS[m]}
+                </option>
+              ))}
+            </select>
+            {/* Close Button */}
+            <button
+              onClick={handleCloseClick}
+              className="p-1.5 text-xs font-medium text-white/80 bg-white/10 hover:bg-red-500/30 hover:text-red-400 rounded-md transition-colors cursor-pointer"
+              title="Close visualizer"
+            >
+              <X size={14} />
             </button>
           </div>
         </div>
@@ -713,4 +746,4 @@ export const Visualizer: React.FC = () => {
       </div>
     </div>
   );
-};
+}

@@ -1,13 +1,13 @@
 import React, { useState } from "react";
 import { PenLine, Plus, Trash2, ArrowLeft } from "lucide-react";
-import { Note } from "../types";
+import type { Note } from "../types";
 
 interface NotesProps {
   notes: Note[];
   setNotes: (notes: Note[]) => void;
 }
 
-export const Notes: React.FC<NotesProps> = ({ notes, setNotes }) => {
+export default function Notes({ notes, setNotes }: NotesProps) {
   const [activeNoteId, setActiveNoteId] = useState<string | null>(null);
 
   const activeNote = notes.find((n) => n.id === activeNoteId);
@@ -116,4 +116,4 @@ export const Notes: React.FC<NotesProps> = ({ notes, setNotes }) => {
       </div>
     </div>
   );
-};
+}
