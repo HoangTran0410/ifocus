@@ -1,29 +1,26 @@
 import React, { useState, useRef, useEffect } from "react";
 import { History, Play, Music as MusicIcon, X } from "lucide-react";
-import { SoundTrack, SoundState } from "../types";
+import { SoundState } from "../types";
 import { DEFAULT_SOUNDS } from "../constants";
+import { useLocalStorage } from "../hooks/useLocalStorage";
 
-interface AudioControllerProps {
-  sounds: SoundTrack[];
-  soundStates: SoundState[];
-  setSoundStates: (states: SoundState[]) => void;
-  youtubeUrl: string;
-  setYoutubeUrl: (url: string) => void;
-  youtubeHistory: string[];
-  addToHistory: (url: string) => void;
-  removeFromHistory: (url: string) => void;
-}
+interface AudioControllerProps {}
 
-export const AudioController: React.FC<AudioControllerProps> = ({
-  // sounds,
-  soundStates,
-  setSoundStates,
-  youtubeUrl,
-  setYoutubeUrl,
-  youtubeHistory,
-  addToHistory,
-  removeFromHistory,
-}) => {
+export const AudioController: React.FC<AudioControllerProps> = () => {
+  const [soundStates, setSoundStates] = useLocalStorage<SoundState[]>(
+    "zen_sound_states",
+    DEFAULT_SOUNDS.map((sound) => ({
+      id: sound.id,
+      volume: 0.5,
+      isPlaying: false,
+    }))
+  );
+  const [youtubeUrl, setYoutubeUrl] = useLocalStorage<string>("zen_yt_url", "");
+  const [youtubeHistory, setYoutubeHistory] = useLocalStorage<string[]>(
+    "zen_yt_history",
+    []
+  );
+
   const [activeTab, setActiveTab] = useState<"sounds" | "media">("sounds");
   const [inputUrl, setInputUrl] = useState(youtubeUrl);
 
@@ -41,6 +38,8 @@ export const AudioController: React.FC<AudioControllerProps> = ({
         if (!audioRefs.current[sound.id]) {
           audioRefs.current[sound.id] = new Audio(sound.url);
           audioRefs.current[sound.id].loop = true;
+          // Enable CORS for audio analysis
+          audioRefs.current[sound.id].crossOrigin = "anonymous";
         }
 
         const audio = audioRefs.current[sound.id];
@@ -70,6 +69,19 @@ export const AudioController: React.FC<AudioControllerProps> = ({
       });
     };
   }, [soundStates]);
+
+  const addToHistory = (url: string) => {
+    // Deduplicate and keep top 5
+    const newHistory = [url, ...youtubeHistory.filter((u) => u !== url)].slice(
+      0,
+      5
+    );
+    setYoutubeHistory(newHistory);
+  };
+
+  const removeFromHistory = (url: string) => {
+    setYoutubeHistory(youtubeHistory.filter((u) => u !== url));
+  };
 
   const toggleSound = (id: string) => {
     const newStates = soundStates.map((s) =>
@@ -163,7 +175,7 @@ export const AudioController: React.FC<AudioControllerProps> = ({
       </div>
 
       <div className="flex-1 overflow-y-auto custom-scrollbar p-1 pt-3">
-        {activeTab === "sounds" && (
+        <div className={activeTab === "sounds" ? "block" : "hidden"}>
           <div className="grid grid-cols-2 gap-3 pb-4">
             {DEFAULT_SOUNDS.map((sound) => {
               const soundState = soundStates.find((s) => s.id === sound.id);
@@ -210,9 +222,9 @@ export const AudioController: React.FC<AudioControllerProps> = ({
               );
             })}
           </div>
-        )}
+        </div>
 
-        {activeTab === "media" && (
+        <div className={activeTab === "media" ? "block" : "hidden"}>
           <div className="space-y-6">
             <form onSubmit={handleUrlSubmit} className="space-y-2">
               <label className="text-xs text-white/70 uppercase tracking-wider">
@@ -325,7 +337,7 @@ export const AudioController: React.FC<AudioControllerProps> = ({
               albums. Paste the link and we'll handle the embed.
             </div>
           </div>
-        )}
+        </div>
       </div>
     </div>
   );

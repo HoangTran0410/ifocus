@@ -14,8 +14,7 @@ export type EffectType =
   | "cherry-blossom"
   | "fireflies"
   | "cloud-shadows"
-  | "sun-rays"
-  | "visualize";
+  | "sun-rays";
 
 export interface Task {
   id: string;

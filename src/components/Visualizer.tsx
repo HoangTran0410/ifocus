@@ -1,7 +1,24 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { useLocalStorage } from "../hooks/useLocalStorage";
+import {
+  getNormalizedFrequencyData,
+  isAudioCaptureActive,
+  startAudioCapture,
+  stopAudioCapture,
+  getAnalyzerConfig,
+  getDefaultAnalyzerConfig,
+  updateAnalyzerConfig,
+  AudioAnalyzerConfig,
+} from "../utils/audioAnalyzer";
+import {
+  renderBars,
+  renderWave,
+  renderCircular,
+  renderTrapNation,
+} from "../utils/visualizerRenderers";
+import { Mic, PictureInPicture2, Settings, RotateCcw } from "lucide-react";
 
-type VisualizerMode = "bars" | "wave" | "circular";
+type VisualizerMode = "bars" | "wave" | "circular" | "trap-nation";
 
 interface Position {
   x: number;
@@ -13,14 +30,15 @@ interface Size {
   height: number;
 }
 
-const MODES: VisualizerMode[] = ["bars", "wave", "circular"];
+const MODES: VisualizerMode[] = ["bars", "wave", "circular", "trap-nation"];
 const MODE_LABELS: Record<VisualizerMode, string> = {
   bars: "Bars",
   wave: "Wave",
   circular: "Circular",
+  "trap-nation": "Trap Nation",
 };
 
-const MIN_WIDTH = 200;
+const MIN_WIDTH = 120;
 const MIN_HEIGHT = 120;
 const DEFAULT_WIDTH = 400;
 const DEFAULT_HEIGHT = 200;
@@ -73,6 +91,9 @@ export const Visualizer: React.FC = () => {
   const audioDataRef = useRef<number[]>(new Array(64).fill(0));
   const timeRef = useRef(0);
 
+  // Spectrum cache for ghost delay effect
+  const spectrumCacheRef = useRef<number[][]>([]);
+
   // Cycle mode on click
   const handleModeClick = useCallback(
     (e: React.MouseEvent) => {
@@ -84,10 +105,68 @@ export const Visualizer: React.FC = () => {
     [mode, setMode]
   );
 
+  // Audio capture state
+  const [isCapturing, setIsCapturing] = useState(false);
+
+  // Handle audio capture toggle
+  const handleCaptureClick = useCallback(
+    async (e: React.MouseEvent) => {
+      e.stopPropagation();
+
+      if (isCapturing) {
+        stopAudioCapture();
+        setIsCapturing(false);
+      } else {
+        const success = await startAudioCapture();
+        setIsCapturing(success);
+      }
+    },
+    [isCapturing]
+  );
+
   // PiP state
   const [isPiP, setIsPiP] = useState(false);
   const pipWindowRef = useRef<Window | null>(null);
   const pipCanvasRef = useRef<HTMLCanvasElement | null>(null);
+
+  // Settings panel state
+  const [showSettings, setShowSettings] = useState(false);
+  const [config, setConfig] = useLocalStorage<AudioAnalyzerConfig>(
+    "zen_visualizer_config",
+    getAnalyzerConfig()
+  );
+
+  // Apply saved config on mount
+  useEffect(() => {
+    updateAnalyzerConfig(config);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Handle config changes
+  const handleConfigChange = useCallback(
+    (key: keyof AudioAnalyzerConfig, value: number) => {
+      const newConfig = { ...config, [key]: value };
+      setConfig(newConfig);
+      updateAnalyzerConfig({ [key]: value });
+    },
+    [config, setConfig]
+  );
+
+  // Toggle settings panel
+  const handleSettingsClick = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    setShowSettings((prev) => !prev);
+  }, []);
+
+  // Reset config to defaults
+  const handleResetConfig = useCallback(
+    (e: React.MouseEvent) => {
+      e.stopPropagation();
+      const defaultConfig = getDefaultAnalyzerConfig();
+      setConfig(defaultConfig);
+      updateAnalyzerConfig(defaultConfig);
+    },
+    [setConfig]
+  );
 
   // Handle PiP toggle
   const handlePiPClick = useCallback(
@@ -272,7 +351,7 @@ export const Visualizer: React.FC = () => {
     [size, position]
   );
 
-  // Animation loop with simulated audio data
+  // Animation loop with real or simulated audio data
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -283,23 +362,31 @@ export const Visualizer: React.FC = () => {
     const animate = () => {
       timeRef.current += 0.02;
 
-      // Generate demo audio data with smooth movement
-      for (let i = 0; i < audioDataRef.current.length; i++) {
-        const noise =
-          Math.sin(timeRef.current * 2 + i * 0.3) * 0.3 +
-          Math.sin(timeRef.current * 3.5 + i * 0.5) * 0.2 +
-          Math.sin(timeRef.current * 1.2 + i * 0.7) * 0.25;
-        const base = 0.3 + noise * 0.5;
-        audioDataRef.current[i] = Math.max(
-          0,
-          Math.min(1, base + Math.random() * 0.1)
-        );
+      // Try to get real audio data, fall back to simulated
+      let data: number[];
+
+      if (isAudioCaptureActive()) {
+        // Use real audio data from connected sources
+        data = getNormalizedFrequencyData();
+      } else {
+        // Generate demo audio data with smooth movement (fallback)
+        for (let i = 0; i < audioDataRef.current.length; i++) {
+          const noise =
+            Math.sin(timeRef.current * 2 + i * 0.3) * 0.3 +
+            Math.sin(timeRef.current * 3.5 + i * 0.5) * 0.2 +
+            Math.sin(timeRef.current * 1.2 + i * 0.7) * 0.25;
+          const base = 0.3 + noise * 0.5;
+          audioDataRef.current[i] = Math.max(
+            0,
+            Math.min(1, base + Math.random() * 0.1)
+          );
+        }
+        data = audioDataRef.current;
       }
 
       // Clear canvas
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      const data = audioDataRef.current;
       const barCount = data.length;
 
       if (mode === "bars") {
@@ -308,6 +395,8 @@ export const Visualizer: React.FC = () => {
         renderWave(ctx, canvas, data, barCount);
       } else if (mode === "circular") {
         renderCircular(ctx, canvas, data, barCount);
+      } else if (mode === "trap-nation") {
+        renderTrapNation(ctx, canvas, data, barCount, spectrumCacheRef.current);
       }
 
       // Also render to PiP canvas if active
@@ -326,6 +415,14 @@ export const Visualizer: React.FC = () => {
             renderWave(pipCtx, pipCanvasRef.current, data, barCount);
           } else if (mode === "circular") {
             renderCircular(pipCtx, pipCanvasRef.current, data, barCount);
+          } else if (mode === "trap-nation") {
+            renderTrapNation(
+              pipCtx,
+              pipCanvasRef.current,
+              data,
+              barCount,
+              spectrumCacheRef.current
+            );
           }
         }
       }
@@ -340,163 +437,152 @@ export const Visualizer: React.FC = () => {
     };
   }, [mode, size, isPiP]);
 
-  const renderBars = (
-    ctx: CanvasRenderingContext2D,
-    canvas: HTMLCanvasElement,
-    data: number[],
-    barCount: number
-  ) => {
-    const barWidth = canvas.width / barCount;
-    const gradient = ctx.createLinearGradient(0, canvas.height, 0, 0);
-    gradient.addColorStop(0, "rgba(99, 102, 241, 0.8)");
-    gradient.addColorStop(0.5, "rgba(168, 85, 247, 0.8)");
-    gradient.addColorStop(1, "rgba(236, 72, 153, 0.8)");
+  const renderSettings = () => (
+    <div
+      className="absolute top-10 left-0 right-0 z-20 p-3 mx-2 rounded-lg"
+      style={{
+        background: "rgba(15, 15, 30, 0.45)",
+        border: "1px solid rgba(168, 85, 247, 0.3)",
+        maxHeight: size.height - 50,
+        overflowY: "auto",
+      }}
+      onMouseDown={(e) => e.stopPropagation()}
+    >
+      <div className="space-y-3">
+        {/* FFT Size - must be power of 2 */}
+        <div>
+          <label className="flex justify-between text-xs text-white/70 mb-1">
+            <span>FFT Size</span>
+          </label>
+          <select
+            value={config.fftSize}
+            onChange={(e) =>
+              handleConfigChange("fftSize", parseInt(e.target.value))
+            }
+            className="w-full px-2 py-1 text-xs bg-white/10 text-white/90 rounded-md border border-white/20 cursor-pointer focus:outline-none focus:border-purple-500"
+          >
+            {[32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768].map(
+              (val) => (
+                <option key={val} value={val} className="bg-gray-900">
+                  {val}
+                </option>
+              )
+            )}
+          </select>
+        </div>
 
-    ctx.fillStyle = gradient;
+        {/* Smoothing Time */}
+        <div>
+          <label className="flex justify-between text-xs text-white/70 mb-1">
+            <span>Smoothing</span>
+            <span className="text-purple-400">
+              {config.smoothingTimeConstant.toFixed(2)}
+            </span>
+          </label>
+          <input
+            type="range"
+            min="0"
+            max="0.99"
+            step="0.01"
+            value={config.smoothingTimeConstant}
+            onChange={(e) =>
+              handleConfigChange(
+                "smoothingTimeConstant",
+                parseFloat(e.target.value)
+              )
+            }
+            className="w-full h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer accent-purple-500"
+          />
+        </div>
 
-    for (let i = 0; i < barCount; i++) {
-      const barHeight = data[i] * canvas.height * 0.9;
-      const x = i * barWidth;
-      const y = canvas.height - barHeight;
+        {/* Min Decibels */}
+        <div>
+          <label className="flex justify-between text-xs text-white/70 mb-1">
+            <span>Min dB</span>
+            <span className="text-purple-400">{config.minDecibels}</span>
+          </label>
+          <input
+            type="range"
+            min="-100"
+            max="-30"
+            step="1"
+            value={config.minDecibels}
+            onChange={(e) =>
+              handleConfigChange("minDecibels", parseInt(e.target.value))
+            }
+            className="w-full h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer accent-purple-500"
+          />
+        </div>
 
-      // Round top corners
-      ctx.beginPath();
-      ctx.roundRect(x + 1, y, barWidth - 2, barHeight, [4, 4, 0, 0]);
-      ctx.fill();
-    }
-  };
+        {/* Max Decibels */}
+        <div>
+          <label className="flex justify-between text-xs text-white/70 mb-1">
+            <span>Max dB</span>
+            <span className="text-purple-400">{config.maxDecibels}</span>
+          </label>
+          <input
+            type="range"
+            min="-50"
+            max="0"
+            step="1"
+            value={config.maxDecibels}
+            onChange={(e) =>
+              handleConfigChange("maxDecibels", parseInt(e.target.value))
+            }
+            className="w-full h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer accent-purple-500"
+          />
+        </div>
 
-  const renderWave = (
-    ctx: CanvasRenderingContext2D,
-    canvas: HTMLCanvasElement,
-    data: number[],
-    barCount: number
-  ) => {
-    const sliceWidth = canvas.width / (barCount - 1);
-    const centerY = canvas.height / 2;
+        {/* Freq Start Index */}
+        <div>
+          <label className="flex justify-between text-xs text-white/70 mb-1">
+            <span>Freq Start</span>
+            <span className="text-purple-400">{config.freqStartIndex}</span>
+          </label>
+          <input
+            type="range"
+            min="0"
+            max="1024"
+            step="1"
+            value={config.freqStartIndex}
+            onChange={(e) =>
+              handleConfigChange("freqStartIndex", parseInt(e.target.value))
+            }
+            className="w-full h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer accent-purple-500"
+          />
+        </div>
 
-    // Draw filled wave
-    const gradient = ctx.createLinearGradient(0, 0, canvas.width, 0);
-    gradient.addColorStop(0, "rgba(99, 102, 241, 0.6)");
-    gradient.addColorStop(0.5, "rgba(168, 85, 247, 0.6)");
-    gradient.addColorStop(1, "rgba(236, 72, 153, 0.6)");
+        {/* Freq Length */}
+        <div>
+          <label className="flex justify-between text-xs text-white/70 mb-1">
+            <span>Freq Count</span>
+            <span className="text-purple-400">{config.freqLength}</span>
+          </label>
+          <input
+            type="range"
+            min="5"
+            max="1024"
+            step="1"
+            value={config.freqLength}
+            onChange={(e) =>
+              handleConfigChange("freqLength", parseInt(e.target.value))
+            }
+            className="w-full h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer accent-purple-500"
+          />
+        </div>
 
-    ctx.fillStyle = gradient;
-    ctx.beginPath();
-    ctx.moveTo(0, centerY);
-
-    for (let i = 0; i < barCount; i++) {
-      const x = i * sliceWidth;
-      const amplitude = data[i] * canvas.height * 0.4;
-      const y = centerY - amplitude;
-
-      if (i === 0) {
-        ctx.lineTo(x, y);
-      } else {
-        const prevX = (i - 1) * sliceWidth;
-        const cpX = (prevX + x) / 2;
-        ctx.quadraticCurveTo(
-          prevX,
-          centerY - data[i - 1] * canvas.height * 0.4,
-          cpX,
-          (centerY - data[i - 1] * canvas.height * 0.4 + y) / 2
-        );
-        ctx.quadraticCurveTo(cpX, y, x, y);
-      }
-    }
-
-    // Bottom wave (mirror)
-    for (let i = barCount - 1; i >= 0; i--) {
-      const x = i * sliceWidth;
-      const amplitude = data[i] * canvas.height * 0.4;
-      const y = centerY + amplitude;
-
-      if (i === barCount - 1) {
-        ctx.lineTo(x, y);
-      } else {
-        const nextX = (i + 1) * sliceWidth;
-        const cpX = (nextX + x) / 2;
-        ctx.quadraticCurveTo(
-          nextX,
-          centerY + data[i + 1] * canvas.height * 0.4,
-          cpX,
-          (centerY + data[i + 1] * canvas.height * 0.4 + y) / 2
-        );
-        ctx.quadraticCurveTo(cpX, y, x, y);
-      }
-    }
-
-    ctx.closePath();
-    ctx.fill();
-
-    // Draw stroke
-    ctx.strokeStyle = "rgba(255, 255, 255, 0.8)";
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(0, centerY);
-
-    for (let i = 0; i < barCount; i++) {
-      const x = i * sliceWidth;
-      const amplitude = data[i] * canvas.height * 0.4;
-      const y = centerY - amplitude;
-      ctx.lineTo(x, y);
-    }
-    ctx.stroke();
-  };
-
-  const renderCircular = (
-    ctx: CanvasRenderingContext2D,
-    canvas: HTMLCanvasElement,
-    data: number[],
-    barCount: number
-  ) => {
-    const centerX = canvas.width / 2;
-    const centerY = canvas.height / 2;
-    const radius = Math.min(centerX, centerY) * 0.4;
-    const maxBarHeight = Math.min(centerX, centerY) * 0.5;
-
-    const gradient = ctx.createRadialGradient(
-      centerX,
-      centerY,
-      radius,
-      centerX,
-      centerY,
-      radius + maxBarHeight
-    );
-    gradient.addColorStop(0, "rgba(99, 102, 241, 0.8)");
-    gradient.addColorStop(0.5, "rgba(168, 85, 247, 0.8)");
-    gradient.addColorStop(1, "rgba(236, 72, 153, 0.8)");
-
-    ctx.fillStyle = gradient;
-    ctx.strokeStyle = "rgba(255, 255, 255, 0.3)";
-    ctx.lineWidth = 1;
-
-    for (let i = 0; i < barCount; i++) {
-      const angle = (i / barCount) * Math.PI * 2 - Math.PI / 2;
-      const barHeight = data[i] * maxBarHeight;
-
-      const x1 = centerX + Math.cos(angle) * radius;
-      const y1 = centerY + Math.sin(angle) * radius;
-      const x2 = centerX + Math.cos(angle) * (radius + barHeight);
-      const y2 = centerY + Math.sin(angle) * (radius + barHeight);
-
-      ctx.beginPath();
-      ctx.moveTo(x1, y1);
-      ctx.lineTo(x2, y2);
-      ctx.lineWidth = 4;
-      ctx.strokeStyle = gradient;
-      ctx.stroke();
-    }
-
-    // Draw center circle
-    ctx.beginPath();
-    ctx.arc(centerX, centerY, radius * 0.6, 0, Math.PI * 2);
-    ctx.fillStyle = "rgba(15, 15, 25, 0.8)";
-    ctx.fill();
-    ctx.strokeStyle = "rgba(168, 85, 247, 0.5)";
-    ctx.lineWidth = 2;
-    ctx.stroke();
-  };
+        {/* Reset Button */}
+        <button
+          onClick={handleResetConfig}
+          className="w-full mt-2 px-3 py-1.5 text-xs font-medium text-white/80 bg-white/10 hover:bg-white/20 rounded-md transition-colors cursor-pointer flex items-center justify-center gap-2"
+          title="Reset to defaults"
+        >
+          <RotateCcw size={14} />
+          Reset to Defaults
+        </button>
+      </div>
+    </div>
+  );
 
   return (
     <div
@@ -532,7 +618,20 @@ export const Visualizer: React.FC = () => {
           <span className="text-xs font-medium text-white/60 uppercase tracking-wider">
             Visualizer
           </span>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
+            {/* Audio Capture Button */}
+            <button
+              onClick={handleCaptureClick}
+              className={`p-1.5 text-xs font-medium rounded-md transition-colors cursor-pointer ${
+                isCapturing
+                  ? "text-green-400 bg-green-500/20 hover:bg-green-500/30"
+                  : "text-white/80 bg-white/10 hover:bg-white/20"
+              }`}
+              title={isCapturing ? "Stop audio capture" : "Capture tab audio"}
+            >
+              <Mic size={14} />
+            </button>
+            {/* PiP Button */}
             <button
               onClick={handlePiPClick}
               className={`p-1.5 text-xs font-medium rounded-md transition-colors cursor-pointer ${
@@ -542,22 +641,19 @@ export const Visualizer: React.FC = () => {
               }`}
               title={isPiP ? "Close PiP" : "Open in PiP"}
             >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M8 3H5a2 2 0 0 0-2 2v3" />
-                <path d="M21 8V5a2 2 0 0 0-2-2h-3" />
-                <path d="M3 16v3a2 2 0 0 0 2 2h3" />
-                <rect x="12" y="12" width="9" height="9" rx="1" />
-              </svg>
+              <PictureInPicture2 size={14} />
+            </button>
+            {/* Settings Button */}
+            <button
+              onClick={handleSettingsClick}
+              className={`p-1.5 text-xs font-medium rounded-md transition-colors cursor-pointer ${
+                showSettings
+                  ? "text-amber-400 bg-amber-500/20 hover:bg-amber-500/30"
+                  : "text-white/80 bg-white/10 hover:bg-white/20"
+              }`}
+              title="Audio analyzer settings"
+            >
+              <Settings size={14} />
             </button>
             <button
               onClick={handleModeClick}
@@ -567,6 +663,9 @@ export const Visualizer: React.FC = () => {
             </button>
           </div>
         </div>
+
+        {/* Settings Panel */}
+        {showSettings && renderSettings()}
 
         {/* Canvas */}
         <canvas

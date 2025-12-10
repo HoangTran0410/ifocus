@@ -11,6 +11,18 @@ import {
   Sparkles,
   PictureInPicture2,
 } from "lucide-react";
+import { Background } from "./components/Background";
+import { Timer } from "./components/Timer";
+import { AudioController } from "./components/AudioController";
+import { Tasks } from "./components/Tasks";
+import { PiPContent } from "./components/PiPContent";
+import { Notes } from "./components/Notes";
+import { SceneSelector } from "./components/SceneSelector";
+import { EffectsSelector } from "./components/EffectsSelector";
+import { Visualizer } from "./components/Visualizer";
+import { useLocalStorage } from "./hooks/useLocalStorage";
+import { DEFAULT_IMAGES } from "./constants";
+import { Scene, Task, Note, TimerMode, EffectType } from "./types";
 
 // Extend Window interface for Document Picture-in-Picture API
 declare global {
@@ -24,18 +36,6 @@ declare global {
     };
   }
 }
-import { Background } from "./components/Background";
-import { Timer } from "./components/Timer";
-import { AudioController } from "./components/AudioController";
-import { Tasks } from "./components/Tasks";
-import { PiPContent } from "./components/PiPContent";
-import { Notes } from "./components/Notes";
-import { SceneSelector } from "./components/SceneSelector";
-import { EffectsSelector } from "./components/EffectsSelector";
-import { Visualizer } from "./components/Visualizer";
-import { useLocalStorage } from "./hooks/useLocalStorage";
-import { DEFAULT_SOUNDS, DEFAULT_IMAGES } from "./constants";
-import { Scene, SoundState, Task, Note, TimerMode, EffectType } from "./types";
 
 // Panel types
 type PanelType = "none" | "audio" | "tasks" | "notes" | "scenes" | "effects";
@@ -51,25 +51,17 @@ function App() {
     "none"
   );
 
-  // Runtime state for sound playback (volume and isPlaying)
-  const [soundStates, setSoundStates] = useLocalStorage<SoundState[]>(
-    "zen_sound_states",
-    DEFAULT_SOUNDS.map((sound) => ({
-      id: sound.id,
-      volume: 0.5,
-      isPlaying: false,
-    }))
+  // Visualizer toggle (independent of effects)
+  const [showVisualizer, setShowVisualizer] = useLocalStorage<boolean>(
+    "zen_show_visualizer",
+    false
   );
 
   const [tasks, setTasks] = useLocalStorage<Task[]>("zen_tasks", []);
   const [notes, setNotes] = useLocalStorage<Note[]>("zen_notes", []);
 
   // YouTube State
-  const [youtubeUrl, setYoutubeUrl] = useLocalStorage<string>("zen_yt_url", "");
-  const [youtubeHistory, setYoutubeHistory] = useLocalStorage<string[]>(
-    "zen_yt_history",
-    []
-  );
+
   const [isBgMuted, setIsBgMuted] = useLocalStorage<boolean>(
     "zen_bg_muted",
     true
@@ -181,19 +173,6 @@ function App() {
     };
   }, []);
 
-  const addToHistory = (url: string) => {
-    // Deduplicate and keep top 5
-    const newHistory = [url, ...youtubeHistory.filter((u) => u !== url)].slice(
-      0,
-      5
-    );
-    setYoutubeHistory(newHistory);
-  };
-
-  const removeFromHistory = (url: string) => {
-    setYoutubeHistory(youtubeHistory.filter((u) => u !== url));
-  };
-
   return (
     <div className="pip-capture-root relative w-screen h-screen overflow-hidden font-sans">
       {/* Dynamic Background */}
@@ -203,8 +182,8 @@ function App() {
         isMuted={isBgMuted}
       />
 
-      {/* Visualizer Effect - rendered separately with portal */}
-      {currentEffect === "visualize" && <Visualizer />}
+      {/* Visualizer - independent of other effects */}
+      {showVisualizer && <Visualizer />}
 
       {/* Main Content Layer */}
       <div className="relative z-10 w-full h-full flex flex-col">
@@ -326,15 +305,7 @@ function App() {
                 activePanel === "audio" ? "block" : "hidden"
               }`}
             >
-              <AudioController
-                soundStates={soundStates}
-                setSoundStates={setSoundStates}
-                youtubeUrl={youtubeUrl}
-                setYoutubeUrl={setYoutubeUrl}
-                youtubeHistory={youtubeHistory}
-                addToHistory={addToHistory}
-                removeFromHistory={removeFromHistory}
-              />
+              <AudioController />
             </div>
             <div
               className={`absolute inset-0 ${
@@ -370,6 +341,8 @@ function App() {
               <EffectsSelector
                 currentEffect={currentEffect}
                 setEffect={setCurrentEffect}
+                showVisualizer={showVisualizer}
+                setShowVisualizer={setShowVisualizer}
               />
             </div>
           </div>

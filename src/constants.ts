@@ -10,20 +10,20 @@ export const TIMER_SETTINGS: Record<TimerMode, number> = {
 
 export const DEFAULT_IMAGES: Scene[] = [
   {
-    id: "rain-window",
-    type: "image",
-    url: "https://images.unsplash.com/photo-1515694346937-94d85e41e6f0?q=80&w=2560&auto=format&fit=crop",
-    thumbnail:
-      "https://images.unsplash.com/photo-1515694346937-94d85e41e6f0?w=150&auto=format&fit=crop",
-    name: "Rainy Window",
-  },
-  {
     id: "forest-fog",
     type: "image",
     url: "https://images.unsplash.com/photo-1542273917363-3b1817f69a2d?q=80&w=2560&auto=format&fit=crop",
     thumbnail:
       "https://images.unsplash.com/photo-1542273917363-3b1817f69a2d?w=150&auto=format&fit=crop",
     name: "Foggy Forest",
+  },
+  {
+    id: "rain-window",
+    type: "image",
+    url: "https://images.unsplash.com/photo-1515694346937-94d85e41e6f0?q=80&w=2560&auto=format&fit=crop",
+    thumbnail:
+      "https://images.unsplash.com/photo-1515694346937-94d85e41e6f0?w=150&auto=format&fit=crop",
+    name: "Rainy Window",
   },
   {
     id: "coffee-shop",
@@ -536,7 +536,6 @@ export const EFFECTS: { id: EffectType; name: string; icon: string }[] = [
   { id: "fireflies", name: "Fireflies", icon: "✨" },
   { id: "cloud-shadows", name: "Clouds", icon: "☁️" },
   { id: "sun-rays", name: "Sun Rays", icon: "🌅" },
-  { id: "visualize", name: "Visualizer", icon: "📊" },
 ];
 
 export const DEFAULT_SOUNDS: SoundTrack[] = [
