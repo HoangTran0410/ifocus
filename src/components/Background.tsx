@@ -37,15 +37,25 @@ export const Background: React.FC<BackgroundProps> = ({
     setImageLoaded(false);
     setShowYoutubeModal(false);
     hasStartedPlayingRef.current = false;
+
+    // Clear player ref when scene changes to prevent stale references
+    // This helps avoid the "Cannot read properties of null" error
+    return () => {
+      playerRef.current = null;
+    };
   }, [scene.url]);
 
   // Handle mute/unmute changes
   useEffect(() => {
     if (playerRef.current && scene.type === "youtube") {
-      if (isMuted) {
-        playerRef.current.mute();
-      } else {
-        playerRef.current.unMute();
+      try {
+        if (isMuted) {
+          playerRef.current.mute();
+        } else {
+          playerRef.current.unMute();
+        }
+      } catch (e) {
+        console.warn("Error changing mute state:", e);
       }
     }
   }, [isMuted, scene.type]);
@@ -56,28 +66,35 @@ export const Background: React.FC<BackgroundProps> = ({
     if (!playerRef.current || hasStartedPlayingRef.current) return;
 
     try {
-      const playerState = playerRef.current.getPlayerState();
+      const playerState = playerRef.current.getPlayerState?.();
+      if (playerState === undefined) return; // Player not ready
+
       // YouTube player states: -1 (unstarted), 0 (ended), 1 (playing), 2 (paused), 3 (buffering), 5 (cued)
       if (playerState !== 1 && playerState !== 3) {
         // Try to play programmatically first
-        playerRef.current.playVideo();
+        playerRef.current.playVideo?.();
 
         // Set a timeout to check if playback actually started
         setTimeout(() => {
           if (!playerRef.current) return;
-          const newState = playerRef.current.getPlayerState();
-          if (
-            newState !== 1 &&
-            newState !== 3 &&
-            !hasStartedPlayingRef.current
-          ) {
-            // Playback didn't start, show the modal for user to click directly
-            setShowYoutubeModal(true);
+          try {
+            const newState = playerRef.current.getPlayerState?.();
+            if (
+              newState !== undefined &&
+              newState !== 1 &&
+              newState !== 3 &&
+              !hasStartedPlayingRef.current
+            ) {
+              // Playback didn't start, show the modal for user to click directly
+              setShowYoutubeModal(true);
+            }
+          } catch (e) {
+            console.warn("Error checking player state:", e);
           }
         }, 500);
       }
     } catch (e) {
-      console.error("Error checking YouTube player state:", e);
+      console.warn("Error checking YouTube player state:", e);
     }
   }, []);
 
@@ -94,23 +111,44 @@ export const Background: React.FC<BackgroundProps> = ({
   }, [scene.type, disableYouTube, checkAndShowModal]);
 
   const onPlayerReady: YouTubeProps["onReady"] = (event) => {
-    playerRef.current = event.target;
-    // Set initial mute state
-    if (isMuted) {
-      event.target.mute();
-    } else {
-      event.target.unMute();
+    try {
+      playerRef.current = event.target;
+      // Set initial mute state
+      if (isMuted) {
+        event.target.mute();
+      } else {
+        event.target.unMute();
+      }
+      // Try to start playing
+      event.target.playVideo();
+    } catch (e) {
+      console.warn("Error in onPlayerReady:", e);
     }
-    // Try to start playing
-    event.target.playVideo();
   };
 
   // Handle state changes - detect when playback actually starts
   const onPlayerStateChange: YouTubeProps["onStateChange"] = (event) => {
-    // If playing (state 1), hide modal and mark as started
-    if (event.data === 1) {
-      hasStartedPlayingRef.current = true;
-      setShowYoutubeModal(false);
+    try {
+      // If playing (state 1), hide modal and mark as started
+      if (event.data === 1) {
+        hasStartedPlayingRef.current = true;
+        setShowYoutubeModal(false);
+      }
+    } catch (e) {
+      console.warn("Error in onPlayerStateChange:", e);
+    }
+  };
+
+  // Error handler for YouTube player
+  const onPlayerError: YouTubeProps["onError"] = (event) => {
+    console.error("YouTube player error:", event.data);
+    // Don't set youtubeError for recoverable errors (like video unavailable)
+    // Only set it for fatal errors that prevent any playback
+    if (event.data === 150 || event.data === 101) {
+      // Video unavailable or embedding not allowed - these are recoverable
+      console.warn("Video may be unavailable or embedding restricted");
+    } else {
+      setYoutubeError(true);
     }
   };
 
@@ -250,10 +288,7 @@ export const Background: React.FC<BackgroundProps> = ({
                   opts={youtubeOpts}
                   onReady={onPlayerReady}
                   onStateChange={onPlayerStateChange}
-                  onError={() => {
-                    console.error("YouTube player error");
-                    setYoutubeError(true);
-                  }}
+                  onError={onPlayerError}
                   className="w-full h-full"
                   iframeClassName={`w-full h-full ${
                     showYoutubeModal ? "" : "pointer-events-none"
