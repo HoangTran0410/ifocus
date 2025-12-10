@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { History, Play, Music as MusicIcon } from "lucide-react";
+import { History, Play, Music as MusicIcon, X } from "lucide-react";
 import { SoundTrack, SoundState } from "../types";
 import { DEFAULT_SOUNDS } from "../constants";
 
@@ -11,6 +11,7 @@ interface AudioControllerProps {
   setYoutubeUrl: (url: string) => void;
   youtubeHistory: string[];
   addToHistory: (url: string) => void;
+  removeFromHistory: (url: string) => void;
 }
 
 export const AudioController: React.FC<AudioControllerProps> = ({
@@ -21,6 +22,7 @@ export const AudioController: React.FC<AudioControllerProps> = ({
   setYoutubeUrl,
   youtubeHistory,
   addToHistory,
+  removeFromHistory,
 }) => {
   const [activeTab, setActiveTab] = useState<"sounds" | "media">("sounds");
   const [inputUrl, setInputUrl] = useState(youtubeUrl);
@@ -244,6 +246,16 @@ export const AudioController: React.FC<AudioControllerProps> = ({
                       : "YouTube"}{" "}
                     Player
                   </span>
+                  <button
+                    onClick={() => {
+                      setYoutubeUrl("");
+                      setInputUrl("");
+                    }}
+                    className="p-1 text-white/50 hover:text-white hover:bg-white/10 rounded transition-all"
+                    title="Close player"
+                  >
+                    <X size={16} />
+                  </button>
                 </div>
 
                 <div
@@ -271,24 +283,38 @@ export const AudioController: React.FC<AudioControllerProps> = ({
                 </h4>
                 <div className="space-y-2">
                   {youtubeHistory.map((url, idx) => (
-                    <button
+                    <div
                       key={idx}
-                      onClick={() => handleHistoryClick(url)}
                       className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-white/10 text-left group transition-colors"
                     >
-                      <div className="w-8 h-6 bg-white/10 rounded flex items-center justify-center shrink-0">
-                        {url.includes("spotify") ? (
-                          <MusicIcon size={12} className="text-green-400" />
-                        ) : url.includes("apple") ? (
-                          <MusicIcon size={12} className="text-pink-500" />
-                        ) : (
-                          <Play size={10} fill="white" className="ml-0.5" />
-                        )}
-                      </div>
-                      <span className="text-xs text-white/70 truncate flex-1 group-hover:text-white">
-                        {url}
-                      </span>
-                    </button>
+                      <button
+                        onClick={() => handleHistoryClick(url)}
+                        className="flex items-center gap-3 flex-1 min-w-0"
+                      >
+                        <div className="w-8 h-6 bg-white/10 rounded flex items-center justify-center shrink-0">
+                          {url.includes("spotify") ? (
+                            <MusicIcon size={12} className="text-green-400" />
+                          ) : url.includes("apple") ? (
+                            <MusicIcon size={12} className="text-pink-500" />
+                          ) : (
+                            <Play size={10} fill="white" className="ml-0.5" />
+                          )}
+                        </div>
+                        <span className="text-xs text-white/70 truncate flex-1 group-hover:text-white">
+                          {url}
+                        </span>
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          removeFromHistory(url);
+                        }}
+                        className="p-1 opacity-0 group-hover:opacity-100 text-white/50 hover:text-white hover:bg-white/10 rounded transition-all shrink-0"
+                        title="Remove from history"
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
                   ))}
                 </div>
               </div>

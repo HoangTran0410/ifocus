@@ -8,8 +8,7 @@ export const TIMER_SETTINGS: Record<TimerMode, number> = {
   stopwatch: 0, // Starts at 0 and counts up
 };
 
-export const DEFAULT_SCENES: Scene[] = [
-  // image
+export const DEFAULT_IMAGES: Scene[] = [
   {
     id: "rain-window",
     type: "image",
@@ -114,8 +113,103 @@ export const DEFAULT_SCENES: Scene[] = [
       "https://images.unsplash.com/photo-1444080748397-f442aa95c3e5?w=150&auto=format&fit=crop",
     name: "Starry Sky",
   },
+];
 
-  // video
+export const DEFAULT_COLORS: Scene[] = [
+  { id: "solid-dark", type: "color", url: "#1a1a1a", name: "Dark Mode" },
+  { id: "solid-warm", type: "color", url: "#2c241b", name: "Warm Brown" },
+  // Focus colors - deep, stable tones that minimize distraction
+  { id: "solid-navy", type: "color", url: "#0d1b2a", name: "Deep Navy" },
+  {
+    id: "solid-midnight",
+    type: "color",
+    url: "#1b2838",
+    name: "Midnight Blue",
+  },
+  { id: "solid-charcoal", type: "color", url: "#2d2d2d", name: "Charcoal" },
+  // Relaxation colors - calming, nature-inspired tones
+  { id: "solid-forest", type: "color", url: "#1a2f1a", name: "Forest Green" },
+  { id: "solid-teal", type: "color", url: "#1a3a3a", name: "Deep Teal" },
+  { id: "solid-ocean", type: "color", url: "#0a2540", name: "Ocean Deep" },
+  { id: "solid-sage", type: "color", url: "#2f3b2f", name: "Soft Sage" },
+  // Meditation colors - soft, spiritual tones
+  { id: "solid-purple", type: "color", url: "#2a1f3d", name: "Muted Purple" },
+  {
+    id: "solid-twilight",
+    type: "color",
+    url: "#2d1f47",
+    name: "Twilight Purple",
+  },
+  { id: "solid-zen", type: "color", url: "#3a3a3a", name: "Zen Gray" },
+];
+
+export const DEFAULT_GRADIENTS: Scene[] = [
+  // Focus gradients - smooth transitions for deep concentration
+  {
+    id: "gradient-aurora",
+    type: "gradient",
+    url: "linear-gradient(135deg, #0d1b2a 0%, #1b2838 50%, #2a1f3d 100%)",
+    name: "Aurora",
+  },
+  {
+    id: "gradient-deep-space",
+    type: "gradient",
+    url: "linear-gradient(180deg, #0a0a0f 0%, #1a1a2e 50%, #16213e 100%)",
+    name: "Deep Space",
+  },
+  {
+    id: "gradient-cosmic",
+    type: "gradient",
+    url: "linear-gradient(135deg, #2d1f47 0%, #1a3a3a 100%)",
+    name: "Cosmic",
+  },
+  // Relaxation gradients - nature-inspired flowing colors
+  {
+    id: "gradient-sunset",
+    type: "gradient",
+    url: "linear-gradient(180deg, #2c1810 0%, #3d2914 50%, #1a1a1a 100%)",
+    name: "Sunset Calm",
+  },
+  {
+    id: "gradient-ocean",
+    type: "gradient",
+    url: "linear-gradient(180deg, #0a2540 0%, #1a3a3a 50%, #0d1b2a 100%)",
+    name: "Ocean Depth",
+  },
+  {
+    id: "gradient-forest",
+    type: "gradient",
+    url: "linear-gradient(180deg, #1a2f1a 0%, #2f3b2f 50%, #1a1a1a 100%)",
+    name: "Forest Mist",
+  },
+  // Meditation gradients - ethereal, spiritual transitions
+  {
+    id: "gradient-twilight",
+    type: "gradient",
+    url: "linear-gradient(180deg, #2d1f47 0%, #1b2838 50%, #0d1b2a 100%)",
+    name: "Twilight",
+  },
+  {
+    id: "gradient-zen",
+    type: "gradient",
+    url: "linear-gradient(180deg, #2f3b2f 0%, #3a3a3a 50%, #1a1a1a 100%)",
+    name: "Zen Garden",
+  },
+  {
+    id: "gradient-ember",
+    type: "gradient",
+    url: "linear-gradient(135deg, #1a0a0a 0%, #2c1810 50%, #1a1a1a 100%)",
+    name: "Warm Ember",
+  },
+  {
+    id: "gradient-northern",
+    type: "gradient",
+    url: "linear-gradient(180deg, #0d1b2a 0%, #1a3a3a 30%, #2a1f3d 70%, #0d1b2a 100%)",
+    name: "Northern Lights",
+  },
+];
+
+export const DEFAULT_VIDEOS: Scene[] = [
   {
     id: "202004-916894674",
     name: "studyfoc.us",
@@ -247,8 +341,9 @@ export const DEFAULT_SCENES: Scene[] = [
     thumbnail:
       "https://cdn.studyfoc.us/studyfocus-1/9584-220312371/480p/thumb.jpg",
   },
+];
 
-  // youtube
+export const DEFAULT_YOUTUBE: Scene[] = [
   {
     id: "lofi-girl",
     type: "youtube",
@@ -429,8 +524,6 @@ export const DEFAULT_SCENES: Scene[] = [
     url: "https://www.youtube.com/watch?v=CGgj95GhG0k",
     name: "MacOS Tea Garden",
   },
-  { id: "solid-dark", type: "color", url: "#1a1a1a", name: "Dark Mode" },
-  { id: "solid-warm", type: "color", url: "#2c241b", name: "Warm Brown" },
 ];
 
 export const EFFECTS: { id: EffectType; name: string; icon: string }[] = [
@@ -516,42 +609,42 @@ export const DEFAULT_SOUNDS: SoundTrack[] = [
   // studi focus
   {
     id: "rain",
-    emoji: "\uD83C\uDF27️",
+    emoji: "🌧️",
     name: "rain",
     url: "https://studyfoc.us/audio/rain.m4a",
     category: "Nature",
   },
   {
     id: "bird",
-    emoji: "\uD83D\uDC26",
+    emoji: "🐦",
     name: "birds",
     url: "https://studyfoc.us/audio/bird.m4a",
     category: "Nature",
   },
   {
     id: "bubble",
-    emoji: "\uD83E\uDEE7",
+    emoji: "🫧",
     name: "bubble",
     url: "https://studyfoc.us/audio/bubblepop.mp3",
     category: "Nature",
   },
   {
     id: "chicken",
-    emoji: "\uD83D\uDC13",
+    emoji: "🐓",
     name: "chicken",
     url: "https://studyfoc.us/audio/chicken.mp3",
     category: "Nature",
   },
   {
     id: "fire",
-    emoji: "\uD83D\uDD25",
+    emoji: "🔥",
     name: "fire",
     url: "https://studyfoc.us/audio/fire.mp3",
     category: "Nature",
   },
   {
     id: "night",
-    emoji: "\uD83C\uDF18",
+    emoji: "🌘",
     name: "night",
     url: "https://studyfoc.us/audio/night-ambience.mp3",
     category: "Nature",
@@ -565,42 +658,42 @@ export const DEFAULT_SOUNDS: SoundTrack[] = [
   },
   {
     id: "tractor",
-    emoji: "\uD83D\uDE9C",
+    emoji: "🚜",
     name: "tractor",
     url: "https://studyfoc.us/audio/tractor.mp3",
     category: "Nature",
   },
   {
     id: "water",
-    emoji: "\uD83D\uDCA6",
+    emoji: "💦",
     name: "water",
     url: "https://studyfoc.us/audio/waterflow.mp3",
     category: "Nature",
   },
   {
     id: "waves",
-    emoji: "\uD83C\uDF0A",
+    emoji: "🌊",
     name: "oceanWaves",
     url: "https://studyfoc.us/audio/ocean.mp3",
     category: "Nature",
   },
   {
     id: "brown-noise",
-    emoji: "\uD83E\uDD0E",
+    emoji: "🤎",
     name: "brown noise",
     url: "https://studyfoc.us/audio/soft-brown-noise.mp3",
     category: "Noise",
   },
   {
     id: "pink-noise",
-    emoji: "\uD83E\uDE77",
+    emoji: "🩷",
     name: "pink noise",
     url: "https://studyfoc.us/audio/pink_noise.mp3",
     category: "Noise",
   },
   {
     id: "white-noise",
-    emoji: "\uD83E\uDD0D",
+    emoji: "🤍",
     name: "white noise",
     url: "https://studyfoc.us/audio/white-noise.mp3",
     category: "Noise",
@@ -614,7 +707,7 @@ export const DEFAULT_SOUNDS: SoundTrack[] = [
   },
   {
     id: "mouse-click-2",
-    emoji: "\uD83D\uDDB1️",
+    emoji: "🖱️",
     name: "mouse click",
     url: "https://studyfoc.us/audio/mouse-click.mp3",
     category: "Office",
@@ -628,7 +721,7 @@ export const DEFAULT_SOUNDS: SoundTrack[] = [
   },
   {
     id: "writing",
-    emoji: "\uD83D\uDCDD",
+    emoji: "✍️",
     name: "writing",
     url: "https://studyfoc.us/audio/writing.mp3",
     category: "Office",
@@ -642,7 +735,7 @@ export const DEFAULT_SOUNDS: SoundTrack[] = [
   },
   {
     id: "city",
-    emoji: "\uD83C\uDFD9️",
+    emoji: "🏙️",
     name: "city",
     url: "https://studyfoc.us/audio/city.mp3",
     category: "Urban",
@@ -656,14 +749,14 @@ export const DEFAULT_SOUNDS: SoundTrack[] = [
   },
   {
     id: "train",
-    emoji: "\uD83D\uDE86",
+    emoji: "🚆",
     name: "railway",
     url: "https://studyfoc.us/audio/railway.mp3",
     category: "Urban",
   },
   {
     id: "fan",
-    emoji: "\uD83D\uDCA8",
+    emoji: "💨",
     name: "fan",
     url: "https://studyfoc.us/audio/ceiling-fan.mp3",
     category: "Urban",

@@ -1,4 +1,9 @@
-export type TimerMode = "pomodoro" | "shortBreak" | "longBreak" | "clock" | "stopwatch";
+export type TimerMode =
+  | "pomodoro"
+  | "shortBreak"
+  | "longBreak"
+  | "clock"
+  | "stopwatch";
 
 export type EffectType =
   | "none"
@@ -27,7 +32,7 @@ export interface Note {
 
 export interface Scene {
   id: string;
-  type: "image" | "video" | "color" | "youtube";
+  type: "image" | "video" | "color" | "gradient" | "youtube";
   url: string; // URL for image/video/youtube or Hex code for color
   name: string;
   thumbnail?: string; // Optional thumbnail URL for lazy loading

@@ -33,7 +33,7 @@ import { Notes } from "./components/Notes";
 import { SceneSelector } from "./components/SceneSelector";
 import { EffectsSelector } from "./components/EffectsSelector";
 import { useLocalStorage } from "./hooks/useLocalStorage";
-import { DEFAULT_SCENES, DEFAULT_SOUNDS } from "./constants";
+import { DEFAULT_SOUNDS, DEFAULT_IMAGES } from "./constants";
 import { Scene, SoundState, Task, Note, TimerMode, EffectType } from "./types";
 
 // Panel types
@@ -43,7 +43,7 @@ function App() {
   // Application State
   const [currentScene, setCurrentScene] = useLocalStorage<Scene>(
     "zen_scene",
-    DEFAULT_SCENES[0]
+    DEFAULT_IMAGES[0]
   );
   const [currentEffect, setCurrentEffect] = useLocalStorage<EffectType>(
     "zen_effect",
@@ -189,6 +189,10 @@ function App() {
     setYoutubeHistory(newHistory);
   };
 
+  const removeFromHistory = (url: string) => {
+    setYoutubeHistory(youtubeHistory.filter((u) => u !== url));
+  };
+
   return (
     <div className="pip-capture-root relative w-screen h-screen overflow-hidden font-sans">
       {/* Dynamic Background */}
@@ -201,8 +205,11 @@ function App() {
       {/* Main Content Layer */}
       <div className="relative z-10 w-full h-full flex flex-col">
         {/* Header / Top Bar */}
-        <div className="flex justify-between items-center p-6 pointer-events-auto">
-          <div className="flex items-center gap-3" onClick={openGithub}>
+        <div className="flex justify-between items-center p-3 pointer-events-auto">
+          <div
+            className="flex items-center gap-3 cursor-pointer hover:bg-white/10 rounded-lg p-2 transition-colors"
+            onClick={openGithub}
+          >
             <div className="w-8 h-8 rounded-lg bg-white/20 backdrop-blur-md flex items-center justify-center">
               <span className="font-bold text-white">F</span>
             </div>
@@ -233,24 +240,16 @@ function App() {
 
         {/* Center Timer Area */}
         <div className="flex-1 flex items-center justify-center p-4 pointer-events-auto">
-          <div
-            className={`transition-all duration-500 ${
-              activePanel !== "none" ? "lg:-translate-x-32" : ""
-            }`}
-          >
+          <div className={`transition-all duration-500`}>
             <Timer mode={timerMode} setMode={setTimerMode} />
           </div>
         </div>
 
         {/* Bottom Dock / Navigation */}
-        <div className="flex justify-center pb-8 pointer-events-auto">
+        <div className="flex justify-center pb-6 pointer-events-auto">
           {/* We apply the same transition logic here to keep it centered relative to the timer */}
-          <div
-            className={`transition-all duration-500 ${
-              activePanel !== "none" ? "lg:-translate-x-32" : ""
-            }`}
-          >
-            <div className="flex gap-0 sm:gap-4 p-2 bg-black/40 opacity-80 hover:opacity-100 hover:backdrop-blur-xl transition-all rounded-2xl border border-white/10 shadow-2xl">
+          <div className={`transition-all duration-500`}>
+            <div className="flex gap-0 sm:gap-2 p-2 bg-black/40 opacity-50 hover:opacity-100 hover:backdrop-blur transition-all rounded-2xl border border-white/10 shadow-2xl">
               <DockButton
                 icon={<ImageIcon size={20} />}
                 label="Scenes"
@@ -330,6 +329,7 @@ function App() {
                 setYoutubeUrl={setYoutubeUrl}
                 youtubeHistory={youtubeHistory}
                 addToHistory={addToHistory}
+                removeFromHistory={removeFromHistory}
               />
             </div>
             <div

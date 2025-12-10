@@ -63,48 +63,170 @@ interface EffectConfig {
   hasRipples?: boolean;
   hasStacking?: boolean;
   stackDuration?: number; // milliseconds
+  hasLightning?: boolean; // for heavy rain
+}
+
+// Wind state for dynamic rain direction
+let windStrength = 0;
+let windTarget = 0;
+let lastWindChange = 0;
+
+// Lightning state
+let lightningOpacity = 0;
+let lastLightning = 0;
+let lightningPhase = 0; // 0 = off, 1 = first flash, 2 = dim, 3 = second flash
+let lightningBoltPath: { x: number; y: number }[] = [];
+let lightningBranches: { x: number; y: number }[][] = [];
+
+// Generate procedural lightning bolt path
+function generateLightningBolt(canvasWidth: number, canvasHeight: number) {
+  lightningBoltPath = [];
+  lightningBranches = [];
+
+  // Start from random position near top
+  let x = canvasWidth * (0.2 + Math.random() * 0.6);
+  let y = 0;
+
+  lightningBoltPath.push({ x, y });
+
+  // Generate main bolt path going downward
+  const segments = 12 + Math.floor(Math.random() * 8);
+  const segmentHeight = (canvasHeight * 0.7) / segments;
+
+  for (let i = 0; i < segments; i++) {
+    // Random horizontal offset with tendency to straighten near bottom
+    const jitter = (1 - i / segments) * 80;
+    x += (Math.random() - 0.5) * jitter;
+    y += segmentHeight + Math.random() * 20;
+
+    lightningBoltPath.push({ x, y });
+
+    // Occasionally create a branch (30% chance)
+    if (Math.random() < 0.3 && i > 2 && i < segments - 2) {
+      const branch: { x: number; y: number }[] = [{ x, y }];
+      let bx = x;
+      let by = y;
+      const branchSegments = 3 + Math.floor(Math.random() * 4);
+      const direction = Math.random() < 0.5 ? -1 : 1;
+
+      for (let j = 0; j < branchSegments; j++) {
+        bx += direction * (20 + Math.random() * 30);
+        by += 15 + Math.random() * 25;
+        branch.push({ x: bx, y: by });
+      }
+      lightningBranches.push(branch);
+    }
+  }
 }
 
 // Generic render functions
 const renderRain: RenderFunction = (ctx, canvas, particles, config, extras) => {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  // Draw ripples with multiple expanding circles for realism
+  // Update wind - smoothly transition to target, occasionally change target
+  const now = Date.now();
+  if (now - lastWindChange > 3000 + Math.random() * 5000) {
+    // Change wind direction every 3-8 seconds
+    windTarget = (Math.random() - 0.5) * 4; // Wind range: -2 to +2
+    lastWindChange = now;
+  }
+  // Smoothly interpolate wind strength toward target
+  windStrength += (windTarget - windStrength) * 0.01;
+
+  // Calculate dynamic slant based on base slant + wind
+  const dynamicSlant = (config.slant || 0) + windStrength;
+
+  // Lightning effect for heavy rain
+  if (config.hasLightning) {
+    const timeSinceLightning = now - lastLightning;
+
+    // Trigger new lightning every 10-30 seconds
+    if (
+      timeSinceLightning > 10000 + Math.random() * 20000 &&
+      lightningPhase === 0
+    ) {
+      lightningPhase = 1;
+      lastLightning = now;
+      // Generate new lightning bolt path
+      generateLightningBolt(canvas.width, canvas.height);
+    }
+
+    // Multi-phase lightning animation
+    if (lightningPhase > 0) {
+      const phaseTime = now - lastLightning;
+
+      if (phaseTime < 80) {
+        // First flash
+        lightningOpacity = 0.8 + Math.random() * 0.2;
+      } else if (phaseTime < 200) {
+        // Quick dim
+        lightningOpacity = 0.2;
+        lightningPhase = 2;
+      } else if (phaseTime < 280 && lightningPhase === 2) {
+        // Second flash
+        lightningOpacity = 0.5 + Math.random() * 0.2;
+        lightningPhase = 3;
+      } else if (phaseTime < 500) {
+        // Fade out
+        lightningOpacity *= 0.9;
+      } else {
+        // Reset
+        lightningOpacity = 0;
+        lightningPhase = 0;
+      }
+    }
+
+    // Draw lightning bolt
+    if (lightningOpacity > 0.01 && lightningBoltPath.length > 0) {
+      // Subtle background flash
+      ctx.fillStyle = `rgba(200, 210, 255, ${lightningOpacity * 0.15})`;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Draw glow
+      ctx.shadowBlur = 20;
+      ctx.shadowColor = `rgba(180, 200, 255, ${lightningOpacity})`;
+      ctx.strokeStyle = `rgba(255, 255, 255, ${lightningOpacity * 0.8})`;
+      ctx.lineWidth = 3;
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+
+      // Draw main bolt
+      ctx.beginPath();
+      ctx.moveTo(lightningBoltPath[0].x, lightningBoltPath[0].y);
+      for (let i = 1; i < lightningBoltPath.length; i++) {
+        ctx.lineTo(lightningBoltPath[i].x, lightningBoltPath[i].y);
+      }
+      ctx.stroke();
+
+      // Draw branches
+      ctx.lineWidth = 1.5;
+      ctx.strokeStyle = `rgba(200, 220, 255, ${lightningOpacity * 0.6})`;
+      lightningBranches.forEach((branch) => {
+        ctx.beginPath();
+        ctx.moveTo(branch[0].x, branch[0].y);
+        for (let i = 1; i < branch.length; i++) {
+          ctx.lineTo(branch[i].x, branch[i].y);
+        }
+        ctx.stroke();
+      });
+
+      ctx.shadowBlur = 0;
+    }
+  }
+
+  // Draw ripples - single expanding ring for realistic water effect
   if (config.hasRipples && extras?.ripples) {
     extras.ripples.forEach((ripple) => {
-      const age = Date.now() - ripple.createdAt;
       const progress = ripple.radius / ripple.maxRadius;
+      // Smooth fade out using easing
+      const fadeOpacity = ripple.opacity * (1 - progress) * (1 - progress);
 
-      // Draw multiple concentric ripples
-      for (let i = 0; i < 3; i++) {
-        const offset = i * 8;
-        const currentRadius = ripple.radius - offset;
-
-        if (currentRadius > 0) {
-          const rippleOpacity = ripple.opacity * (1 - i * 0.3) * (1 - progress);
-          ctx.strokeStyle = `rgba(174, 194, 224, ${rippleOpacity})`;
-          ctx.lineWidth = 1.5 - (i * 0.3);
-          ctx.beginPath();
-          ctx.arc(ripple.x, ripple.y, currentRadius, 0, Math.PI * 2);
-          ctx.stroke();
-        }
-      }
-
-      // Add small splash particles
-      if (age < 100) {
-        const splashCount = 4;
-        for (let i = 0; i < splashCount; i++) {
-          const angle = (Math.PI * 2 * i) / splashCount;
-          const splashDist = age * 0.15;
-          const splashX = ripple.x + Math.cos(angle) * splashDist;
-          const splashY = ripple.y + Math.sin(angle) * splashDist - age * 0.1;
-          const splashOpacity = ripple.opacity * (1 - age / 100);
-
-          ctx.fillStyle = `rgba(174, 194, 224, ${splashOpacity})`;
-          ctx.beginPath();
-          ctx.arc(splashX, splashY, 1, 0, Math.PI * 2);
-          ctx.fill();
-        }
+      if (fadeOpacity > 0.01) {
+        ctx.strokeStyle = `rgba(200, 220, 255, ${fadeOpacity})`;
+        ctx.lineWidth = Math.max(0.5, 1.5 * (1 - progress));
+        ctx.beginPath();
+        ctx.arc(ripple.x, ripple.y, ripple.radius, 0, Math.PI * 2);
+        ctx.stroke();
       }
     });
   }
@@ -114,17 +236,18 @@ const renderRain: RenderFunction = (ctx, canvas, particles, config, extras) => {
 
   particles.forEach((p) => {
     p.y += p.speed;
-    if (config.slant) p.x -= config.slant;
+    // Apply dynamic wind to horizontal movement
+    p.x -= dynamicSlant;
 
     if (p.y > canvas.height) {
-      // Create ripple when rain hits bottom
-      if (config.hasRipples && extras?.ripples) {
+      // Only create ripple occasionally (15% chance) for subtle effect
+      if (config.hasRipples && extras?.ripples && Math.random() < 0.15) {
         extras.ripples.push({
           x: p.x,
-          y: canvas.height,
+          y: canvas.height - 2,
           radius: 0,
-          maxRadius: 12 + Math.random() * 8,
-          opacity: 0.6 + Math.random() * 0.2,
+          maxRadius: 15 + Math.random() * 10,
+          opacity: 0.3 + Math.random() * 0.2,
           createdAt: Date.now(),
         });
       }
@@ -132,21 +255,28 @@ const renderRain: RenderFunction = (ctx, canvas, particles, config, extras) => {
       p.y = -p.length;
       p.x = Math.random() * canvas.width;
     }
-    if (p.x < 0) p.x = canvas.width;
+    // Wrap around horizontally
+    if (p.x < -20) p.x = canvas.width + 20;
+    if (p.x > canvas.width + 20) p.x = -20;
 
     // Add gradient to rain drops for realism
     const gradient = ctx.createLinearGradient(
-      p.x, p.y,
-      p.x - (config.slant || 0), p.y + p.length
+      p.x,
+      p.y,
+      p.x - dynamicSlant * 2,
+      p.y + p.length
     );
-    gradient.addColorStop(0, config.color?.replace('0.5', '0.2') || "rgba(174, 194, 224, 0.2)");
+    gradient.addColorStop(
+      0,
+      config.color?.replace("0.5", "0.2") || "rgba(174, 194, 224, 0.2)"
+    );
     gradient.addColorStop(1, config.color || "rgba(174, 194, 224, 0.5)");
 
     ctx.strokeStyle = gradient;
     ctx.lineWidth = config.lineWidth || 1;
     ctx.beginPath();
     ctx.moveTo(p.x, p.y);
-    ctx.lineTo(p.x - (config.slant || 0), p.y + p.length);
+    ctx.lineTo(p.x - dynamicSlant * 2, p.y + p.length);
     ctx.stroke();
   });
 };
@@ -159,9 +289,11 @@ const renderSnow: RenderFunction = (ctx, canvas, particles, config, extras) => {
     extras.stacked.forEach((s) => {
       const age = Date.now() - s.createdAt;
       const fadeStart = (config.stackDuration || 3000) * 0.7;
-      const fadeOpacity = age > fadeStart
-        ? s.opacity * (1 - (age - fadeStart) / ((config.stackDuration || 3000) * 0.3))
-        : s.opacity;
+      const fadeOpacity =
+        age > fadeStart
+          ? s.opacity *
+            (1 - (age - fadeStart) / ((config.stackDuration || 3000) * 0.3))
+          : s.opacity;
 
       ctx.globalAlpha = fadeOpacity;
       ctx.fillStyle = config.color || "rgba(255, 255, 255, 0.8)";
@@ -205,7 +337,13 @@ const renderSnow: RenderFunction = (ctx, canvas, particles, config, extras) => {
   ctx.globalAlpha = 1;
 };
 
-const renderLeaves: RenderFunction = (ctx, canvas, particles, config, extras) => {
+const renderLeaves: RenderFunction = (
+  ctx,
+  canvas,
+  particles,
+  config,
+  extras
+) => {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
   // Draw stacked leaves at bottom
@@ -213,9 +351,11 @@ const renderLeaves: RenderFunction = (ctx, canvas, particles, config, extras) =>
     extras.stacked.forEach((s) => {
       const age = Date.now() - s.createdAt;
       const fadeStart = (config.stackDuration || 3000) * 0.7;
-      const fadeOpacity = age > fadeStart
-        ? s.opacity * (1 - (age - fadeStart) / ((config.stackDuration || 3000) * 0.3))
-        : s.opacity;
+      const fadeOpacity =
+        age > fadeStart
+          ? s.opacity *
+            (1 - (age - fadeStart) / ((config.stackDuration || 3000) * 0.3))
+          : s.opacity;
 
       ctx.save();
       ctx.translate(s.x, s.y);
@@ -319,7 +459,14 @@ const renderFireflies: RenderFunction = (ctx, canvas, particles) => {
     const glowSize = p.size * (1 + twinkle);
 
     // Outer glow
-    const gradient = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, glowSize * 3);
+    const gradient = ctx.createRadialGradient(
+      p.x,
+      p.y,
+      0,
+      p.x,
+      p.y,
+      glowSize * 3
+    );
     gradient.addColorStop(0, `rgba(255, 255, 150, ${currentOpacity * 0.8})`);
     gradient.addColorStop(0.4, `rgba(255, 255, 150, ${currentOpacity * 0.3})`);
     gradient.addColorStop(1, `rgba(255, 255, 150, 0)`);
@@ -377,16 +524,17 @@ const EFFECT_CONFIGS: Record<
     hasRipples: true,
   },
   "heavy-rain": {
-    count: 800,
+    count: 500,
     speedRange: { min: 10, max: 15 },
     sizeRange: { min: 1, max: 4 },
     lengthRange: { min: 10, max: 30 },
     opacityRange: { min: 0.1, max: 0.6 },
     renderFunction: renderRain,
-    color: "rgba(174, 194, 224, 0.5)",
+    color: "rgba(174, 194, 224, 0.2)",
     lineWidth: 2,
     slant: 1,
     hasRipples: true,
+    hasLightning: true,
   },
   snow: {
     count: 150,
@@ -542,7 +690,7 @@ export const EffectsLayer: React.FC<EffectsLayerProps> = ({ type }) => {
   return (
     <canvas
       ref={canvasRef}
-      className="absolute inset-0 w-full h-full pointer-events-none z-0"
+      className="absolute inset-0 w-full h-full pointer-events-none z-10"
     />
   );
 };

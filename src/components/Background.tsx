@@ -175,6 +175,10 @@ export const Background: React.FC<BackgroundProps> = ({
         <div className="w-full h-full" style={{ backgroundColor: scene.url }} />
       )}
 
+      {scene.type === "gradient" && (
+        <div className="w-full h-full" style={{ background: scene.url }} />
+      )}
+
       {scene.type === "image" && (
         <>
           {/* Thumbnail layer - shows immediately */}
@@ -336,8 +340,16 @@ export const Background: React.FC<BackgroundProps> = ({
         </div>
       )}
 
-      {/* Canvas Effects */}
-      <EffectsLayer type={effect} />
+      {/* Canvas Effects - rendered via Portal to appear above YouTube iframe */}
+      {createPortal(
+        <div
+          className="fixed inset-0 w-full h-full pointer-events-none"
+          style={{ zIndex: 1 }}
+        >
+          <EffectsLayer type={effect} />
+        </div>,
+        document.body
+      )}
     </div>
   );
 };

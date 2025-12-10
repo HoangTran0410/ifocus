@@ -115,7 +115,7 @@ export const Timer: React.FC<TimerProps> = ({ mode, setMode }) => {
   }, [timeLeft, mode]);
 
   return (
-    <div className="group flex flex-col items-center justify-center p-8 transition-all duration-500 ease-in-out text-white w-full max-w-md mx-auto hover:bg-black/40 hover:backdrop-blur-md rounded-3xl font-sans">
+    <div className="group flex flex-col items-center justify-center sm:p-8 p-4 transition-all duration-500 ease-in-out text-white w-full max-w-md mx-auto hover:bg-black/40 hover:backdrop-blur-md rounded-3xl font-sans">
       {/* Mode Selectors - Fades in on hover */}
       <div className="flex sm:space-x-2 space-x-1 mb-8 p-1 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-4 group-hover:translate-y-0 bg-white/10">
         {(
@@ -157,33 +157,35 @@ export const Timer: React.FC<TimerProps> = ({ mode, setMode }) => {
 
       {/* Controls - Fades in on hover */}
       {/* Only show controls if NOT in clock mode */}
-      <div
-        className={`flex items-center sm:space-x-6 space-x-3 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-4 group-hover:translate-y-0 ${
-          mode === "clock" ? "invisible" : ""
-        }`}
-      >
-        <button
-          onClick={toggleTimer}
-          className="bg-white text-black sm:p-6 p-4 rounded-full hover:scale-105 transition-transform shadow-lg active:scale-95"
+      {mode !== "clock" && (
+        <div
+          className={`flex items-center space-x-3 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-4 group-hover:translate-y-0 ${
+            mode === "clock" ? "invisible" : ""
+          }`}
         >
-          {isActive ? (
-            <Pause size={32} fill="black" />
-          ) : (
-            <Play size={32} fill="black" className="ml-1" />
-          )}
-        </button>
-
-        {(mode === "stopwatch"
-          ? timeLeft > 0
-          : timeLeft < TIMER_SETTINGS[mode]) && (
           <button
-            onClick={resetTimer}
-            className="bg-white/10 text-white sm:p-4 p-3 rounded-full hover:bg-white/20 transition-colors"
+            onClick={toggleTimer}
+            className="bg-white text-black sm:p-6 p-4 rounded-full hover:scale-105 transition-transform shadow-lg active:scale-95"
           >
-            <RotateCcw size={24} />
+            {isActive ? (
+              <Pause size={32} fill="black" />
+            ) : (
+              <Play size={32} fill="black" className="ml-1" />
+            )}
           </button>
-        )}
-      </div>
+
+          {(mode === "stopwatch"
+            ? timeLeft > 0
+            : timeLeft < TIMER_SETTINGS[mode]) && (
+            <button
+              onClick={resetTimer}
+              className="bg-white/10 text-white sm:p-4 p-3 rounded-full hover:bg-white/20 transition-colors"
+            >
+              <RotateCcw size={24} />
+            </button>
+          )}
+        </div>
+      )}
 
       {/* Hint when hidden */}
       {/* <div className="absolute bottom-4 text-xs text-white/30 uppercase tracking-widest opacity-100 group-hover:opacity-0 transition-opacity duration-300 pointer-events-none font-medium">
