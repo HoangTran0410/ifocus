@@ -151,7 +151,7 @@ export const Timer: React.FC<TimerProps> = ({ mode, setMode }) => {
 
       {/* Timer Display - Always visible but enhances on hover */}
       {/* Changed font-thin to font-bold as requested */}
-      <div className="text-9xl font-bold tracking-tight mb-8 select-none drop-shadow-2xl transition-transform duration-500 group-hover:scale-105">
+      <div className="timer-display text-9xl font-bold tracking-tight mb-8 select-none drop-shadow-2xl transition-transform duration-500 group-hover:scale-105">
         {mode === "clock" ? formatClock(currentTime) : formatTimer(timeLeft)}
       </div>
 

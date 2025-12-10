@@ -7,15 +7,18 @@ interface BackgroundProps {
   scene: Scene;
   effect?: EffectType;
   isMuted?: boolean;
+  disableYouTube?: boolean; // Option to disable YouTube for PiP
 }
 
 export const Background: React.FC<BackgroundProps> = ({
   scene,
   effect = "none",
   isMuted = true,
+  disableYouTube = false,
 }) => {
   const playerRef = useRef<any>(null);
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [youtubeError, setYoutubeError] = useState(false);
 
   const getYoutubeVideoId = (url: string) => {
     const regExp =
@@ -137,18 +140,30 @@ export const Background: React.FC<BackgroundProps> = ({
         </>
       )}
 
-      {scene.type === "youtube" && (
+      {scene.type === "youtube" && !disableYouTube && !youtubeError && (
         <>
           <div className="absolute inset-0 w-full h-full pointer-events-none">
             <YouTube
               videoId={getYoutubeVideoId(scene.url) || ""}
               opts={youtubeOpts}
               onReady={onPlayerReady}
+              onError={() => {
+                console.error("YouTube player error");
+                setYoutubeError(true);
+              }}
               className="w-full h-full"
               iframeClassName="w-full h-full pointer-events-none"
               style={{ width: "100%", height: "100%" }}
             />
           </div>
+          <div className="absolute inset-0 bg-black/20" />
+        </>
+      )}
+
+      {scene.type === "youtube" && (disableYouTube || youtubeError) && (
+        <>
+          {/* Fallback: solid color background when YouTube fails */}
+          <div className="w-full h-full" style={{ backgroundColor: '#1a1a1a' }} />
           <div className="absolute inset-0 bg-black/20" />
         </>
       )}

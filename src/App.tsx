@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import {
   X,
   Music,
@@ -8,11 +9,26 @@ import {
   Maximize2,
   Minimize2,
   Sparkles,
+  PictureInPicture2,
 } from "lucide-react";
+
+// Extend Window interface for Document Picture-in-Picture API
+declare global {
+  interface Window {
+    documentPictureInPicture?: {
+      requestWindow: (options?: {
+        width?: number;
+        height?: number;
+      }) => Promise<Window>;
+      window: Window | null;
+    };
+  }
+}
 import { Background } from "./components/Background";
 import { Timer } from "./components/Timer";
 import { AudioController } from "./components/AudioController";
 import { Tasks } from "./components/Tasks";
+import { PiPContent } from "./components/PiPContent";
 import { Notes } from "./components/Notes";
 import { SceneSelector } from "./components/SceneSelector";
 import { EffectsSelector } from "./components/EffectsSelector";
@@ -64,6 +80,8 @@ function App() {
   );
   const [activePanel, setActivePanel] = useState<PanelType>("none");
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isPiP, setIsPiP] = useState(false);
+  const pipWindowRef = useRef<Window | null>(null);
 
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
@@ -77,6 +95,87 @@ function App() {
     }
   };
 
+  const togglePiP = async () => {
+    try {
+      console.log("Toggle PiP clicked");
+
+      // Check for Document Picture-in-Picture API support
+      if (!window.documentPictureInPicture) {
+        alert(
+          "Document Picture-in-Picture is not supported in your browser. Please use Chrome 116+ or Edge 116+."
+        );
+        return;
+      }
+
+      // If PiP window is already open, close it
+      if (pipWindowRef.current && !pipWindowRef.current.closed) {
+        pipWindowRef.current.close();
+        pipWindowRef.current = null;
+        setIsPiP(false);
+        return;
+      }
+
+      // Open Document PiP window
+      const pipWindow = await window.documentPictureInPicture.requestWindow({
+        width: 800,
+        height: 450,
+      });
+
+      pipWindowRef.current = pipWindow;
+
+      // Copy all stylesheets from the main document to PiP window
+      const styleSheets = Array.from(document.styleSheets);
+      styleSheets.forEach((styleSheet) => {
+        try {
+          const cssRules = Array.from(styleSheet.cssRules)
+            .map((rule) => rule.cssText)
+            .join("\n");
+          const style = pipWindow.document.createElement("style");
+          style.textContent = cssRules;
+          pipWindow.document.head.appendChild(style);
+        } catch (e) {
+          // For external stylesheets, create a link element
+          const link = pipWindow.document.createElement("link");
+          link.rel = "stylesheet";
+          link.href = (styleSheet as CSSStyleSheet).href || "";
+          if (link.href) {
+            pipWindow.document.head.appendChild(link);
+          }
+        }
+      });
+
+      // Set body styles
+      pipWindow.document.body.style.margin = "0";
+      pipWindow.document.body.style.padding = "0";
+      pipWindow.document.body.style.overflow = "hidden";
+
+      // Listen for window close
+      pipWindow.addEventListener("pagehide", () => {
+        pipWindowRef.current = null;
+        setIsPiP(false);
+      });
+
+      // Set state to trigger React Portal rendering
+      setIsPiP(true);
+    } catch (error) {
+      console.error("PiP error:", error);
+      alert(
+        "Failed to activate Picture-in-Picture mode. Error: " +
+          (error as Error).message
+      );
+      setIsPiP(false);
+    }
+  };
+
+  // Cleanup PiP window on unmount
+  useEffect(() => {
+    return () => {
+      if (pipWindowRef.current && !pipWindowRef.current.closed) {
+        pipWindowRef.current.close();
+      }
+    };
+  }, []);
+
   const addToHistory = (url: string) => {
     // Deduplicate and keep top 5
     const newHistory = [url, ...youtubeHistory.filter((u) => u !== url)].slice(
@@ -87,7 +186,7 @@ function App() {
   };
 
   return (
-    <div className="relative w-screen h-screen overflow-hidden font-sans">
+    <div className="pip-capture-root relative w-screen h-screen overflow-hidden font-sans">
       {/* Dynamic Background */}
       <Background
         scene={currentScene}
@@ -108,12 +207,24 @@ function App() {
             </span>
           </div>
 
-          <button
-            onClick={toggleFullscreen}
-            className="p-3 text-white/70 hover:text-white transition-colors rounded-full hover:bg-white/10"
-          >
-            {isFullscreen ? <Minimize2 size={20} /> : <Maximize2 size={20} />}
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={togglePiP}
+              className={`p-3 transition-colors rounded-full hover:bg-white/10 ${
+                isPiP ? "text-white" : "text-white/70 hover:text-white"
+              }`}
+              title="Picture-in-Picture"
+            >
+              <PictureInPicture2 size={20} />
+            </button>
+            <button
+              onClick={toggleFullscreen}
+              className="p-3 text-white/70 hover:text-white transition-colors rounded-full hover:bg-white/10"
+              title="Fullscreen"
+            >
+              {isFullscreen ? <Minimize2 size={20} /> : <Maximize2 size={20} />}
+            </button>
+          </div>
         </div>
 
         {/* Center Timer Area */}
@@ -256,6 +367,20 @@ function App() {
           </div>
         </div>
       </div>
+
+      {/* Render PiP content using Portal when PiP is active */}
+      {isPiP &&
+        pipWindowRef.current &&
+        createPortal(
+          <PiPContent
+            currentScene={currentScene}
+            currentEffect={currentEffect}
+            isBgMuted={isBgMuted}
+            timerMode={timerMode}
+            setTimerMode={setTimerMode}
+          />,
+          pipWindowRef.current.document.body
+        )}
     </div>
   );
 }
