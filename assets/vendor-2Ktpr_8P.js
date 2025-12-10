@@ -1,4 +1,4 @@
-import{q as X,p as re}from"./react-vendor-DAgaEvQw.js";var ne={exports:{}},ae={};/**
+import{t as X,s as re}from"./react-vendor-BfW9shI7.js";var ne={exports:{}},ae={};/**
  * @license React
  * scheduler.production.js
  *

@@ -10,6 +10,8 @@ interface EffectsSelectorProps {
   setShowVisualizer: (show: boolean) => void;
   showTimer: boolean;
   setShowTimer: (show: boolean) => void;
+  visualizerMode: "center" | "window";
+  setVisualizerMode: (mode: "center" | "window") => void;
 }
 
 export default function EffectsSelector({
@@ -19,6 +21,8 @@ export default function EffectsSelector({
   setShowVisualizer,
   showTimer,
   setShowTimer,
+  visualizerMode,
+  setVisualizerMode,
 }: EffectsSelectorProps) {
   return (
     <div className="flex flex-col h-full text-white">
@@ -54,6 +58,32 @@ export default function EffectsSelector({
               />
             </div>
           </button>
+
+          {/* Visualizer Mode Toggle - only show when visualizer is active */}
+          {showVisualizer && (
+            <div className="mt-2 flex rounded-lg bg-white/5 p-1 gap-1">
+              <button
+                onClick={() => setVisualizerMode("center")}
+                className={`flex-1 px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
+                  visualizerMode === "center"
+                    ? "bg-purple-500 text-white"
+                    : "text-white/60 hover:text-white hover:bg-white/10"
+                }`}
+              >
+                Center
+              </button>
+              <button
+                onClick={() => setVisualizerMode("window")}
+                className={`flex-1 px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
+                  visualizerMode === "window"
+                    ? "bg-purple-500 text-white"
+                    : "text-white/60 hover:text-white hover:bg-white/10"
+                }`}
+              >
+                Window
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Timer Toggle */}

@@ -16,7 +16,15 @@ import {
   renderCircular,
   renderTrapNation,
 } from "../utils/visualizerRenderers";
-import { Mic, PictureInPicture2, Settings, RotateCcw, X } from "lucide-react";
+import {
+  Mic,
+  PictureInPicture2,
+  Settings,
+  RotateCcw,
+  X,
+  Move,
+  Maximize,
+} from "lucide-react";
 
 type VisualizerMode = "bars" | "wave" | "circular" | "trap-nation";
 
@@ -43,11 +51,23 @@ const MIN_HEIGHT = 120;
 const DEFAULT_WIDTH = 400;
 const DEFAULT_HEIGHT = 200;
 
+type DisplayMode = "center" | "window";
+
 interface VisualizerProps {
   onClose?: () => void;
+  displayMode?: DisplayMode;
+  setDisplayMode?: (mode: DisplayMode) => void;
+  isCenterMode?: boolean;
+  allowPiP?: boolean;
 }
 
-export default function Visualizer({ onClose }: VisualizerProps) {
+export default function Visualizer({
+  onClose,
+  displayMode = "window",
+  setDisplayMode,
+  isCenterMode = false,
+  allowPiP = true,
+}: VisualizerProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const animationRef = useRef<number>(0);
@@ -602,35 +622,63 @@ export default function Visualizer({ onClose }: VisualizerProps) {
   return (
     <div
       ref={containerRef}
-      className="fixed cursor-move select-none"
-      style={{
-        left: position.x,
-        top: position.y,
-        width: size.width,
-        height: size.height,
-        zIndex: 9999,
-      }}
-      onMouseDown={handleDragStart}
+      className={`select-none ${
+        isCenterMode ? "relative mx-auto" : "fixed cursor-move"
+      }`}
+      style={
+        isCenterMode
+          ? {
+              zIndex: 1,
+              width: size.width,
+              height: size.height,
+              maxWidth: "100%",
+            }
+          : {
+              left: position.x,
+              top: position.y,
+              width: size.width,
+              height: size.height,
+              zIndex: 9999,
+            }
+      }
+      onMouseDown={isCenterMode ? undefined : handleDragStart}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
       {/* Main visualizer container */}
       <div
-        className="relative w-full h-full rounded-2xl overflow-hidden backdrop-blur-md transition-opacity duration-300"
+        className={`relative w-full h-full rounded-2xl overflow-hidden transition-all duration-300 ${
+          isCenterMode && !isHovered && !showSettings ? "" : "backdrop-blur-md"
+        }`}
         style={{
           background:
-            "linear-gradient(135deg, rgba(15, 15, 30, 0.85), rgba(30, 20, 50, 0.85))",
-          border: "1px solid rgba(168, 85, 247, 0.3)",
+            isCenterMode && !isHovered && !showSettings
+              ? "transparent"
+              : "linear-gradient(135deg, rgba(15, 15, 30, 0.85), rgba(30, 20, 50, 0.85))",
+          border:
+            isCenterMode && !isHovered && !showSettings
+              ? "1px solid transparent"
+              : "1px solid rgba(168, 85, 247, 0.3)",
           boxShadow:
-            "0 8px 32px rgba(0, 0, 0, 0.4), 0 0 60px rgba(168, 85, 247, 0.1)",
+            isCenterMode && !isHovered && !showSettings
+              ? "none"
+              : "0 8px 32px rgba(0, 0, 0, 0.4), 0 0 60px rgba(168, 85, 247, 0.1)",
         }}
       >
-        {/* Header */}
+        {/* Header - in center mode, hide toolbar buttons unless hovered */}
         <div
-          className="absolute top-0 left-0 right-0 flex items-center justify-between px-3 py-2 z-10 transition-opacity duration-300"
+          className={`absolute top-0 left-0 right-0 flex items-center justify-between px-3 py-2 z-10 transition-opacity duration-300 ${
+            isCenterMode && !isHovered && !showSettings ? "opacity-0" : ""
+          }`}
           style={{
             background: "linear-gradient(180deg, rgba(0,0,0,0.4), transparent)",
-            opacity: showSettings || isHovered ? 1 : 0.4,
+            opacity: isCenterMode
+              ? isHovered || showSettings
+                ? 1
+                : 0
+              : showSettings || isHovered
+              ? 1
+              : 0.4,
           }}
         >
           <span className="text-xs font-medium text-white/60 uppercase tracking-wider">
@@ -650,17 +698,19 @@ export default function Visualizer({ onClose }: VisualizerProps) {
               <Mic size={14} />
             </button>
             {/* PiP Button */}
-            <button
-              onClick={handlePiPClick}
-              className={`p-1.5 text-xs font-medium rounded-md transition-colors cursor-pointer ${
-                isPiP
-                  ? "text-purple-400 bg-purple-500/20 hover:bg-purple-500/30"
-                  : "text-white/80 bg-white/10 hover:bg-white/20"
-              }`}
-              title={isPiP ? "Close PiP" : "Open in PiP"}
-            >
-              <PictureInPicture2 size={14} />
-            </button>
+            {allowPiP && (
+              <button
+                onClick={handlePiPClick}
+                className={`p-1.5 text-xs font-medium rounded-md transition-colors cursor-pointer ${
+                  isPiP
+                    ? "text-purple-400 bg-purple-500/20 hover:bg-purple-500/30"
+                    : "text-white/80 bg-white/10 hover:bg-white/20"
+                }`}
+                title={isPiP ? "Close PiP" : "Open in PiP"}
+              >
+                <PictureInPicture2 size={14} />
+              </button>
+            )}
             {/* Settings Button */}
             <button
               onClick={handleSettingsClick}
@@ -686,6 +736,33 @@ export default function Visualizer({ onClose }: VisualizerProps) {
                 </option>
               ))}
             </select>
+            {/* Display Mode Toggle Button */}
+            {setDisplayMode && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setDisplayMode(
+                    displayMode === "center" ? "window" : "center"
+                  );
+                }}
+                className={`p-1.5 text-xs font-medium rounded-md transition-colors cursor-pointer ${
+                  displayMode === "center"
+                    ? "text-cyan-400 bg-cyan-500/20 hover:bg-cyan-500/30"
+                    : "text-white/80 bg-white/10 hover:bg-white/20"
+                }`}
+                title={
+                  displayMode === "center"
+                    ? "Switch to window mode"
+                    : "Switch to center mode"
+                }
+              >
+                {displayMode === "center" ? (
+                  <Move size={14} />
+                ) : (
+                  <Maximize size={14} />
+                )}
+              </button>
+            )}
             {/* Close Button */}
             <button
               onClick={handleCloseClick}
@@ -709,40 +786,42 @@ export default function Visualizer({ onClose }: VisualizerProps) {
         />
 
         {/* Resize handles */}
-        {/* Corners */}
-        <div
-          className="resize-handle absolute top-0 left-0 w-4 h-4 cursor-nw-resize"
-          onMouseDown={(e) => handleResizeStart(e, "nw")}
-        />
-        <div
-          className="resize-handle absolute top-0 right-0 w-4 h-4 cursor-ne-resize"
-          onMouseDown={(e) => handleResizeStart(e, "ne")}
-        />
-        <div
-          className="resize-handle absolute bottom-0 left-0 w-4 h-4 cursor-sw-resize"
-          onMouseDown={(e) => handleResizeStart(e, "sw")}
-        />
-        <div
-          className="resize-handle absolute bottom-0 right-0 w-4 h-4 cursor-se-resize"
-          onMouseDown={(e) => handleResizeStart(e, "se")}
-        />
-        {/* Edges */}
-        <div
-          className="resize-handle absolute top-0 left-4 right-4 h-2 cursor-n-resize"
-          onMouseDown={(e) => handleResizeStart(e, "n")}
-        />
-        <div
-          className="resize-handle absolute bottom-0 left-4 right-4 h-2 cursor-s-resize"
-          onMouseDown={(e) => handleResizeStart(e, "s")}
-        />
-        <div
-          className="resize-handle absolute left-0 top-4 bottom-4 w-2 cursor-w-resize"
-          onMouseDown={(e) => handleResizeStart(e, "w")}
-        />
-        <div
-          className="resize-handle absolute right-0 top-4 bottom-4 w-2 cursor-e-resize"
-          onMouseDown={(e) => handleResizeStart(e, "e")}
-        />
+        <>
+          {/* Corners */}
+          <div
+            className="resize-handle absolute top-0 left-0 w-4 h-4 cursor-nw-resize"
+            onMouseDown={(e) => handleResizeStart(e, "nw")}
+          />
+          <div
+            className="resize-handle absolute top-0 right-0 w-4 h-4 cursor-ne-resize"
+            onMouseDown={(e) => handleResizeStart(e, "ne")}
+          />
+          <div
+            className="resize-handle absolute bottom-0 left-0 w-4 h-4 cursor-sw-resize"
+            onMouseDown={(e) => handleResizeStart(e, "sw")}
+          />
+          <div
+            className="resize-handle absolute bottom-0 right-0 w-4 h-4 cursor-se-resize"
+            onMouseDown={(e) => handleResizeStart(e, "se")}
+          />
+          {/* Edges */}
+          <div
+            className="resize-handle absolute top-0 left-4 right-4 h-2 cursor-n-resize"
+            onMouseDown={(e) => handleResizeStart(e, "n")}
+          />
+          <div
+            className="resize-handle absolute bottom-0 left-4 right-4 h-2 cursor-s-resize"
+            onMouseDown={(e) => handleResizeStart(e, "s")}
+          />
+          <div
+            className="resize-handle absolute left-0 top-4 bottom-4 w-2 cursor-w-resize"
+            onMouseDown={(e) => handleResizeStart(e, "w")}
+          />
+          <div
+            className="resize-handle absolute right-0 top-4 bottom-4 w-2 cursor-e-resize"
+            onMouseDown={(e) => handleResizeStart(e, "e")}
+          />
+        </>
       </div>
     </div>
   );

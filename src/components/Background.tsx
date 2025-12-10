@@ -191,6 +191,108 @@ export default function Background({
     },
   };
 
+  const renderVideo = () => (
+    <>
+      {/* CSS keyframes for animation */}
+      <style>{`
+                @keyframes modalFadeIn {
+                  from { opacity: 0; }
+                  to { opacity: 1; }
+                }
+              `}</style>
+
+      {/* Modal backdrop - only visible in modal mode */}
+      {isModal && (
+        <div
+          className="fixed inset-0 bg-black/80 backdrop-blur-sm"
+          style={{
+            zIndex: 99998,
+            animation: "modalFadeIn 0.3s ease-out forwards",
+          }}
+          onClick={handleCloseModal}
+        />
+      )}
+
+      {/* Video/YouTube player container - changes position based on modal state */}
+      <div
+        className={
+          isModal
+            ? "fixed w-[80vw] max-w-4xl aspect-video left-1/2 top-1/2 rounded-xl overflow-hidden shadow-2xl border border-white/10 bg-black"
+            : "fixed inset-0 w-full h-full"
+        }
+        style={
+          isModal
+            ? {
+                zIndex: 99999,
+                transform: "translate(-50%, -50%)",
+                animation: "modalFadeIn 0.3s ease-out forwards",
+              }
+            : {
+                zIndex: -1, // Behind everything when in background mode
+                pointerEvents: "none",
+              }
+        }
+      >
+        {/* Instructional text & close button - only in modal mode */}
+        {isModal && (
+          <>
+            {scene.type === "youtube" &&
+              internalShowYoutubeModal &&
+              !hasStartedPlayingRef.current && (
+                <div className="absolute top-3 left-3 z-10 px-3 py-1.5 rounded-lg bg-black/60 text-white/90 text-sm">
+                  Click the video to start playback
+                </div>
+              )}
+            <button
+              onClick={handleCloseModal}
+              className="absolute top-3 right-3 z-10 w-8 h-8 flex items-center justify-center rounded-full bg-black/60 hover:bg-black/80 text-white/80 hover:text-white transition-all cursor-pointer"
+            >
+              ✕
+            </button>
+          </>
+        )}
+
+        {scene.type === "video" ? (
+          <video
+            autoPlay
+            loop
+            muted={isMuted}
+            controls={isModal}
+            playsInline
+            className="w-full h-full object-cover"
+            key={scene.url}
+          >
+            <source src={scene.url} type="video/mp4" />
+          </video>
+        ) : (
+          /* Single YouTube player */
+          <YouTube
+            videoId={getYoutubeVideoId(scene.url) || ""}
+            opts={youtubeOpts}
+            onReady={onPlayerReady}
+            onStateChange={onPlayerStateChange}
+            onError={onPlayerError}
+            className="w-full h-full"
+            iframeClassName={`w-full h-full ${
+              isModal ? "" : "pointer-events-none"
+            }`}
+            style={{ width: "100%", height: "100%" }}
+            key={scene.url} // Only reload when scene URL changes
+          />
+        )}
+      </div>
+    </>
+  );
+
+  const renderEffect = () => (
+    <div
+      className="absolute inset-0 w-full h-full pointer-events-none"
+      style={{ zIndex: 1 }}
+    >
+      <EffectsLayer type={effect} />
+    </div>
+  );
+
   return (
     <div className="absolute inset-0 w-full h-full -z-10 overflow-hidden transition-all duration-700 ease-in-out bg-black">
       {scene.type === "color" && (
@@ -236,99 +338,7 @@ export default function Background({
           <div className="absolute inset-0 bg-black/20" />
 
           {/* Single Video/YouTube player rendered via Portal - styling changes based on modal state */}
-          {createPortal(
-            <>
-              {/* CSS keyframes for animation */}
-              <style>{`
-                @keyframes modalFadeIn {
-                  from { opacity: 0; }
-                  to { opacity: 1; }
-                }
-              `}</style>
-
-              {/* Modal backdrop - only visible in modal mode */}
-              {isModal && (
-                <div
-                  className="fixed inset-0 bg-black/80 backdrop-blur-sm"
-                  style={{
-                    zIndex: 99998,
-                    animation: "modalFadeIn 0.3s ease-out forwards",
-                  }}
-                  onClick={handleCloseModal}
-                />
-              )}
-
-              {/* Video/YouTube player container - changes position based on modal state */}
-              <div
-                className={
-                  isModal
-                    ? "fixed w-[80vw] max-w-4xl aspect-video left-1/2 top-1/2 rounded-xl overflow-hidden shadow-2xl border border-white/10 bg-black"
-                    : "fixed inset-0 w-full h-full"
-                }
-                style={
-                  isModal
-                    ? {
-                        zIndex: 99999,
-                        transform: "translate(-50%, -50%)",
-                        animation: "modalFadeIn 0.3s ease-out forwards",
-                      }
-                    : {
-                        zIndex: -1, // Behind everything when in background mode
-                        pointerEvents: "none",
-                      }
-                }
-              >
-                {/* Instructional text & close button - only in modal mode */}
-                {isModal && (
-                  <>
-                    {scene.type === "youtube" &&
-                      internalShowYoutubeModal &&
-                      !hasStartedPlayingRef.current && (
-                        <div className="absolute top-3 left-3 z-10 px-3 py-1.5 rounded-lg bg-black/60 text-white/90 text-sm">
-                          Click the video to start playback
-                        </div>
-                      )}
-                    <button
-                      onClick={handleCloseModal}
-                      className="absolute top-3 right-3 z-10 w-8 h-8 flex items-center justify-center rounded-full bg-black/60 hover:bg-black/80 text-white/80 hover:text-white transition-all cursor-pointer"
-                    >
-                      ✕
-                    </button>
-                  </>
-                )}
-
-                {scene.type === "video" ? (
-                  <video
-                    autoPlay
-                    loop
-                    muted={isMuted}
-                    controls={isModal}
-                    playsInline
-                    className="w-full h-full object-cover"
-                    key={scene.url}
-                  >
-                    <source src={scene.url} type="video/mp4" />
-                  </video>
-                ) : (
-                  /* Single YouTube player */
-                  <YouTube
-                    videoId={getYoutubeVideoId(scene.url) || ""}
-                    opts={youtubeOpts}
-                    onReady={onPlayerReady}
-                    onStateChange={onPlayerStateChange}
-                    onError={onPlayerError}
-                    className="w-full h-full"
-                    iframeClassName={`w-full h-full ${
-                      isModal ? "" : "pointer-events-none"
-                    }`}
-                    style={{ width: "100%", height: "100%" }}
-                    key={scene.url} // Only reload when scene URL changes
-                  />
-                )}
-              </div>
-            </>,
-            document.body
-          )}
+          {isPiP ? renderVideo() : createPortal(renderVideo(), document.body)}
         </>
       )}
 
@@ -367,24 +377,7 @@ export default function Background({
       )}
 
       {/* Canvas Effects - rendered via Portal to appear above YouTube iframe (except in PiP) */}
-      {isPiP ? (
-        <div
-          className="absolute inset-0 w-full h-full pointer-events-none"
-          style={{ zIndex: 1 }}
-        >
-          <EffectsLayer type={effect} />
-        </div>
-      ) : (
-        createPortal(
-          <div
-            className="fixed inset-0 w-full h-full pointer-events-none"
-            style={{ zIndex: 1 }}
-          >
-            <EffectsLayer type={effect} />
-          </div>,
-          document.body
-        )
-      )}
+      {isPiP ? renderEffect() : createPortal(renderEffect(), document.body)}
     </div>
   );
 }

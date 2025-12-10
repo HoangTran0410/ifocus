@@ -79,6 +79,11 @@ function App() {
     false
   );
 
+  // Visualizer display mode: "center" replaces timer, "window" is draggable
+  const [visualizerMode, setVisualizerMode] = useLocalStorage<
+    "center" | "window"
+  >("zen_visualizer_mode_display", "window");
+
   // Timer visibility toggle
   const [showTimer, setShowTimer] = useLocalStorage<boolean>(
     "zen_show_timer",
@@ -226,9 +231,13 @@ function App() {
         setShowVideoModal={setShowVideoModal}
       />
 
-      {/* Visualizer - independent of other effects */}
-      {showVisualizer && (
-        <Visualizer onClose={() => setShowVisualizer(false)} />
+      {/* Visualizer in Window mode - independent of other effects */}
+      {showVisualizer && visualizerMode === "window" && (
+        <Visualizer
+          onClose={() => setShowVisualizer(false)}
+          displayMode={visualizerMode}
+          setDisplayMode={setVisualizerMode}
+        />
       )}
 
       {/* Main Content Layer */}
@@ -267,9 +276,18 @@ function App() {
           </div>
         </div>
 
-        {/* Center Timer Area */}
+        {/* Center Timer/Visualizer Area */}
         <div className="flex-1 flex items-center justify-center p-4 pointer-events-auto">
-          {showTimer && (
+          {showVisualizer && visualizerMode === "center" ? (
+            <div className={`transition-all duration-500 w-full max-w-2xl`}>
+              <Visualizer
+                onClose={() => setShowVisualizer(false)}
+                displayMode={visualizerMode}
+                setDisplayMode={setVisualizerMode}
+                isCenterMode
+              />
+            </div>
+          ) : showTimer ? (
             <div className={`transition-all duration-500`}>
               <Timer
                 mode={timerMode}
@@ -277,7 +295,7 @@ function App() {
                 onClose={() => setShowTimer(false)}
               />
             </div>
-          )}
+          ) : null}
         </div>
 
         {/* Bottom Dock / Navigation */}
@@ -405,6 +423,8 @@ function App() {
                   setShowVisualizer={setShowVisualizer}
                   showTimer={showTimer}
                   setShowTimer={setShowTimer}
+                  visualizerMode={visualizerMode}
+                  setVisualizerMode={setVisualizerMode}
                 />
               )}
             </div>
@@ -424,6 +444,8 @@ function App() {
             setTimerMode={setTimerMode}
             showTimer={showTimer}
             setShowTimer={setShowTimer}
+            showVisualizer={showVisualizer}
+            setShowVisualizer={setShowVisualizer}
           />,
           pipWindowRef.current.document.body
         )}

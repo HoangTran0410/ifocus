@@ -9,6 +9,9 @@ const Background = loadable(() => import("./Background"), {
 const Timer = loadable(() => import("./Timer"), {
   fallback: LoadingFallback,
 });
+const Visualizer = loadable(() => import("./Visualizer"), {
+  fallback: LoadingFallback,
+});
 
 interface PiPContentProps {
   currentScene: Scene;
@@ -18,6 +21,8 @@ interface PiPContentProps {
   setTimerMode: (mode: TimerMode) => void;
   showTimer: boolean;
   setShowTimer: (show: boolean) => void;
+  showVisualizer: boolean;
+  setShowVisualizer: (show: boolean) => void;
 }
 
 export default function PiPContent({
@@ -28,6 +33,8 @@ export default function PiPContent({
   setTimerMode,
   showTimer,
   setShowTimer,
+  showVisualizer,
+  setShowVisualizer,
 }: PiPContentProps) {
   const [isReady, setIsReady] = useState(false);
 
@@ -62,15 +69,23 @@ export default function PiPContent({
 
       {/* Main Content Layer */}
       <div className="relative z-10 w-full h-full flex flex-col pointer-events-none">
-        {/* Center Timer Area */}
+        {/* Center Area - Visualizer takes priority over Timer */}
         <div className="flex-1 flex items-center justify-center p-4 pointer-events-auto">
-          {showTimer && (
+          {showVisualizer ? (
+            <div className="w-full max-w-2xl">
+              <Visualizer
+                onClose={() => setShowVisualizer(false)}
+                isCenterMode
+                allowPiP={false}
+              />
+            </div>
+          ) : showTimer ? (
             <Timer
               mode={timerMode}
               setMode={setTimerMode}
               onClose={() => setShowTimer(false)}
             />
-          )}
+          ) : null}
         </div>
       </div>
     </div>

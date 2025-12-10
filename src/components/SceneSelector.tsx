@@ -633,10 +633,10 @@ export default function SceneSelector({
   );
 
   const renderVideoTab = () => (
-    <div className="flex flex-col flex-1 min-h-0">
-      {/* Header */}
-      <div className="px-2">
-        <div className="flex items-center gap-2 mb-2">
+    <>
+      {/* Header - fixed at top */}
+      <div className="flex-shrink-0 p-2">
+        <div className="flex items-center gap-2">
           {/* Audio Control */}
           <button
             onClick={() => setIsBgMuted(!isBgMuted)}
@@ -753,7 +753,7 @@ export default function SceneSelector({
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 
   const renderCustomTab = () => (
@@ -789,7 +789,12 @@ export default function SceneSelector({
       {/* Tabs */}
       {renderTabs()}
 
-      <div className="flex-1 overflow-y-auto custom-scrollbar p-2">
+      <div
+        className={
+          "flex-1 custom-scrollbar" +
+          (activeTab === "video" ? " overflow-hidden" : " overflow-y-auto p-2")
+        }
+      >
         {/* COLOR TAB */}
         <div className={activeTab === "color" ? "block" : "hidden"}>
           {visitedTabs.has("color") && renderColorTab()}
@@ -801,7 +806,11 @@ export default function SceneSelector({
         </div>
 
         {/* VIDEO TAB */}
-        <div className={activeTab === "video" ? "block" : "hidden"}>
+        <div
+          className={
+            activeTab === "video" ? "flex flex-col h-full min-h-0" : "hidden"
+          }
+        >
           {visitedTabs.has("video") && renderVideoTab()}
         </div>
 
