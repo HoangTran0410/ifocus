@@ -16,6 +16,8 @@ interface PiPContentProps {
   isBgMuted: boolean;
   timerMode: TimerMode;
   setTimerMode: (mode: TimerMode) => void;
+  showTimer: boolean;
+  setShowTimer: (show: boolean) => void;
 }
 
 export default function PiPContent({
@@ -24,6 +26,8 @@ export default function PiPContent({
   isBgMuted,
   timerMode,
   setTimerMode,
+  showTimer,
+  setShowTimer,
 }: PiPContentProps) {
   const [isReady, setIsReady] = useState(false);
 
@@ -39,27 +43,34 @@ export default function PiPContent({
 
   if (!isReady) {
     return (
-      <div className="relative w-full h-full overflow-hidden font-sans bg-black flex items-center justify-center">
+      <div className="relative w-screen h-screen overflow-hidden font-sans bg-black flex items-center justify-center">
         <div className="text-white text-xl">Loading...</div>
       </div>
     );
   }
 
   return (
-    <div className="relative w-full h-full overflow-hidden font-sans">
+    <div className="relative w-screen h-screen overflow-hidden font-sans">
       {/* Dynamic Background */}
       <Background
         scene={currentScene}
         effect={currentEffect}
         isMuted={isBgMuted}
-        disableYouTube={currentScene.type === "youtube"}
+        disableYouTube={true}
+        isPiP={true}
       />
 
       {/* Main Content Layer */}
       <div className="relative z-10 w-full h-full flex flex-col pointer-events-none">
         {/* Center Timer Area */}
         <div className="flex-1 flex items-center justify-center p-4 pointer-events-auto">
-          <Timer mode={timerMode} setMode={setTimerMode} />
+          {showTimer && (
+            <Timer
+              mode={timerMode}
+              setMode={setTimerMode}
+              onClose={() => setShowTimer(false)}
+            />
+          )}
         </div>
       </div>
     </div>

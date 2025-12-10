@@ -607,11 +607,29 @@ export default function EffectsLayer({ type }: EffectsLayerProps) {
     let animationFrameId: number;
     let particles: Particle[] = [];
 
+    // Use parent container dimensions instead of window (works in PiP)
     const resize = () => {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
+      const parent = canvas.parentElement;
+      if (parent) {
+        canvas.width = parent.clientWidth || window.innerWidth;
+        canvas.height = parent.clientHeight || window.innerHeight;
+      } else {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+      }
     };
 
+    // Use ResizeObserver for container-based resizing (works in PiP)
+    const resizeObserver = new ResizeObserver(() => {
+      resize();
+    });
+
+    const parent = canvas.parentElement;
+    if (parent) {
+      resizeObserver.observe(parent);
+    }
+
+    // Also listen to window resize as fallback
     window.addEventListener("resize", resize);
     resize();
 
@@ -678,6 +696,7 @@ export default function EffectsLayer({ type }: EffectsLayerProps) {
     render();
 
     return () => {
+      resizeObserver.disconnect();
       window.removeEventListener("resize", resize);
       cancelAnimationFrame(animationFrameId);
       ripplesRef.current = [];

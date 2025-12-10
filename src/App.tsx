@@ -79,16 +79,19 @@ function App() {
     false
   );
 
+  // Timer visibility toggle
+  const [showTimer, setShowTimer] = useLocalStorage<boolean>(
+    "zen_show_timer",
+    true
+  );
+
   const [tasks, setTasks] = useLocalStorage<Task[]>("zen_tasks", []);
   const [notes, setNotes] = useLocalStorage<Note[]>("zen_notes", []);
-
-  // YouTube State
 
   const [isBgMuted, setIsBgMuted] = useLocalStorage<boolean>(
     "zen_bg_muted",
     true
-  ); // Background video mute state
-
+  );
   const [timerMode, setTimerMode] = useLocalStorage<TimerMode>(
     "zen_timerMode",
     "pomodoro"
@@ -107,6 +110,13 @@ function App() {
   const [isPiP, setIsPiP] = useState(false);
   const [showVideoModal, setShowVideoModal] = useState(false);
   const pipWindowRef = useRef<Window | null>(null);
+
+  // auto open effect panel when timer is closed, and no other panel is open
+  useEffect(() => {
+    if (!showTimer && activePanel === "none") {
+      setActivePanel("effects");
+    }
+  }, [showTimer]);
 
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
@@ -259,9 +269,15 @@ function App() {
 
         {/* Center Timer Area */}
         <div className="flex-1 flex items-center justify-center p-4 pointer-events-auto">
-          <div className={`transition-all duration-500`}>
-            <Timer mode={timerMode} setMode={setTimerMode} />
-          </div>
+          {showTimer && (
+            <div className={`transition-all duration-500`}>
+              <Timer
+                mode={timerMode}
+                setMode={setTimerMode}
+                onClose={() => setShowTimer(false)}
+              />
+            </div>
+          )}
         </div>
 
         {/* Bottom Dock / Navigation */}
@@ -387,6 +403,8 @@ function App() {
                   setEffect={setCurrentEffect}
                   showVisualizer={showVisualizer}
                   setShowVisualizer={setShowVisualizer}
+                  showTimer={showTimer}
+                  setShowTimer={setShowTimer}
                 />
               )}
             </div>
@@ -404,6 +422,8 @@ function App() {
             isBgMuted={isBgMuted}
             timerMode={timerMode}
             setTimerMode={setTimerMode}
+            showTimer={showTimer}
+            setShowTimer={setShowTimer}
           />,
           pipWindowRef.current.document.body
         )}

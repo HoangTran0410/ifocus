@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Play, Pause, RotateCcw } from "lucide-react";
+import { Play, Pause, RotateCcw, X } from "lucide-react";
 import { TIMER_SETTINGS } from "../constants";
 import { useLocalStorage } from "../hooks/useLocalStorage";
 import type { TimerMode } from "../types";
@@ -8,12 +8,13 @@ interface TimerProps {
   mode: TimerMode;
   setMode: (mode: TimerMode) => void;
   onTick?: () => void; // Optional callback for ticks
+  onClose?: () => void; // Optional callback to hide timer
 }
 
 // Type for storing time left for each mode
 type TimerStates = Record<TimerMode, number>;
 
-export default function Timer({ mode, setMode }: TimerProps) {
+export default function Timer({ mode, setMode, onClose }: TimerProps) {
   // Store timeLeft for each mode separately
   const [timerStates, setTimerStates] = useLocalStorage<TimerStates>(
     "zen_timer_states",
@@ -115,9 +116,9 @@ export default function Timer({ mode, setMode }: TimerProps) {
   }, [timeLeft, mode]);
 
   return (
-    <div className="group flex flex-col items-center justify-center sm:p-8 p-4 transition-all duration-500 ease-in-out text-white w-full max-w-md mx-auto hover:bg-black/40 hover:backdrop-blur-md rounded-3xl font-sans">
-      {/* Mode Selectors - Fades in on hover */}
-      <div className="flex sm:space-x-2 space-x-1 mb-8 p-1 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-4 group-hover:translate-y-0 bg-white/10">
+    <div className="group relative flex items-center justify-center p-8 transition-all duration-500 ease-in-out text-white max-w-md mx-auto hover:bg-black/40 hover:backdrop-blur-md rounded-3xl font-sans">
+      {/* Mode Selectors - Absolutely positioned above timer display */}
+      <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-4 flex sm:space-x-2 space-x-1 p-1 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-4 group-hover:translate-y-0 bg-white/10">
         {(
           [
             "pomodoro",
@@ -149,16 +150,14 @@ export default function Timer({ mode, setMode }: TimerProps) {
         ))}
       </div>
 
-      {/* Timer Display - Always visible but enhances on hover */}
-      {/* Changed font-thin to font-bold as requested */}
-      <div className="timer-display text-7xl sm:text-9xl font-bold tracking-tight mb-8 select-none drop-shadow-2xl transition-transform duration-500 group-hover:scale-105">
+      {/* Timer Display - Centered, always visible, enhances on hover */}
+      <div className="timer-display text-7xl sm:text-9xl font-bold tracking-tight select-none drop-shadow-2xl transition-transform duration-500 group-hover:scale-105">
         {mode === "clock" ? formatClock(currentTime) : formatTimer(timeLeft)}
       </div>
 
-      {/* Controls - Fades in on hover */}
-      {/* Only show controls if NOT in clock mode */}
+      {/* Controls - Absolutely positioned below timer display */}
       {mode !== "clock" && (
-        <div className="flex items-center space-x-3 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-4 group-hover:translate-y-0">
+        <div className="absolute left-1/2 -translate-x-1/2 top-full mt-4 flex items-center space-x-3 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-4 group-hover:translate-y-0">
           <button
             onClick={toggleTimer}
             className="bg-white text-black sm:p-6 p-4 rounded-full hover:scale-105 transition-transform shadow-lg active:scale-95"
@@ -183,10 +182,16 @@ export default function Timer({ mode, setMode }: TimerProps) {
         </div>
       )}
 
-      {/* Hint when hidden */}
-      {/* <div className="absolute bottom-4 text-xs text-white/30 uppercase tracking-widest opacity-100 group-hover:opacity-0 transition-opacity duration-300 pointer-events-none font-medium">
-        {mode === "clock" ? "Current Time" : "Hover to Control"}
-      </div> */}
+      {/* Close button - Top right corner */}
+      {onClose && (
+        <button
+          onClick={onClose}
+          className="absolute top-2 right-2 p-2 rounded-full bg-white/10 text-white/50 hover:bg-white/20 hover:text-white transition-all opacity-0 group-hover:opacity-100 cursor-pointer"
+          title="Hide Timer"
+        >
+          <X size={16} />
+        </button>
+      )}
     </div>
   );
 }

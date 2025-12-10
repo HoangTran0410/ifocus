@@ -1,5 +1,5 @@
 import React from "react";
-import { BarChart } from "lucide-react";
+import { BarChart, Clock } from "lucide-react";
 import type { EffectType } from "../types";
 import { EFFECTS } from "../constants";
 
@@ -8,6 +8,8 @@ interface EffectsSelectorProps {
   setEffect: (effect: EffectType) => void;
   showVisualizer: boolean;
   setShowVisualizer: (show: boolean) => void;
+  showTimer: boolean;
+  setShowTimer: (show: boolean) => void;
 }
 
 export default function EffectsSelector({
@@ -15,6 +17,8 @@ export default function EffectsSelector({
   setEffect,
   showVisualizer,
   setShowVisualizer,
+  showTimer,
+  setShowTimer,
 }: EffectsSelectorProps) {
   return (
     <div className="flex flex-col h-full text-white">
@@ -46,6 +50,39 @@ export default function EffectsSelector({
               <div
                 className={`w-4 h-4 rounded-full bg-white shadow transition-transform ${
                   showVisualizer ? "translate-x-6" : "translate-x-0"
+                }`}
+              />
+            </div>
+          </button>
+        </div>
+
+        {/* Timer Toggle */}
+        <div className="mb-4">
+          <button
+            onClick={() => setShowTimer(!showTimer)}
+            className={`w-full flex items-center justify-between p-4 rounded-xl border-2 transition-all ${
+              showTimer
+                ? "bg-gradient-to-r from-blue-500/30 to-cyan-500/30 border-blue-400 shadow-xl"
+                : "bg-white/5 border-transparent hover:bg-white/10"
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              <Clock size={24} />
+              <div className="text-left">
+                <div className="font-medium text-white">Timer Display</div>
+                <div className="text-xs text-white/60">
+                  Show or hide the timer
+                </div>
+              </div>
+            </div>
+            <div
+              className={`w-12 h-6 rounded-full p-1 transition-colors ${
+                showTimer ? "bg-blue-500" : "bg-white/20"
+              }`}
+            >
+              <div
+                className={`w-4 h-4 rounded-full bg-white shadow transition-transform ${
+                  showTimer ? "translate-x-6" : "translate-x-0"
                 }`}
               />
             </div>

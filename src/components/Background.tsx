@@ -19,6 +19,7 @@ interface BackgroundProps {
   disableYouTube?: boolean; // Option to disable YouTube for PiP
   showVideoModal?: boolean;
   setShowVideoModal?: (show: boolean) => void;
+  isPiP?: boolean; // When true, don't use portals (they'd render to wrong document)
 }
 
 export default function Background({
@@ -28,6 +29,7 @@ export default function Background({
   disableYouTube = false,
   showVideoModal = false,
   setShowVideoModal = (_: boolean) => {},
+  isPiP = false,
 }: BackgroundProps) {
   const playerRef = useRef<any>(null);
   const [imageLoaded, setImageLoaded] = useState(false);
@@ -364,15 +366,24 @@ export default function Background({
         </div>
       )}
 
-      {/* Canvas Effects - rendered via Portal to appear above YouTube iframe */}
-      {createPortal(
+      {/* Canvas Effects - rendered via Portal to appear above YouTube iframe (except in PiP) */}
+      {isPiP ? (
         <div
-          className="fixed inset-0 w-full h-full pointer-events-none"
+          className="absolute inset-0 w-full h-full pointer-events-none"
           style={{ zIndex: 1 }}
         >
           <EffectsLayer type={effect} />
-        </div>,
-        document.body
+        </div>
+      ) : (
+        createPortal(
+          <div
+            className="fixed inset-0 w-full h-full pointer-events-none"
+            style={{ zIndex: 1 }}
+          >
+            <EffectsLayer type={effect} />
+          </div>,
+          document.body
+        )
       )}
     </div>
   );
