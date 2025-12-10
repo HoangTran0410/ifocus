@@ -199,7 +199,7 @@ function App() {
       />
 
       {/* Main Content Layer */}
-      <div className="relative z-10 w-full h-full flex flex-col pointer-events-none">
+      <div className="relative z-10 w-full h-full flex flex-col">
         {/* Header / Top Bar */}
         <div className="flex justify-between items-center p-6 pointer-events-auto">
           <div className="flex items-center gap-3" onClick={openGithub}>

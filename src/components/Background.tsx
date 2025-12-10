@@ -1,4 +1,5 @@
-import React, { useRef, useEffect, useState } from "react";
+import React, { useRef, useEffect, useState, useCallback } from "react";
+import { createPortal } from "react-dom";
 import YouTube, { YouTubeProps } from "react-youtube";
 import { Scene, EffectType } from "../types";
 import { EffectsLayer } from "./EffectsLayer";
@@ -19,6 +20,10 @@ export const Background: React.FC<BackgroundProps> = ({
   const playerRef = useRef<any>(null);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [youtubeError, setYoutubeError] = useState(false);
+  // State to control whether YouTube player should be shown in modal for user interaction
+  const [showYoutubeModal, setShowYoutubeModal] = useState(false);
+  // Track if we've ever successfully started playback
+  const hasStartedPlayingRef = useRef(false);
 
   const getYoutubeVideoId = (url: string) => {
     const regExp =
@@ -27,9 +32,11 @@ export const Background: React.FC<BackgroundProps> = ({
     return match && match[2].length === 11 ? match[2] : null;
   };
 
-  // Reset image loaded state when scene changes
+  // Reset states when scene changes
   useEffect(() => {
     setImageLoaded(false);
+    setShowYoutubeModal(false);
+    hasStartedPlayingRef.current = false;
   }, [scene.url]);
 
   // Handle mute/unmute changes
@@ -43,23 +50,48 @@ export const Background: React.FC<BackgroundProps> = ({
     }
   }, [isMuted, scene.type]);
 
-  // Handle window click for YouTube autoplay
+  // Check if YouTube is playing and handle modal visibility
+  const checkAndShowModal = useCallback(() => {
+    // setShowYoutubeModal(true);
+    if (!playerRef.current || hasStartedPlayingRef.current) return;
+
+    try {
+      const playerState = playerRef.current.getPlayerState();
+      // YouTube player states: -1 (unstarted), 0 (ended), 1 (playing), 2 (paused), 3 (buffering), 5 (cued)
+      if (playerState !== 1 && playerState !== 3) {
+        // Try to play programmatically first
+        playerRef.current.playVideo();
+
+        // Set a timeout to check if playback actually started
+        setTimeout(() => {
+          if (!playerRef.current) return;
+          const newState = playerRef.current.getPlayerState();
+          if (
+            newState !== 1 &&
+            newState !== 3 &&
+            !hasStartedPlayingRef.current
+          ) {
+            // Playback didn't start, show the modal for user to click directly
+            setShowYoutubeModal(true);
+          }
+        }, 500);
+      }
+    } catch (e) {
+      console.error("Error checking YouTube player state:", e);
+    }
+  }, []);
+
+  // Handle window click for YouTube autoplay - now shows modal if autoplay fails
   useEffect(() => {
-    if (scene.type !== "youtube") return;
+    if (scene.type !== "youtube" || disableYouTube) return;
 
     const handleWindowClick = () => {
-      if (playerRef.current) {
-        const playerState = playerRef.current.getPlayerState();
-        // YouTube player states: -1 (unstarted), 0 (ended), 1 (playing), 2 (paused), 3 (buffering), 5 (cued)
-        if (playerState !== 1) {
-          playerRef.current.playVideo();
-        }
-      }
+      checkAndShowModal();
     };
 
     window.addEventListener("click", handleWindowClick);
     return () => window.removeEventListener("click", handleWindowClick);
-  }, [scene.type]);
+  }, [scene.type, disableYouTube, checkAndShowModal]);
 
   const onPlayerReady: YouTubeProps["onReady"] = (event) => {
     playerRef.current = event.target;
@@ -69,8 +101,17 @@ export const Background: React.FC<BackgroundProps> = ({
     } else {
       event.target.unMute();
     }
-    // Start playing
+    // Try to start playing
     event.target.playVideo();
+  };
+
+  // Handle state changes - detect when playback actually starts
+  const onPlayerStateChange: YouTubeProps["onStateChange"] = (event) => {
+    // If playing (state 1), hide modal and mark as started
+    if (event.data === 1) {
+      hasStartedPlayingRef.current = true;
+      setShowYoutubeModal(false);
+    }
   };
 
   const youtubeOpts: YouTubeProps["opts"] = {
@@ -142,28 +183,97 @@ export const Background: React.FC<BackgroundProps> = ({
 
       {scene.type === "youtube" && !disableYouTube && !youtubeError && (
         <>
-          <div className="absolute inset-0 w-full h-full pointer-events-none">
-            <YouTube
-              videoId={getYoutubeVideoId(scene.url) || ""}
-              opts={youtubeOpts}
-              onReady={onPlayerReady}
-              onError={() => {
-                console.error("YouTube player error");
-                setYoutubeError(true);
-              }}
-              className="w-full h-full"
-              iframeClassName="w-full h-full pointer-events-none"
-              style={{ width: "100%", height: "100%" }}
-            />
-          </div>
+          {/* Placeholder for where the YouTube player would appear in background */}
           <div className="absolute inset-0 bg-black/20" />
+
+          {/* Single YouTube player rendered via Portal - styling changes based on modal state */}
+          {createPortal(
+            <>
+              {/* CSS keyframes for animation */}
+              <style>{`
+                @keyframes ytModalFadeIn {
+                  from { opacity: 0; }
+                  to { opacity: 1; }
+                }
+              `}</style>
+
+              {/* Modal backdrop - only visible in modal mode */}
+              {showYoutubeModal && (
+                <div
+                  className="fixed inset-0 bg-black/80 backdrop-blur-sm"
+                  style={{
+                    zIndex: 99998,
+                    animation: "ytModalFadeIn 0.3s ease-out forwards",
+                  }}
+                  onClick={() => setShowYoutubeModal(false)}
+                />
+              )}
+
+              {/* YouTube player container - changes position based on modal state */}
+              <div
+                className={
+                  showYoutubeModal
+                    ? "fixed w-[80vw] max-w-4xl aspect-video left-1/2 top-1/2 rounded-xl overflow-hidden shadow-2xl border border-white/10 bg-black"
+                    : "fixed inset-0 w-full h-full"
+                }
+                style={
+                  showYoutubeModal
+                    ? {
+                        zIndex: 99999,
+                        transform: "translate(-50%, -50%)",
+                        animation: "ytModalFadeIn 0.3s ease-out forwards",
+                      }
+                    : {
+                        zIndex: -1, // Behind everything when in background mode
+                        pointerEvents: "none",
+                      }
+                }
+              >
+                {/* Instructional text & close button - only in modal mode */}
+                {showYoutubeModal && (
+                  <>
+                    <div className="absolute top-3 left-3 z-10 px-3 py-1.5 rounded-lg bg-black/60 text-white/90 text-sm">
+                      Click the video to start playback
+                    </div>
+                    <button
+                      onClick={() => setShowYoutubeModal(false)}
+                      className="absolute top-3 right-3 z-10 w-8 h-8 flex items-center justify-center rounded-full bg-black/60 hover:bg-black/80 text-white/80 hover:text-white transition-all cursor-pointer"
+                    >
+                      ✕
+                    </button>
+                  </>
+                )}
+
+                {/* Single YouTube player */}
+                <YouTube
+                  videoId={getYoutubeVideoId(scene.url) || ""}
+                  opts={youtubeOpts}
+                  onReady={onPlayerReady}
+                  onStateChange={onPlayerStateChange}
+                  onError={() => {
+                    console.error("YouTube player error");
+                    setYoutubeError(true);
+                  }}
+                  className="w-full h-full"
+                  iframeClassName={`w-full h-full ${
+                    showYoutubeModal ? "" : "pointer-events-none"
+                  }`}
+                  style={{ width: "100%", height: "100%" }}
+                />
+              </div>
+            </>,
+            document.body
+          )}
         </>
       )}
 
       {scene.type === "youtube" && (disableYouTube || youtubeError) && (
         <>
           {/* Fallback: solid color background when YouTube fails */}
-          <div className="w-full h-full" style={{ backgroundColor: '#1a1a1a' }} />
+          <div
+            className="w-full h-full"
+            style={{ backgroundColor: "#1a1a1a" }}
+          />
           <div className="absolute inset-0 bg-black/20" />
         </>
       )}
