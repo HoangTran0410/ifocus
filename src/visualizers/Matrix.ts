@@ -70,15 +70,15 @@ export default function renderMatrix({
   }
 
   // Semi-transparent black to create trail effect - faster on beats
-  ctx.fillStyle = `rgba(0, 0, 0, ${
-    0.08 + avgIntensity * 0.08 + beatIntensity * 0.1
-  })`;
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  // ctx.fillStyle = `rgba(0, 0, 0, ${
+  //   0.08 + avgIntensity * 0.08 + beatIntensity * 0.1
+  // })`;
+  // ctx.fillRect(0, 0, canvas.width, canvas.height);
 
   ctx.font = `${fontSize}px monospace`;
 
   // Fixed speed factor - independent of canvas size, boosted on beats
-  const baseSpeedFactor = 0.005 + beatIntensity * 0.008;
+  const baseSpeedFactor = 0.005 + beatIntensity * 0.005;
 
   // Update and draw each drop
   matrixState.drops.forEach((drop, i) => {
@@ -87,7 +87,7 @@ export default function renderMatrix({
     const x = i * fontSize;
 
     // Adjust speed based on audio - use normalized speed
-    const speedMultiplier = 1 + intensity * 3;
+    const speedMultiplier = 1 + intensity;
     drop.yRatio += drop.speed * baseSpeedFactor * speedMultiplier;
 
     // Convert ratio to actual Y position

@@ -28,12 +28,12 @@ const EffectsLayer = loadable(() => import("./EffectsLayer"), {
 
 interface BackgroundProps {
   disableYouTube?: boolean; // Option to disable YouTube for PiP
-  isPiP?: boolean; // When true, don't use portals (they'd render to wrong document)
+  isInPiP?: boolean; // When true, don't use portals (they'd render to wrong document)
 }
 
 export default function Background({
   disableYouTube = false,
-  isPiP = false,
+  isInPiP = false,
 }: BackgroundProps) {
   // Get state from Zustand store
   const scene = useCurrentScene();
@@ -496,7 +496,7 @@ export default function Background({
           <div className="absolute inset-0 bg-black/20" />
 
           {/* Single Video/YouTube player rendered via Portal - styling changes based on modal state */}
-          {isPiP ? renderVideo() : createPortal(renderVideo(), document.body)}
+          {isInPiP ? renderVideo() : createPortal(renderVideo(), document.body)}
         </>
       )}
 
@@ -537,7 +537,7 @@ export default function Background({
   );
 
   // Canvas Effects - rendered outside the filtered container so they're not affected by filters
-  const effectsElement = isPiP
+  const effectsElement = isInPiP
     ? renderEffect()
     : // reatePortal ensures effects appear above YouTube iframes
       // by rendering them at the root of the document, bypassing any stacking context issues

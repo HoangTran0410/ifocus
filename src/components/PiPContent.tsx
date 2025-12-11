@@ -48,14 +48,14 @@ export default function PiPContent() {
   return (
     <div className="relative w-screen h-screen overflow-hidden font-sans">
       {/* Dynamic Background */}
-      <Background disableYouTube={true} isPiP={true} />
+      <Background disableYouTube={true} isInPiP={true} />
 
       {/* Visualizer - handles its own positioning */}
       {showVisualizer && (
         <Visualizer
           onClose={() => setShowVisualizer(false)}
           forceCenter
-          isPiP={true}
+          isInPiP={true}
         />
       )}
 

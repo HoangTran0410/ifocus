@@ -78,7 +78,7 @@ function App() {
   const [activePanel, setActivePanel] = useState<PanelType>("none");
   const [visitedPanels, setVisitedPanels] = useState<Set<PanelType>>(new Set());
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [isPiP, setIsPiP] = useState(false);
+  const [isPiPWebsite, setIsPiPWebsite] = useState(false);
   const pipWindowRef = useRef<Window | null>(null);
 
   // Lazy load panels
@@ -89,11 +89,11 @@ function App() {
   }, [activePanel, visitedPanels]);
 
   // auto open effect panel when timer is closed, and no other panel is open
-  useEffect(() => {
-    if (!showTimer && activePanel === "none") {
-      setActivePanel("effects");
-    }
-  }, [showTimer]);
+  // useEffect(() => {
+  //   if (!showTimer && activePanel === "none") {
+  //     setActivePanel("effects");
+  //   }
+  // }, [showTimer]);
 
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
@@ -123,7 +123,7 @@ function App() {
       if (pipWindowRef.current && !pipWindowRef.current.closed) {
         pipWindowRef.current.close();
         pipWindowRef.current = null;
-        setIsPiP(false);
+        setIsPiPWebsite(false);
         return;
       }
 
@@ -164,18 +164,18 @@ function App() {
       // Listen for window close
       pipWindow.addEventListener("pagehide", () => {
         pipWindowRef.current = null;
-        setIsPiP(false);
+        setIsPiPWebsite(false);
       });
 
       // Set state to trigger React Portal rendering
-      setIsPiP(true);
+      setIsPiPWebsite(true);
     } catch (error) {
       console.error("PiP error:", error);
       alert(
         "Failed to activate Picture-in-Picture mode. Error: " +
           (error as Error).message
       );
-      setIsPiP(false);
+      setIsPiPWebsite(false);
     }
   };
 
@@ -198,8 +198,11 @@ function App() {
       <Background />
 
       {/* Visualizer - handles its own positioning based on visualizerMode */}
-      {showVisualizer && !isPiP && (
-        <Visualizer onClose={() => setShowVisualizer(false)} />
+      {showVisualizer && (
+        <Visualizer
+          onClose={() => setShowVisualizer(false)}
+          stop={isPiPWebsite}
+        />
       )}
 
       {/* Main Content Layer */}
@@ -222,7 +225,7 @@ function App() {
             <button
               onClick={togglePiP}
               className={`p-3 transition-colors rounded-full hover:bg-white/10 ${
-                isPiP ? "text-white" : "text-white/70 hover:text-white"
+                isPiPWebsite ? "text-white" : "text-white/70 hover:text-white"
               }`}
               title="Picture-in-Picture"
             >
@@ -300,9 +303,12 @@ function App() {
 
       {/* Side Panel Drawer - Keep all panels mounted, just hide them */}
       <div
-        className={`absolute top-0 right-0 h-full w-full sm:w-96 glass-panel border-l border-white/10 transition-transform duration-300 ease-out z-20 ${
+        className={`absolute top-0 right-0 h-full w-full sm:w-96 glass-panel border-l border-white/10 transition-transform duration-300 ease-out ${
           activePanel !== "none" ? "translate-x-0" : "translate-x-full"
         }`}
+        style={{
+          zIndex: activePanel !== "none" ? 50 : -1,
+        }}
       >
         <div className="h-full flex flex-col p-6">
           <div className="flex justify-between items-center mb-6">
@@ -359,7 +365,7 @@ function App() {
       </div>
 
       {/* Render PiP content using Portal when PiP is active */}
-      {isPiP &&
+      {isPiPWebsite &&
         pipWindowRef.current &&
         createPortal(<PiPContent />, pipWindowRef.current.document.body)}
     </div>

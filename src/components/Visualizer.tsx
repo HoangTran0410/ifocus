@@ -47,14 +47,16 @@ const DEFAULT_HEIGHT = 200;
 
 interface VisualizerProps {
   onClose?: () => void;
-  isPiP?: boolean;
+  isInPiP?: boolean;
   forceCenter?: boolean;
+  stop?: boolean;
 }
 
 export default function Visualizer({
   onClose,
-  isPiP = false,
+  isInPiP = false,
   forceCenter = false,
+  stop = false,
 }: VisualizerProps) {
   // Get visualizer display mode from Zustand
   const visualizerMode = useVisualizerDisplayMode();
@@ -80,34 +82,15 @@ export default function Visualizer({
     height: DEFAULT_HEIGHT,
   });
 
-  // Drag state (not persisted)
-  const [isDragging, setIsDragging] = useState(false);
-  const [isResizing, setIsResizing] = useState<string | null>(null);
-  const dragStartRef = useRef<{
-    x: number;
-    y: number;
-    posX: number;
-    posY: number;
-  }>({ x: 0, y: 0, posX: 0, posY: 0 });
-  const resizeStartRef = useRef<{
-    x: number;
-    y: number;
-    width: number;
-    height: number;
-    posX: number;
-    posY: number;
-  }>({
-    x: 0,
-    y: 0,
-    width: DEFAULT_WIDTH,
-    height: DEFAULT_HEIGHT,
-    posX: 0,
-    posY: 0,
-  });
+  // Hover state for opacity effect
+  const [isHovered, setIsHovered] = useState(false);
 
-  // Demo audio data (simulated)
-  const audioDataRef = useRef<number[]>(new Array(64).fill(0));
-  const timeRef = useRef(0);
+  // Clear gradient cache when size changes
+  useEffect(() => {
+    clearGradientCache();
+  }, [size.width, size.height]);
+
+  // #region Config handlers
 
   // Logo image for trap nation mode
   const [logoDataUrl, setLogoDataUrl] = useLocalStorage<string | null>(
@@ -115,6 +98,27 @@ export default function Visualizer({
     null
   );
   const logoImageRef = useRef<HTMLImageElement | null>(null);
+
+  // PiP state
+  const [_isPiPVis, setIsPiPVis] = useState(false);
+  const pipWindowRef = useRef<Window | null>(null);
+  const pipCanvasRef = useRef<HTMLCanvasElement | null>(null);
+
+  // Settings panel state
+  const [showSettings, setShowSettings] = useState(false);
+  const [config, setConfig] = useLocalStorage<AudioAnalyzerConfig>(
+    "zen_visualizer_config",
+    getAnalyzerConfig()
+  );
+  const [performanceMode, setPerformanceMode] = useLocalStorage<boolean>(
+    "zen_visualizer_performance_mode",
+    false
+  );
+
+  const performanceModeRef = useRef(performanceMode);
+  useEffect(() => {
+    performanceModeRef.current = performanceMode;
+  }, [performanceMode]);
 
   // Load logo image when dataUrl changes
   useEffect(() => {
@@ -128,6 +132,20 @@ export default function Visualizer({
       logoImageRef.current = null;
     }
   }, [logoDataUrl]);
+
+  // Apply saved config on mount
+  useEffect(() => {
+    updateAnalyzerConfig(config);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Cleanup PiP window on unmount (don't stop audio capture - it's a singleton that should persist)
+  useEffect(() => {
+    return () => {
+      if (pipWindowRef.current && !pipWindowRef.current.closed) {
+        pipWindowRef.current.close();
+      }
+    };
+  }, []);
 
   // Handle logo upload
   const handleLogoUpload = useCallback(
@@ -149,9 +167,6 @@ export default function Visualizer({
   const handleLogoRemove = useCallback(() => {
     setLogoDataUrl(null);
   }, [setLogoDataUrl]);
-
-  // Hover state for opacity effect
-  const [isHovered, setIsHovered] = useState(false);
 
   // Handle mode change from selector
   const handleModeChange = useCallback(
@@ -189,32 +204,6 @@ export default function Visualizer({
     },
     [isCapturing]
   );
-
-  // PiP state
-  const [_isPiP, setIsPiP] = useState(isPiP);
-  const pipWindowRef = useRef<Window | null>(null);
-  const pipCanvasRef = useRef<HTMLCanvasElement | null>(null);
-
-  // Settings panel state
-  const [showSettings, setShowSettings] = useState(false);
-  const [config, setConfig] = useLocalStorage<AudioAnalyzerConfig>(
-    "zen_visualizer_config",
-    getAnalyzerConfig()
-  );
-  const [performanceMode, setPerformanceMode] = useLocalStorage<boolean>(
-    "zen_visualizer_performance_mode",
-    false
-  );
-
-  // Clear gradient cache when size changes
-  useEffect(() => {
-    clearGradientCache();
-  }, [size.width, size.height]);
-
-  // Apply saved config on mount
-  useEffect(() => {
-    updateAnalyzerConfig(config);
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Handle config changes
   const handleConfigChange = useCallback(
@@ -261,7 +250,7 @@ export default function Visualizer({
         pipWindowRef.current.close();
         pipWindowRef.current = null;
         pipCanvasRef.current = null;
-        setIsPiP(false);
+        setIsPiPVis(false);
         return;
       }
 
@@ -294,32 +283,50 @@ export default function Visualizer({
         pipWindow.addEventListener("pagehide", () => {
           pipWindowRef.current = null;
           pipCanvasRef.current = null;
-          setIsPiP(false);
+          setIsPiPVis(false);
         });
 
-        setIsPiP(true);
+        setIsPiPVis(true);
       } catch (error) {
         console.error("PiP error:", error);
         alert(
           "Failed to activate Picture-in-Picture mode. Error: " +
             (error as Error).message
         );
-        setIsPiP(false);
+        setIsPiPVis(false);
       }
     },
     [size]
   );
 
-  // Cleanup PiP window on unmount (don't stop audio capture - it's a singleton that should persist)
-  useEffect(() => {
-    return () => {
-      if (pipWindowRef.current && !pipWindowRef.current.closed) {
-        pipWindowRef.current.close();
-      }
-    };
-  }, []);
+  // #endregion
 
-  // Drag handlers
+  // #region Drag to Resize handlers
+  // Drag state (not persisted)
+  const [isDragging, setIsDragging] = useState(false);
+  const [isResizing, setIsResizing] = useState<string | null>(null);
+  const dragStartRef = useRef<{
+    x: number;
+    y: number;
+    posX: number;
+    posY: number;
+  }>({ x: 0, y: 0, posX: 0, posY: 0 });
+  const resizeStartRef = useRef<{
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    posX: number;
+    posY: number;
+  }>({
+    x: 0,
+    y: 0,
+    width: DEFAULT_WIDTH,
+    height: DEFAULT_HEIGHT,
+    posX: 0,
+    posY: 0,
+  });
+
   const handleDragStart = useCallback(
     (e: React.MouseEvent) => {
       if ((e.target as HTMLElement).classList.contains("resize-handle")) return;
@@ -386,17 +393,6 @@ export default function Visualizer({
     setIsResizing(null);
   }, []);
 
-  useEffect(() => {
-    if (isDragging || isResizing) {
-      window.addEventListener("mousemove", handleMouseMove);
-      window.addEventListener("mouseup", handleMouseUp);
-      return () => {
-        window.removeEventListener("mousemove", handleMouseMove);
-        window.removeEventListener("mouseup", handleMouseUp);
-      };
-    }
-  }, [isDragging, isResizing, handleMouseMove, handleMouseUp]);
-
   const handleResizeStart = useCallback(
     (e: React.MouseEvent, direction: string) => {
       e.preventDefault();
@@ -414,7 +410,23 @@ export default function Visualizer({
     [size, position]
   );
 
-  // Animation loop with real or simulated audio data
+  useEffect(() => {
+    if (isDragging || isResizing) {
+      window.addEventListener("mousemove", handleMouseMove);
+      window.addEventListener("mouseup", handleMouseUp);
+      return () => {
+        window.removeEventListener("mousemove", handleMouseMove);
+        window.removeEventListener("mouseup", handleMouseUp);
+      };
+    }
+  }, [isDragging, isResizing, handleMouseMove, handleMouseUp]);
+  // #endregion
+
+  // #region Animation loop with real or simulated audio data
+  // Demo audio data (simulated)
+  const audioDataRef = useRef<number[]>(new Array(64).fill(0));
+  const timeRef = useRef(0);
+
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -423,6 +435,8 @@ export default function Visualizer({
     if (!ctx) return;
 
     const animate = async () => {
+      if (stop) return;
+
       timeRef.current += 0.02;
 
       // Try to get real audio data, fall back to simulated
@@ -447,9 +461,6 @@ export default function Visualizer({
         data = audioDataRef.current;
       }
 
-      // Clear canvas
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
       const barCount = data.length;
 
       // Get beat intensity for enhanced effects
@@ -457,18 +468,7 @@ export default function Visualizer({
         ? detectBeat()
         : Math.sin(timeRef.current * 4) * 0.3 + 0.3;
 
-      // Create shared props object
-      const visualizerProps: VisualizeFnProps = {
-        ctx,
-        canvas,
-        data,
-        barCount,
-        performanceMode,
-        logoImage: logoImageRef.current,
-        beatIntensity,
-      };
-
-      await render(mode, visualizerProps);
+      let rendered = false;
 
       // Also render to PiP canvas if active
       if (pipCanvasRef.current) {
@@ -487,13 +487,31 @@ export default function Visualizer({
             canvas: pipCanvasRef.current,
             data,
             barCount,
-            performanceMode,
+            performanceMode: performanceModeRef.current,
             logoImage: logoImageRef.current,
             beatIntensity,
           };
 
           await render(mode, pipProps);
+          rendered = true;
         }
+      }
+
+      if (!rendered) {
+        // Clear canvas
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        const visualizerProps: VisualizeFnProps = {
+          ctx,
+          canvas,
+          data,
+          barCount,
+          performanceMode: performanceModeRef.current,
+          logoImage: logoImageRef.current,
+          beatIntensity,
+        };
+
+        await render(mode, visualizerProps);
       }
 
       animationRef.current = requestAnimationFrame(animate);
@@ -504,7 +522,8 @@ export default function Visualizer({
     return () => {
       cancelAnimationFrame(animationRef.current);
     };
-  }, [mode, size, _isPiP, performanceMode]);
+  }, [mode, stop]);
+  // #endregion
 
   const renderSettings = () => (
     <div
@@ -727,7 +746,7 @@ export default function Visualizer({
               top: position.y,
               width: size.width,
               height: size.height,
-              zIndex: 9999,
+              zIndex: 40,
             }
       }
       onMouseDown={isCenterMode ? undefined : handleDragStart}
@@ -787,15 +806,15 @@ export default function Visualizer({
               <Mic size={14} />
             </button>
             {/* PiP Button */}
-            {!isPiP && (
+            {!isInPiP && (
               <button
                 onClick={handlePiPClick}
                 className={`p-1.5 text-xs font-medium rounded-md transition-colors cursor-pointer ${
-                  _isPiP
+                  _isPiPVis
                     ? "text-purple-400 bg-purple-500/20 hover:bg-purple-500/30"
                     : "text-white/80 bg-white/10 hover:bg-white/20"
                 }`}
-                title={_isPiP ? "Close PiP" : "Open in PiP"}
+                title={_isPiPVis ? "Close PiP" : "Open in PiP"}
               >
                 <PictureInPicture2 size={14} />
               </button>
