@@ -21,6 +21,7 @@ import {
   renderOscilloscope,
   renderRadialLines,
   renderGalaxy,
+  renderBlackHole,
   clearGradientCache,
 } from "../utils/visualizerRenderers";
 import {
@@ -50,7 +51,8 @@ type VisualizerMode =
   | "dna-helix"
   | "oscilloscope"
   | "radial-lines"
-  | "galaxy";
+  | "galaxy"
+  | "black-hole";
 
 interface Position {
   x: number;
@@ -73,6 +75,7 @@ const MODES: VisualizerMode[] = [
   "oscilloscope",
   "radial-lines",
   "galaxy",
+  "black-hole",
 ];
 const MODE_LABELS: Record<VisualizerMode, string> = {
   bars: "Bars",
@@ -85,6 +88,7 @@ const MODE_LABELS: Record<VisualizerMode, string> = {
   oscilloscope: "Oscilloscope",
   "radial-lines": "Radial Lines",
   galaxy: "Galaxy",
+  "black-hole": "Black Hole",
 };
 
 const MIN_WIDTH = 120;
@@ -155,9 +159,6 @@ export default function Visualizer({
   // Demo audio data (simulated)
   const audioDataRef = useRef<number[]>(new Array(64).fill(0));
   const timeRef = useRef(0);
-
-  // Spectrum cache for ghost delay effect
-  const spectrumCacheRef = useRef<number[][]>([]);
 
   // Logo image for trap nation mode
   const [logoDataUrl, setLogoDataUrl] = useLocalStorage<string | null>(
@@ -514,7 +515,6 @@ export default function Visualizer({
           canvas,
           data,
           barCount,
-          spectrumCacheRef.current,
           logoImageRef.current,
           performanceMode
         );
@@ -530,6 +530,8 @@ export default function Visualizer({
         renderRadialLines(ctx, canvas, data, barCount, performanceMode);
       } else if (mode === "galaxy") {
         renderGalaxy(ctx, canvas, data, barCount, performanceMode);
+      } else if (mode === "black-hole") {
+        renderBlackHole(ctx, canvas, data, barCount, performanceMode);
       }
 
       // Also render to PiP canvas if active
@@ -572,7 +574,6 @@ export default function Visualizer({
               pipCanvasRef.current,
               data,
               barCount,
-              spectrumCacheRef.current,
               logoImageRef.current,
               performanceMode
             );
@@ -618,6 +619,14 @@ export default function Visualizer({
             );
           } else if (mode === "galaxy") {
             renderGalaxy(
+              pipCtx,
+              pipCanvasRef.current,
+              data,
+              barCount,
+              performanceMode
+            );
+          } else if (mode === "black-hole") {
+            renderBlackHole(
               pipCtx,
               pipCanvasRef.current,
               data,
