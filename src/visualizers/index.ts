@@ -20,6 +20,10 @@ const RenderMode = {
   "💍 Rings": () => import("./Rings"),
   "📈 Waveform3D": () => import("./Waveform3D"),
   "⭐ Starfield": () => import("./Starfield"),
+  "🌀 Plasma": () => import("./Plasma"),
+  "⚡ Lightning": () => import("./Lightning"),
+  "🐝 Hexagons": () => import("./Hexagons"),
+  "🌿 Fractal": () => import("./Fractal"),
 };
 export type VisualizerMode = keyof typeof RenderMode;
 export const MODES = Object.keys(RenderMode) as VisualizerMode[];

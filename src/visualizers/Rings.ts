@@ -22,7 +22,7 @@ export default function renderRings({
   ringsState.rotation += 0.005 + avgIntensity * 0.02 + beatIntensity * 0.05;
   ringsState.pulsePhase += 0.05 + beatIntensity * 0.1;
 
-  const ringCount = performanceMode ? 6 : 10;
+  const ringCount = performanceMode ? 5 : 8;
   const segmentsPerRing = performanceMode ? 32 : 64;
 
   // Beat-reactive radius expansion

@@ -16,7 +16,7 @@ export default function renderAurora({
   auroraState.time += 0.02;
 
   // Initialize waves
-  const waveCount = performanceMode ? 3 : 5;
+  const waveCount = performanceMode ? 4 : 5;
   if (auroraState.waves.length !== waveCount) {
     auroraState.waves = Array.from({ length: waveCount }, (_, i) => ({
       offset: Math.random() * Math.PI * 2,
@@ -53,8 +53,9 @@ export default function renderAurora({
     ctx.moveTo(0, canvas.height);
 
     const segments = performanceMode ? 30 : 60;
-    const points: { x: number; y: number }[] = [];
+    const rawPoints: { x: number; y: number }[] = [];
 
+    // Generate raw points using raw data (full intensity)
     for (let i = 0; i <= segments; i++) {
       const x = (i / segments) * canvas.width;
       const dataIndex = Math.floor((i / segments) * data.length);
@@ -76,19 +77,47 @@ export default function renderAurora({
       const heightVariation = intensity * canvas.height * 0.3;
 
       const y = baseY + waveValue * 50 - heightVariation;
-      points.push({ x, y });
+      rawPoints.push({ x, y });
     }
 
-    // Draw the filled shape
-    ctx.moveTo(0, canvas.height);
-    points.forEach((p, i) => {
-      if (i === 0) ctx.lineTo(p.x, p.y);
-      else {
-        const prev = points[i - 1];
-        const cpX = (prev.x + p.x) / 2;
-        ctx.quadraticCurveTo(prev.x, prev.y, cpX, (prev.y + p.y) / 2);
+    // Apply spatial smoothing (weighted moving average) to smooth neighboring points
+    const smoothRadius = 3; // Number of neighbors on each side
+    const points: { x: number; y: number }[] = rawPoints.map((p, i) => {
+      let sumY = 0;
+      let totalWeight = 0;
+
+      for (let j = -smoothRadius; j <= smoothRadius; j++) {
+        const idx = Math.max(0, Math.min(rawPoints.length - 1, i + j));
+        // Gaussian-like weight: closer neighbors have more influence
+        const weight = 1 / (1 + Math.abs(j));
+        sumY += rawPoints[idx].y * weight;
+        totalWeight += weight;
       }
+
+      return { x: p.x, y: sumY / totalWeight };
     });
+
+    // Draw the filled shape using Catmull-Rom spline for smooth curves
+    ctx.moveTo(0, canvas.height);
+    ctx.lineTo(points[0].x, points[0].y);
+
+    // Catmull-Rom spline interpolation for smooth curves through all points
+    for (let i = 0; i < points.length - 1; i++) {
+      const p0 = points[Math.max(0, i - 1)];
+      const p1 = points[i];
+      const p2 = points[i + 1];
+      const p3 = points[Math.min(points.length - 1, i + 2)];
+
+      // Control points for cubic bezier derived from Catmull-Rom
+      const tension = 0.5; // Smoothness factor (0.5 is standard Catmull-Rom)
+      const cp1x = p1.x + ((p2.x - p0.x) * tension) / 3;
+      const cp1y = p1.y + ((p2.y - p0.y) * tension) / 3;
+      const cp2x = p2.x - ((p3.x - p1.x) * tension) / 3;
+      const cp2y = p2.y - ((p3.y - p1.y) * tension) / 3;
+
+      ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, p2.x, p2.y);
+    }
+
     ctx.lineTo(canvas.width, canvas.height);
     ctx.closePath();
 

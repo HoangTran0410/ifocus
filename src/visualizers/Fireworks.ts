@@ -128,7 +128,7 @@ export default function renderFireworks({
     );
     flashGradient.addColorStop(
       0,
-      `rgba(255, 200, 100, ${fireworksState.beatFlash * 0.3})`
+      `rgba(255, 200, 100, ${fireworksState.beatFlash * 0.5})`
     );
     flashGradient.addColorStop(
       0.5,

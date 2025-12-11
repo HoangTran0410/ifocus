@@ -114,11 +114,24 @@ export default function Visualizer({
     "zen_visualizer_performance_mode",
     false
   );
+  const [showFps, setShowFps] = useLocalStorage<boolean>(
+    "zen_visualizer_show_fps",
+    false
+  );
 
   const performanceModeRef = useRef(performanceMode);
   useEffect(() => {
     performanceModeRef.current = performanceMode;
   }, [performanceMode]);
+
+  // FPS tracking refs
+  const fpsRef = useRef(0);
+  const frameCountRef = useRef(0);
+  const lastFpsUpdateRef = useRef(performance.now());
+  const showFpsRef = useRef(showFps);
+  useEffect(() => {
+    showFpsRef.current = showFps;
+  }, [showFps]);
 
   // Load logo image when dataUrl changes
   useEffect(() => {
@@ -512,6 +525,27 @@ export default function Visualizer({
         };
 
         await render(mode, visualizerProps);
+
+        // Draw FPS counter on main canvas
+        if (showFpsRef.current) {
+          ctx.save();
+          ctx.font = "bold 12px monospace";
+          ctx.fillStyle = "rgba(255, 255, 255, 0.8)";
+          ctx.shadowColor = "rgba(0, 0, 0, 0.8)";
+          ctx.shadowBlur = 4;
+          ctx.fillText(`${fpsRef.current} FPS`, 10, 20);
+          ctx.restore();
+        }
+      }
+
+      // Calculate FPS
+      frameCountRef.current++;
+      const now = performance.now();
+      const elapsed = now - lastFpsUpdateRef.current;
+      if (elapsed >= 1000) {
+        fpsRef.current = Math.round((frameCountRef.current * 1000) / elapsed);
+        frameCountRef.current = 0;
+        lastFpsUpdateRef.current = now;
       }
 
       animationRef.current = requestAnimationFrame(animate);
@@ -707,9 +741,19 @@ export default function Visualizer({
             <Zap size={14} />
             Performance Mode {performanceMode ? "ON" : "OFF"}
           </button>
-          <p className="text-[10px] text-white/40 mt-1 text-center">
-            Reduces effects for better FPS
-          </p>
+
+          {/* Show FPS Toggle */}
+          <button
+            onClick={() => setShowFps(!showFps)}
+            className={`w-full mt-2 px-3 py-1.5 text-xs font-medium rounded-md transition-colors cursor-pointer flex items-center justify-center gap-2 ${
+              showFps
+                ? "text-cyan-400 bg-cyan-500/20 hover:bg-cyan-500/30"
+                : "text-white/80 bg-white/10 hover:bg-white/20"
+            }`}
+            title="Show FPS counter on the visualizer"
+          >
+            Show FPS {showFps ? "ON" : "OFF"}
+          </button>
         </div>
 
         {/* Reset Button */}

@@ -145,19 +145,19 @@ export default function renderWaveform3D({
   }
 
   // Horizon glow
-  if (!performanceMode && avgIntensity > 0.2) {
-    const horizonGlow = ctx.createRadialGradient(
-      vanishX,
-      horizonY,
-      0,
-      vanishX,
-      horizonY,
-      canvas.width * 0.5
-    );
-    horizonGlow.addColorStop(0, `rgba(168, 85, 247, ${avgIntensity * 0.3})`);
-    horizonGlow.addColorStop(0.5, `rgba(168, 85, 247, ${avgIntensity * 0.1})`);
-    horizonGlow.addColorStop(1, "transparent");
-    ctx.fillStyle = horizonGlow;
-    ctx.fillRect(0, 0, canvas.width, horizonY + 50);
-  }
+  // if (!performanceMode && avgIntensity > 0.2) {
+  //   const horizonGlow = ctx.createRadialGradient(
+  //     vanishX,
+  //     horizonY,
+  //     0,
+  //     vanishX,
+  //     horizonY,
+  //     canvas.width * 0.5
+  //   );
+  //   horizonGlow.addColorStop(0, `rgba(168, 85, 247, ${avgIntensity * 0.3})`);
+  //   horizonGlow.addColorStop(0.5, `rgba(168, 85, 247, ${avgIntensity * 0.1})`);
+  //   horizonGlow.addColorStop(1, "transparent");
+  //   ctx.fillStyle = horizonGlow;
+  //   ctx.fillRect(0, 0, canvas.width, horizonY + 50);
+  // }
 }

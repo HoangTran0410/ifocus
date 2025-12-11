@@ -44,8 +44,13 @@ export default function renderMatrix({
   beatIntensity = 0,
 }: VisualizeFnProps) {
   const avgIntensity = data.reduce((a, b) => a + b, 0) / data.length;
-  const fontSize = performanceMode ? 16 : 14;
-  const columns = Math.floor(canvas.width / fontSize);
+
+  // Base font size with beat-reactive scaling
+  const baseFontSize = performanceMode ? 16 : 14;
+  const beatScale = 1 + beatIntensity * 1; // Scale up to 40% larger on beats
+  const fontSize = Math.round(baseFontSize * beatScale);
+
+  const columns = Math.floor(canvas.width / baseFontSize); // Use base size for consistent column count
 
   // Initialize or adjust drops when column count changes
   if (!matrixState.initialized) {
@@ -78,27 +83,33 @@ export default function renderMatrix({
   ctx.font = `${fontSize}px monospace`;
 
   // Fixed speed factor - independent of canvas size, boosted on beats
-  const baseSpeedFactor = 0.005 + beatIntensity * 0.005;
+  const baseSpeedFactor = 0.005 + beatIntensity * 0.003;
 
   // Update and draw each drop
   matrixState.drops.forEach((drop, i) => {
     const dataIndex = Math.floor((i / columns) * data.length);
     const intensity = data[dataIndex] || avgIntensity;
-    const x = i * fontSize;
+
+    // Use baseFontSize for positioning to keep lanes stable
+    const x = i * baseFontSize;
 
     // Adjust speed based on audio - use normalized speed
     const speedMultiplier = 1 + intensity;
     drop.yRatio += drop.speed * baseSpeedFactor * speedMultiplier;
 
-    // Convert ratio to actual Y position
-    const dropLength = drop.length * fontSize;
+    // Convert ratio to actual Y position (using baseFontSize for consistent positioning)
+    const dropLength = drop.length * baseFontSize;
     const totalHeight = canvas.height + dropLength;
     const y = drop.yRatio * totalHeight;
 
+    // Offset to center the scaled font in its lane
+    const scaleOffset = (fontSize - baseFontSize) / 2;
+
     // Draw characters in the drop
     for (let j = 0; j < drop.length; j++) {
-      const charY = y - j * fontSize;
-      if (charY < 0 || charY > canvas.height + fontSize) continue;
+      // Use baseFontSize for position calculation, keep lanes stable
+      const charY = y - j * baseFontSize;
+      if (charY < 0 || charY > canvas.height + baseFontSize) continue;
 
       // Color gradient from white (head) to green (tail)
       const alpha = 1 - j / drop.length;
@@ -121,7 +132,8 @@ export default function renderMatrix({
         drop.chars[j] = randomChar();
       }
 
-      ctx.fillText(drop.chars[j], x, charY);
+      // Draw at lane position with centering offset for scaled font
+      ctx.fillText(drop.chars[j], x - scaleOffset, charY);
     }
 
     ctx.shadowBlur = 0;
@@ -136,7 +148,7 @@ export default function renderMatrix({
   });
 
   // Add glow effect based on audio intensity
-  if (!performanceMode && avgIntensity > 0.3) {
+  if (!performanceMode && avgIntensity > 0.1) {
     const glowGradient = ctx.createRadialGradient(
       canvas.width / 2,
       canvas.height / 2,
@@ -145,7 +157,7 @@ export default function renderMatrix({
       canvas.height / 2,
       canvas.width / 2
     );
-    glowGradient.addColorStop(0, `rgba(0, 255, 70, ${avgIntensity * 0.15})`);
+    glowGradient.addColorStop(0, `rgba(0, 255, 70, ${avgIntensity * 0.5})`);
     glowGradient.addColorStop(1, "rgba(0, 255, 70, 0)");
     ctx.fillStyle = glowGradient;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
