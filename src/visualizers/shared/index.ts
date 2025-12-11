@@ -11,6 +11,8 @@ export interface VisualizeFnProps {
   performanceMode?: boolean;
   /** Optional logo image for visualizers that support it (e.g., TrapNation) */
   logoImage?: HTMLImageElement | null;
+  /** Beat intensity from detectBeat() (0-1, with decay) */
+  beatIntensity?: number;
 }
 
 // Gradient cache for performance optimization

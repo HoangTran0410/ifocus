@@ -198,7 +198,7 @@ function App() {
       <Background />
 
       {/* Visualizer - handles its own positioning based on visualizerMode */}
-      {showVisualizer && (
+      {showVisualizer && !isPiP && (
         <Visualizer onClose={() => setShowVisualizer(false)} />
       )}
 

@@ -9,6 +9,7 @@ import {
   getDefaultAnalyzerConfig,
   updateAnalyzerConfig,
   AudioAnalyzerConfig,
+  detectBeat,
 } from "../utils/audioAnalyzer";
 import {
   Mic,
@@ -26,7 +27,7 @@ import {
   useVisualizerMode as useVisualizerDisplayMode,
   useSetVisualizerMode as useSetVisualizerDisplayMode,
 } from "../stores/useAppStore";
-import { MODES, render, VisualizerMode } from "../visualizers";
+import { DEFAULT_MODE, MODES, render, VisualizerMode } from "../visualizers";
 import { clearGradientCache, VisualizeFnProps } from "../visualizers/shared";
 
 interface Position {
@@ -68,7 +69,7 @@ export default function Visualizer({
   // Persisted state using useLocalStorage
   const [mode, setMode] = useLocalStorage<VisualizerMode>(
     "zen_visualizer_mode",
-    "Bars"
+    DEFAULT_MODE
   );
   const [position, setPosition] = useLocalStorage<Position>(
     "zen_visualizer_position",
@@ -451,6 +452,11 @@ export default function Visualizer({
 
       const barCount = data.length;
 
+      // Get beat intensity for enhanced effects
+      const beatIntensity = isAudioCaptureActive()
+        ? detectBeat()
+        : Math.sin(timeRef.current * 4) * 0.3 + 0.3;
+
       // Create shared props object
       const visualizerProps: VisualizeFnProps = {
         ctx,
@@ -459,6 +465,7 @@ export default function Visualizer({
         barCount,
         performanceMode,
         logoImage: logoImageRef.current,
+        beatIntensity,
       };
 
       await render(mode, visualizerProps);
@@ -482,6 +489,7 @@ export default function Visualizer({
             barCount,
             performanceMode,
             logoImage: logoImageRef.current,
+            beatIntensity,
           };
 
           await render(mode, pipProps);
