@@ -1,12 +1,12 @@
-import { getCachedGradient } from "./shared";
+import { getCachedGradient, VisualizeFnProps } from "./shared";
 
-export const renderBars = (
-  ctx: CanvasRenderingContext2D,
-  canvas: HTMLCanvasElement,
-  data: number[],
-  barCount: number,
-  performanceMode = false
-) => {
+export default function renderBars({
+  ctx,
+  canvas,
+  data,
+  barCount,
+  performanceMode = false,
+}: VisualizeFnProps) {
   const barWidth = canvas.width / barCount;
   const gap = Math.max(2, barWidth * 0.15);
   const actualBarWidth = barWidth - gap;
@@ -170,4 +170,4 @@ export const renderBars = (
   ctx.strokeStyle = `rgba(255, 255, 255, ${0.2 + avgIntensity * 0.3})`;
   ctx.lineWidth = 1.5;
   ctx.stroke();
-};
+}

@@ -1,11 +1,12 @@
-// 4. Oscilloscope - Classic oscilloscope waveform display
-export const renderOscilloscope = (
-  ctx: CanvasRenderingContext2D,
-  canvas: HTMLCanvasElement,
-  data: number[],
-  barCount: number,
-  performanceMode = false
-) => {
+import { VisualizeFnProps } from "./shared";
+
+// Oscilloscope - Classic oscilloscope waveform display
+export default function renderOscilloscope({
+  ctx,
+  canvas,
+  data,
+  performanceMode = false,
+}: VisualizeFnProps) {
   const centerY = canvas.height / 2;
   const sliceWidth = canvas.width / (data.length - 1);
 
@@ -78,4 +79,4 @@ export const renderOscilloscope = (
       }
     }
   }
-};
+}

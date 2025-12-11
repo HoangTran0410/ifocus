@@ -1,6 +1,6 @@
-import { getCachedGradient } from "./shared";
+import { VisualizeFnProps } from "./shared";
 
-// 2. Particles - Audio-reactive particles
+// Particles - Audio-reactive particles
 const particleState: {
   particles: Array<{
     x: number;
@@ -14,13 +14,12 @@ const particleState: {
   particles: [],
 };
 
-export const renderParticles = (
-  ctx: CanvasRenderingContext2D,
-  canvas: HTMLCanvasElement,
-  data: number[],
-  barCount: number,
-  performanceMode = false
-) => {
+export default function renderParticles({
+  ctx,
+  canvas,
+  data,
+  performanceMode = false,
+}: VisualizeFnProps) {
   const avgIntensity = data.reduce((a, b) => a + b, 0) / data.length;
   const maxParticles = performanceMode ? 50 : 150;
 
@@ -44,26 +43,6 @@ export const renderParticles = (
       });
     }
   }
-
-  // Update and draw particles
-  //   const gradient = getCachedGradient(
-  //     ctx,
-  //     `particles-center-${canvas.width}-${canvas.height}`,
-  //     () => {
-  //       const g = ctx.createRadialGradient(
-  //         canvas.width / 2,
-  //         canvas.height / 2,
-  //         0,
-  //         canvas.width / 2,
-  //         canvas.height / 2,
-  //         canvas.width / 2
-  //       );
-  //       g.addColorStop(0, "rgba(168, 85, 247, 0.8)");
-  //       g.addColorStop(0.5, "rgba(236, 72, 153, 0.6)");
-  //       g.addColorStop(1, "rgba(99, 102, 241, 0.3)");
-  //       return g;
-  //     }
-  //   );
 
   particleState.particles = particleState.particles.filter((p) => {
     // Update position
@@ -117,4 +96,4 @@ export const renderParticles = (
     ctx.fillStyle = centerGlow;
     ctx.fill();
   }
-};
+}

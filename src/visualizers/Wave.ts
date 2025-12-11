@@ -1,12 +1,12 @@
-import { getCachedGradient } from "./shared";
+import { getCachedGradient, VisualizeFnProps } from "./shared";
 
-export const renderWave = (
-  ctx: CanvasRenderingContext2D,
-  canvas: HTMLCanvasElement,
-  data: number[],
-  barCount: number,
-  performanceMode = false
-) => {
+export default function renderWave({
+  ctx,
+  canvas,
+  data,
+  barCount,
+  performanceMode = false,
+}: VisualizeFnProps) {
   const sliceWidth = canvas.width / (barCount - 1);
   const centerY = canvas.height / 2;
 
@@ -274,4 +274,4 @@ export const renderWave = (
       }
     }
   }
-};
+}

@@ -1,12 +1,12 @@
-import { getCachedGradient } from "./shared";
+import { getCachedGradient, VisualizeFnProps } from "./shared";
 
-export const renderCircular = (
-  ctx: CanvasRenderingContext2D,
-  canvas: HTMLCanvasElement,
-  data: number[],
-  barCount: number,
-  performanceMode = false
-) => {
+export default function renderCircular({
+  ctx,
+  canvas,
+  data,
+  barCount,
+  performanceMode = false,
+}: VisualizeFnProps) {
   const centerX = canvas.width / 2;
   const centerY = canvas.height / 2;
   const baseRadius = Math.min(centerX, centerY) * 0.3;
@@ -265,4 +265,4 @@ export const renderCircular = (
   ctx.arc(centerX, centerY, 4 + avgIntensity * 3, 0, Math.PI * 2);
   ctx.fillStyle = `rgba(255, 255, 255, ${0.6 + avgIntensity * 0.4})`;
   ctx.fill();
-};
+}

@@ -11,20 +11,6 @@ import {
   AudioAnalyzerConfig,
 } from "../utils/audioAnalyzer";
 import {
-  renderBars,
-  renderWave,
-  renderCircular,
-  renderTrapNation,
-  renderSpectrum,
-  renderParticles,
-  renderDnaHelix,
-  renderOscilloscope,
-  renderRadialLines,
-  renderGalaxy,
-  renderBlackHole,
-  clearGradientCache,
-} from "../utils/visualizerRenderers";
-import {
   Mic,
   PictureInPicture2,
   Settings,
@@ -40,19 +26,8 @@ import {
   useVisualizerMode as useVisualizerDisplayMode,
   useSetVisualizerMode as useSetVisualizerDisplayMode,
 } from "../stores/useAppStore";
-
-type VisualizerMode =
-  | "bars"
-  | "wave"
-  | "circular"
-  | "trap-nation"
-  | "spectrum"
-  | "particles"
-  | "dna-helix"
-  | "oscilloscope"
-  | "radial-lines"
-  | "galaxy"
-  | "black-hole";
+import { MODES, render, VisualizerMode } from "../visualizers";
+import { clearGradientCache, VisualizeFnProps } from "../visualizers/shared";
 
 interface Position {
   x: number;
@@ -63,33 +38,6 @@ interface Size {
   width: number;
   height: number;
 }
-
-const MODES: VisualizerMode[] = [
-  "bars",
-  "wave",
-  "circular",
-  "trap-nation",
-  "spectrum",
-  "particles",
-  "dna-helix",
-  "oscilloscope",
-  "radial-lines",
-  "galaxy",
-  "black-hole",
-];
-const MODE_LABELS: Record<VisualizerMode, string> = {
-  bars: "Bars",
-  wave: "Wave",
-  circular: "Circular",
-  "trap-nation": "Trap Nation",
-  spectrum: "Spectrum",
-  particles: "Particles",
-  "dna-helix": "DNA Helix",
-  oscilloscope: "Oscilloscope",
-  "radial-lines": "Radial Lines",
-  galaxy: "Galaxy",
-  "black-hole": "Black Hole",
-};
 
 const MIN_WIDTH = 120;
 const MIN_HEIGHT = 120;
@@ -120,7 +68,7 @@ export default function Visualizer({
   // Persisted state using useLocalStorage
   const [mode, setMode] = useLocalStorage<VisualizerMode>(
     "zen_visualizer_mode",
-    "bars"
+    "Bars"
   );
   const [position, setPosition] = useLocalStorage<Position>(
     "zen_visualizer_position",
@@ -473,7 +421,7 @@ export default function Visualizer({
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    const animate = () => {
+    const animate = async () => {
       timeRef.current += 0.02;
 
       // Try to get real audio data, fall back to simulated
@@ -503,36 +451,17 @@ export default function Visualizer({
 
       const barCount = data.length;
 
-      if (mode === "bars") {
-        renderBars(ctx, canvas, data, barCount, performanceMode);
-      } else if (mode === "wave") {
-        renderWave(ctx, canvas, data, barCount, performanceMode);
-      } else if (mode === "circular") {
-        renderCircular(ctx, canvas, data, barCount, performanceMode);
-      } else if (mode === "trap-nation") {
-        renderTrapNation(
-          ctx,
-          canvas,
-          data,
-          barCount,
-          logoImageRef.current,
-          performanceMode
-        );
-      } else if (mode === "spectrum") {
-        renderSpectrum(ctx, canvas, data, barCount, performanceMode);
-      } else if (mode === "particles") {
-        renderParticles(ctx, canvas, data, barCount, performanceMode);
-      } else if (mode === "dna-helix") {
-        renderDnaHelix(ctx, canvas, data, barCount, performanceMode);
-      } else if (mode === "oscilloscope") {
-        renderOscilloscope(ctx, canvas, data, barCount, performanceMode);
-      } else if (mode === "radial-lines") {
-        renderRadialLines(ctx, canvas, data, barCount, performanceMode);
-      } else if (mode === "galaxy") {
-        renderGalaxy(ctx, canvas, data, barCount, performanceMode);
-      } else if (mode === "black-hole") {
-        renderBlackHole(ctx, canvas, data, barCount, performanceMode);
-      }
+      // Create shared props object
+      const visualizerProps: VisualizeFnProps = {
+        ctx,
+        canvas,
+        data,
+        barCount,
+        performanceMode,
+        logoImage: logoImageRef.current,
+      };
+
+      await render(mode, visualizerProps);
 
       // Also render to PiP canvas if active
       if (pipCanvasRef.current) {
@@ -544,96 +473,18 @@ export default function Visualizer({
             pipCanvasRef.current.width,
             pipCanvasRef.current.height
           );
-          if (mode === "bars") {
-            renderBars(
-              pipCtx,
-              pipCanvasRef.current,
-              data,
-              barCount,
-              performanceMode
-            );
-          } else if (mode === "wave") {
-            renderWave(
-              pipCtx,
-              pipCanvasRef.current,
-              data,
-              barCount,
-              performanceMode
-            );
-          } else if (mode === "circular") {
-            renderCircular(
-              pipCtx,
-              pipCanvasRef.current,
-              data,
-              barCount,
-              performanceMode
-            );
-          } else if (mode === "trap-nation") {
-            renderTrapNation(
-              pipCtx,
-              pipCanvasRef.current,
-              data,
-              barCount,
-              logoImageRef.current,
-              performanceMode
-            );
-          } else if (mode === "spectrum") {
-            renderSpectrum(
-              pipCtx,
-              pipCanvasRef.current,
-              data,
-              barCount,
-              performanceMode
-            );
-          } else if (mode === "particles") {
-            renderParticles(
-              pipCtx,
-              pipCanvasRef.current,
-              data,
-              barCount,
-              performanceMode
-            );
-          } else if (mode === "dna-helix") {
-            renderDnaHelix(
-              pipCtx,
-              pipCanvasRef.current,
-              data,
-              barCount,
-              performanceMode
-            );
-          } else if (mode === "oscilloscope") {
-            renderOscilloscope(
-              pipCtx,
-              pipCanvasRef.current,
-              data,
-              barCount,
-              performanceMode
-            );
-          } else if (mode === "radial-lines") {
-            renderRadialLines(
-              pipCtx,
-              pipCanvasRef.current,
-              data,
-              barCount,
-              performanceMode
-            );
-          } else if (mode === "galaxy") {
-            renderGalaxy(
-              pipCtx,
-              pipCanvasRef.current,
-              data,
-              barCount,
-              performanceMode
-            );
-          } else if (mode === "black-hole") {
-            renderBlackHole(
-              pipCtx,
-              pipCanvasRef.current,
-              data,
-              barCount,
-              performanceMode
-            );
-          }
+
+          // Create PiP props object
+          const pipProps: VisualizeFnProps = {
+            ctx: pipCtx,
+            canvas: pipCanvasRef.current,
+            data,
+            barCount,
+            performanceMode,
+            logoImage: logoImageRef.current,
+          };
+
+          await render(mode, pipProps);
         }
       }
 
@@ -962,7 +813,7 @@ export default function Visualizer({
             >
               {MODES.map((m) => (
                 <option key={m} value={m} className="bg-gray-900 text-white">
-                  {MODE_LABELS[m]}
+                  {m}
                 </option>
               ))}
             </select>

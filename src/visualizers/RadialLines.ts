@@ -1,13 +1,13 @@
-import { getCachedGradient } from "./shared";
+import { getCachedGradient, VisualizeFnProps } from "./shared";
 
-// 5. Radial Lines - Lines radiating from center
-export const renderRadialLines = (
-  ctx: CanvasRenderingContext2D,
-  canvas: HTMLCanvasElement,
-  data: number[],
-  barCount: number,
-  performanceMode = false
-) => {
+// Radial Lines - Lines radiating from center
+export default function renderRadialLines({
+  ctx,
+  canvas,
+  data,
+  barCount,
+  performanceMode = false,
+}: VisualizeFnProps) {
   const centerX = canvas.width / 2;
   const centerY = canvas.height / 2;
   const maxRadius = Math.min(centerX, centerY) * 0.9;
@@ -78,4 +78,4 @@ export const renderRadialLines = (
   ctx.strokeStyle = `rgba(168, 85, 247, ${0.5 + avgIntensity * 0.3})`;
   ctx.lineWidth = 2;
   ctx.stroke();
-};
+}

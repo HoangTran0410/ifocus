@@ -1,13 +1,12 @@
-import { getCachedGradient } from "./shared";
+import { getCachedGradient, VisualizeFnProps } from "./shared";
 
-// 1. Spectrum - Horizontal frequency spectrum with mirrored reflection
-export const renderSpectrum = (
-  ctx: CanvasRenderingContext2D,
-  canvas: HTMLCanvasElement,
-  data: number[],
-  barCount: number,
-  performanceMode = false
-) => {
+export default function renderSpectrum({
+  ctx,
+  canvas,
+  data,
+  barCount,
+  performanceMode = false,
+}: VisualizeFnProps) {
   const barWidth = canvas.width / barCount;
   const gap = 1;
   const actualBarWidth = barWidth - gap;
@@ -52,4 +51,4 @@ export const renderSpectrum = (
     ctx.stroke();
     ctx.shadowBlur = 0;
   }
-};
+}

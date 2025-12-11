@@ -1,3 +1,5 @@
+import { VisualizeFnProps } from "./shared";
+
 // Trap Nation ghost configuration
 const TRAP_NATION_GHOSTS = [
   {
@@ -60,14 +62,13 @@ const TRAP_NATION_GHOSTS = [
 
 const spectrumCache: number[][] = [];
 
-export const renderTrapNation = (
-  ctx: CanvasRenderingContext2D,
-  canvas: HTMLCanvasElement,
-  data: number[],
-  barCount: number,
-  logoImage?: HTMLImageElement | null,
-  performanceMode = false
-) => {
+export default function renderTrapNation({
+  ctx,
+  canvas,
+  data,
+  logoImage,
+  performanceMode = false,
+}: VisualizeFnProps) {
   const centerX = canvas.width / 2;
   const centerY = canvas.height / 2;
   const maxRadius = Math.min(canvas.width, canvas.height) / 4;
@@ -175,4 +176,4 @@ export const renderTrapNation = (
 
     ctx.restore();
   }
-};
+}

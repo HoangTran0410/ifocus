@@ -1,4 +1,6 @@
-// 7. Black Hole - Audio-reactive black hole with accretion disk
+import { VisualizeFnProps } from "./shared";
+
+// Black Hole - Audio-reactive black hole with accretion disk
 const blackHoleState = {
   rotation: 0,
   particles: [] as Array<{
@@ -11,13 +13,12 @@ const blackHoleState = {
   }>,
 };
 
-export const renderBlackHole = (
-  ctx: CanvasRenderingContext2D,
-  canvas: HTMLCanvasElement,
-  data: number[],
-  barCount: number,
-  performanceMode = false
-) => {
+export default function renderBlackHole({
+  ctx,
+  canvas,
+  data,
+  performanceMode = false,
+}: VisualizeFnProps) {
   const centerX = canvas.width / 2;
   const centerY = canvas.height / 2;
   const maxRadius = Math.min(centerX, centerY) * 0.85;
@@ -149,7 +150,6 @@ export const renderBlackHole = (
   // Draw frequency-reactive corona/jets
   if (!performanceMode) {
     for (let jet = 0; jet < 2; jet++) {
-      const jetAngle = jet === 0 ? -Math.PI / 2 : Math.PI / 2;
       const jetLength = maxRadius * 0.5 * (0.3 + avgIntensity * 0.7);
 
       const jetGradient = ctx.createLinearGradient(
@@ -255,4 +255,4 @@ export const renderBlackHole = (
   ctx.arc(centerX, centerY, eventHorizonRadius * 1.2, 0, Math.PI * 2);
   ctx.fillStyle = innerGlow;
   ctx.fill();
-};
+}

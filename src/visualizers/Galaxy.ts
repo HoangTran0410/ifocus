@@ -1,13 +1,14 @@
-// 6. Galaxy/Spiral - Rotating spiral pattern
+import { VisualizeFnProps } from "./shared";
+
+// Galaxy/Spiral - Rotating spiral pattern
 const galaxyState = { rotation: 0 };
 
-export const renderGalaxy = (
-  ctx: CanvasRenderingContext2D,
-  canvas: HTMLCanvasElement,
-  data: number[],
-  barCount: number,
-  performanceMode = false
-) => {
+export default function renderGalaxy({
+  ctx,
+  canvas,
+  data,
+  performanceMode = false,
+}: VisualizeFnProps) {
   const centerX = canvas.width / 2;
   const centerY = canvas.height / 2;
   const maxRadius = Math.min(centerX, centerY) * 0.85;
@@ -90,4 +91,4 @@ export const renderGalaxy = (
   ctx.arc(centerX, centerY, 30 + avgIntensity * 30, 0, Math.PI * 2);
   ctx.fillStyle = centerGlow;
   ctx.fill();
-};
+}

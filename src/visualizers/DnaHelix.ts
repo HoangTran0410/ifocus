@@ -1,11 +1,12 @@
-// 3. DNA Helix - Pulsing double helix
-export const renderDnaHelix = (
-  ctx: CanvasRenderingContext2D,
-  canvas: HTMLCanvasElement,
-  data: number[],
-  barCount: number,
-  performanceMode = false
-) => {
+import { VisualizeFnProps } from "./shared";
+
+// DNA Helix - Pulsing double helix
+export default function renderDnaHelix({
+  ctx,
+  canvas,
+  data,
+  performanceMode = false,
+}: VisualizeFnProps) {
   const centerY = canvas.height / 2;
   const amplitude = canvas.height * 0.3;
   const avgIntensity = data.reduce((a, b) => a + b, 0) / data.length;
@@ -72,4 +73,4 @@ export const renderDnaHelix = (
       ctx.fill();
     }
   }
-};
+}
