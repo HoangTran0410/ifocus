@@ -444,7 +444,7 @@ export default function Background({
     </div>
   );
 
-  return (
+  const backgroundElement = (
     <div
       ref={bgContainerRef}
       className="absolute inset-0 w-full h-full -z-10 overflow-hidden bg-black"
@@ -533,9 +533,21 @@ export default function Background({
           {/* Dust motes (handled by EffectsLayer fireflies re-purposed or just let EffectsLayer handle it if user stacks them, but here we keep it pure css for the rays) */}
         </div>
       )}
-
-      {/* Canvas Effects - rendered via Portal to appear above YouTube iframe (except in PiP) */}
-      {isPiP ? renderEffect() : createPortal(renderEffect(), document.body)}
     </div>
+  );
+
+  // Canvas Effects - rendered outside the filtered container so they're not affected by filters
+  const effectsElement = isPiP
+    ? renderEffect()
+    : // reatePortal ensures effects appear above YouTube iframes
+      // by rendering them at the root of the document, bypassing any stacking context issues
+      // In PiP, we skip it because portals would render to the wrong document.
+      createPortal(renderEffect(), document.body);
+
+  return (
+    <>
+      {backgroundElement}
+      {effectsElement}
+    </>
   );
 }

@@ -50,19 +50,20 @@ export default function PiPContent() {
       {/* Dynamic Background */}
       <Background disableYouTube={true} isPiP={true} />
 
+      {/* Visualizer - handles its own positioning */}
+      {showVisualizer && (
+        <Visualizer
+          onClose={() => setShowVisualizer(false)}
+          forceCenter
+          isPiP={true}
+        />
+      )}
+
       {/* Main Content Layer */}
       <div className="relative z-10 w-full h-full flex flex-col pointer-events-none">
-        {/* Center Area - Visualizer takes priority over Timer */}
+        {/* Center Area - only show Timer when visualizer is not in center mode */}
         <div className="flex-1 flex items-center justify-center p-4 pointer-events-auto">
-          {showVisualizer ? (
-            <div className="w-full max-w-2xl">
-              <Visualizer
-                onClose={() => setShowVisualizer(false)}
-                isCenterMode
-                allowPiP={false}
-              />
-            </div>
-          ) : showTimer ? (
+          {showTimer && !showVisualizer ? (
             <Timer onClose={() => setShowTimer(false)} />
           ) : null}
         </div>

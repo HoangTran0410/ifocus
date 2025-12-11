@@ -197,8 +197,8 @@ function App() {
       {/* Dynamic Background - now uses Zustand internally */}
       <Background />
 
-      {/* Visualizer in Window mode - independent of other effects */}
-      {showVisualizer && visualizerMode === "window" && (
+      {/* Visualizer - handles its own positioning based on visualizerMode */}
+      {showVisualizer && (
         <Visualizer onClose={() => setShowVisualizer(false)} />
       )}
 
@@ -238,16 +238,9 @@ function App() {
           </div>
         </div>
 
-        {/* Center Timer/Visualizer Area */}
+        {/* Center Timer Area - only show Timer when visualizer is not in center mode */}
         <div className="flex-1 flex items-center justify-center p-4 pointer-events-auto">
-          {showVisualizer && visualizerMode === "center" ? (
-            <div className={`transition-all duration-500 w-full max-w-2xl`}>
-              <Visualizer
-                onClose={() => setShowVisualizer(false)}
-                isCenterMode
-              />
-            </div>
-          ) : showTimer ? (
+          {showTimer && !(showVisualizer && visualizerMode === "center") ? (
             <div className={`transition-all duration-500`}>
               <Timer onClose={() => setShowTimer(false)} />
             </div>

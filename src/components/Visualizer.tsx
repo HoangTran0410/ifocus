@@ -15,6 +15,13 @@ import {
   renderWave,
   renderCircular,
   renderTrapNation,
+  renderSpectrum,
+  renderParticles,
+  renderDnaHelix,
+  renderOscilloscope,
+  renderRadialLines,
+  renderGalaxy,
+  clearGradientCache,
 } from "../utils/visualizerRenderers";
 import {
   Mic,
@@ -26,13 +33,24 @@ import {
   Maximize,
   Upload,
   Trash2,
+  Zap,
 } from "lucide-react";
 import {
   useVisualizerMode as useVisualizerDisplayMode,
   useSetVisualizerMode as useSetVisualizerDisplayMode,
 } from "../stores/useAppStore";
 
-type VisualizerMode = "bars" | "wave" | "circular" | "trap-nation";
+type VisualizerMode =
+  | "bars"
+  | "wave"
+  | "circular"
+  | "trap-nation"
+  | "spectrum"
+  | "particles"
+  | "dna-helix"
+  | "oscilloscope"
+  | "radial-lines"
+  | "galaxy";
 
 interface Position {
   x: number;
@@ -44,12 +62,29 @@ interface Size {
   height: number;
 }
 
-const MODES: VisualizerMode[] = ["bars", "wave", "circular", "trap-nation"];
+const MODES: VisualizerMode[] = [
+  "bars",
+  "wave",
+  "circular",
+  "trap-nation",
+  "spectrum",
+  "particles",
+  "dna-helix",
+  "oscilloscope",
+  "radial-lines",
+  "galaxy",
+];
 const MODE_LABELS: Record<VisualizerMode, string> = {
   bars: "Bars",
   wave: "Wave",
   circular: "Circular",
   "trap-nation": "Trap Nation",
+  spectrum: "Spectrum",
+  particles: "Particles",
+  "dna-helix": "DNA Helix",
+  oscilloscope: "Oscilloscope",
+  "radial-lines": "Radial Lines",
+  galaxy: "Galaxy",
 };
 
 const MIN_WIDTH = 120;
@@ -57,22 +92,23 @@ const MIN_HEIGHT = 120;
 const DEFAULT_WIDTH = 400;
 const DEFAULT_HEIGHT = 200;
 
-type DisplayMode = "center" | "window";
-
 interface VisualizerProps {
   onClose?: () => void;
-  isCenterMode?: boolean;
-  allowPiP?: boolean;
+  isPiP?: boolean;
+  forceCenter?: boolean;
 }
 
 export default function Visualizer({
   onClose,
-  isCenterMode = false,
-  allowPiP = true,
+  isPiP = false,
+  forceCenter = false,
 }: VisualizerProps) {
   // Get visualizer display mode from Zustand
-  const displayMode = useVisualizerDisplayMode();
-  const setDisplayMode = useSetVisualizerDisplayMode();
+  const visualizerMode = useVisualizerDisplayMode();
+  const setVisualizerMode = useSetVisualizerDisplayMode();
+
+  // Derive isCenterMode from store
+  const isCenterMode = forceCenter || visualizerMode === "center";
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const animationRef = useRef<number>(0);
@@ -205,7 +241,7 @@ export default function Visualizer({
   );
 
   // PiP state
-  const [isPiP, setIsPiP] = useState(false);
+  const [_isPiP, setIsPiP] = useState(isPiP);
   const pipWindowRef = useRef<Window | null>(null);
   const pipCanvasRef = useRef<HTMLCanvasElement | null>(null);
 
@@ -215,6 +251,15 @@ export default function Visualizer({
     "zen_visualizer_config",
     getAnalyzerConfig()
   );
+  const [performanceMode, setPerformanceMode] = useLocalStorage<boolean>(
+    "zen_visualizer_performance_mode",
+    false
+  );
+
+  // Clear gradient cache when size changes
+  useEffect(() => {
+    clearGradientCache();
+  }, [size.width, size.height]);
 
   // Apply saved config on mount
   useEffect(() => {
@@ -458,11 +503,11 @@ export default function Visualizer({
       const barCount = data.length;
 
       if (mode === "bars") {
-        renderBars(ctx, canvas, data, barCount);
+        renderBars(ctx, canvas, data, barCount, performanceMode);
       } else if (mode === "wave") {
-        renderWave(ctx, canvas, data, barCount);
+        renderWave(ctx, canvas, data, barCount, performanceMode);
       } else if (mode === "circular") {
-        renderCircular(ctx, canvas, data, barCount);
+        renderCircular(ctx, canvas, data, barCount, performanceMode);
       } else if (mode === "trap-nation") {
         renderTrapNation(
           ctx,
@@ -470,8 +515,21 @@ export default function Visualizer({
           data,
           barCount,
           spectrumCacheRef.current,
-          logoImageRef.current
+          logoImageRef.current,
+          performanceMode
         );
+      } else if (mode === "spectrum") {
+        renderSpectrum(ctx, canvas, data, barCount, performanceMode);
+      } else if (mode === "particles") {
+        renderParticles(ctx, canvas, data, barCount, performanceMode);
+      } else if (mode === "dna-helix") {
+        renderDnaHelix(ctx, canvas, data, barCount, performanceMode);
+      } else if (mode === "oscilloscope") {
+        renderOscilloscope(ctx, canvas, data, barCount, performanceMode);
+      } else if (mode === "radial-lines") {
+        renderRadialLines(ctx, canvas, data, barCount, performanceMode);
+      } else if (mode === "galaxy") {
+        renderGalaxy(ctx, canvas, data, barCount, performanceMode);
       }
 
       // Also render to PiP canvas if active
@@ -485,11 +543,29 @@ export default function Visualizer({
             pipCanvasRef.current.height
           );
           if (mode === "bars") {
-            renderBars(pipCtx, pipCanvasRef.current, data, barCount);
+            renderBars(
+              pipCtx,
+              pipCanvasRef.current,
+              data,
+              barCount,
+              performanceMode
+            );
           } else if (mode === "wave") {
-            renderWave(pipCtx, pipCanvasRef.current, data, barCount);
+            renderWave(
+              pipCtx,
+              pipCanvasRef.current,
+              data,
+              barCount,
+              performanceMode
+            );
           } else if (mode === "circular") {
-            renderCircular(pipCtx, pipCanvasRef.current, data, barCount);
+            renderCircular(
+              pipCtx,
+              pipCanvasRef.current,
+              data,
+              barCount,
+              performanceMode
+            );
           } else if (mode === "trap-nation") {
             renderTrapNation(
               pipCtx,
@@ -497,7 +573,56 @@ export default function Visualizer({
               data,
               barCount,
               spectrumCacheRef.current,
-              logoImageRef.current
+              logoImageRef.current,
+              performanceMode
+            );
+          } else if (mode === "spectrum") {
+            renderSpectrum(
+              pipCtx,
+              pipCanvasRef.current,
+              data,
+              barCount,
+              performanceMode
+            );
+          } else if (mode === "particles") {
+            renderParticles(
+              pipCtx,
+              pipCanvasRef.current,
+              data,
+              barCount,
+              performanceMode
+            );
+          } else if (mode === "dna-helix") {
+            renderDnaHelix(
+              pipCtx,
+              pipCanvasRef.current,
+              data,
+              barCount,
+              performanceMode
+            );
+          } else if (mode === "oscilloscope") {
+            renderOscilloscope(
+              pipCtx,
+              pipCanvasRef.current,
+              data,
+              barCount,
+              performanceMode
+            );
+          } else if (mode === "radial-lines") {
+            renderRadialLines(
+              pipCtx,
+              pipCanvasRef.current,
+              data,
+              barCount,
+              performanceMode
+            );
+          } else if (mode === "galaxy") {
+            renderGalaxy(
+              pipCtx,
+              pipCanvasRef.current,
+              data,
+              barCount,
+              performanceMode
             );
           }
         }
@@ -511,7 +636,7 @@ export default function Visualizer({
     return () => {
       cancelAnimationFrame(animationRef.current);
     };
-  }, [mode, size, isPiP]);
+  }, [mode, size, _isPiP, performanceMode]);
 
   const renderSettings = () => (
     <div
@@ -681,6 +806,25 @@ export default function Visualizer({
           )}
         </div>
 
+        {/* Performance Mode Toggle */}
+        <div className="pt-2 border-t border-white/10">
+          <button
+            onClick={() => setPerformanceMode(!performanceMode)}
+            className={`w-full px-3 py-2 text-xs font-medium rounded-md transition-colors cursor-pointer flex items-center justify-center gap-2 ${
+              performanceMode
+                ? "text-green-400 bg-green-500/20 hover:bg-green-500/30"
+                : "text-white/80 bg-white/10 hover:bg-white/20"
+            }`}
+            title="Performance mode reduces visual effects for better framerate on low-end devices"
+          >
+            <Zap size={14} />
+            Performance Mode {performanceMode ? "ON" : "OFF"}
+          </button>
+          <p className="text-[10px] text-white/40 mt-1 text-center">
+            Reduces effects for better FPS
+          </p>
+        </div>
+
         {/* Reset Button */}
         <button
           onClick={handleResetConfig}
@@ -697,19 +841,20 @@ export default function Visualizer({
   return (
     <div
       ref={containerRef}
-      className={`select-none ${
-        isCenterMode ? "relative" : "fixed cursor-move"
-      }`}
+      className={`select-none fixed ${isCenterMode ? "" : "cursor-move"}`}
       style={
         isCenterMode
           ? {
-              zIndex: 1,
+              // Center mode: fixed position, centered on screen
+              left: "50%",
+              top: "50%",
+              transform: "translate(-50%, -50%)",
               width: size.width,
               height: size.height,
-              left: "50%",
-              transform: "translateX(-50%)",
+              zIndex: 50,
             }
           : {
+              // Window mode: fixed position, draggable
               left: position.x,
               top: position.y,
               width: size.width,
@@ -774,15 +919,15 @@ export default function Visualizer({
               <Mic size={14} />
             </button>
             {/* PiP Button */}
-            {allowPiP && (
+            {!isPiP && (
               <button
                 onClick={handlePiPClick}
                 className={`p-1.5 text-xs font-medium rounded-md transition-colors cursor-pointer ${
-                  isPiP
+                  _isPiP
                     ? "text-purple-400 bg-purple-500/20 hover:bg-purple-500/30"
                     : "text-white/80 bg-white/10 hover:bg-white/20"
                 }`}
-                title={isPiP ? "Close PiP" : "Open in PiP"}
+                title={_isPiP ? "Close PiP" : "Open in PiP"}
               >
                 <PictureInPicture2 size={14} />
               </button>
@@ -813,26 +958,32 @@ export default function Visualizer({
               ))}
             </select>
             {/* Display Mode Toggle Button */}
-            {setDisplayMode && (
+            {setVisualizerMode && !forceCenter && (
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  setDisplayMode(
-                    displayMode === "center" ? "window" : "center"
+                  if (visualizerMode === "center") {
+                    // When switching to window mode, center it on screen
+                    const centerX = (window.innerWidth - size.width) / 2;
+                    const centerY = (window.innerHeight - size.height) / 2;
+                    setPosition({ x: centerX, y: centerY });
+                  }
+                  setVisualizerMode(
+                    visualizerMode === "center" ? "window" : "center"
                   );
                 }}
                 className={`p-1.5 text-xs font-medium rounded-md transition-colors cursor-pointer ${
-                  displayMode === "center"
+                  visualizerMode === "center"
                     ? "text-cyan-400 bg-cyan-500/20 hover:bg-cyan-500/30"
                     : "text-white/80 bg-white/10 hover:bg-white/20"
                 }`}
                 title={
-                  displayMode === "center"
+                  visualizerMode === "center"
                     ? "Switch to window mode"
                     : "Switch to center mode"
                 }
               >
-                {displayMode === "center" ? (
+                {visualizerMode === "center" ? (
                   <Move size={14} />
                 ) : (
                   <Maximize size={14} />
