@@ -350,10 +350,12 @@ export default function Background({
       {/* Wrapper for applying filters and beat sync transforms (only when not in modal) */}
       <div
         ref={isModal ? undefined : videoContainerRef}
-        className={isModal ? "" : "fixed inset-0 w-full h-full overflow-hidden"}
+        className={
+          isModal ? "contents" : "fixed inset-0 w-full h-full overflow-hidden"
+        }
         style={
           isModal
-            ? {} // No filters/transforms in modal mode
+            ? undefined // Use display: contents (from className) - children render as if wrapper doesn't exist
             : {
                 zIndex: -1,
                 filter: getFilterStyle(),
