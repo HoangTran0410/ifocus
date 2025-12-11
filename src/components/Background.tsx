@@ -58,6 +58,7 @@ export default function Background({
 
   // Ref for direct DOM manipulation (avoids React re-renders for smooth animation)
   const bgContainerRef = useRef<HTMLDivElement>(null);
+  const videoContainerRef = useRef<HTMLDivElement>(null); // For portaled video/youtube
   const animationFrameRef = useRef<number>(0);
 
   // Merge with defaults to handle missing properties
@@ -116,30 +117,37 @@ export default function Background({
       if (bgContainerRef.current) {
         bgContainerRef.current.style.transform = `scale(${baseZoom})`;
       }
+      if (videoContainerRef.current) {
+        videoContainerRef.current.style.transform = `scale(${baseZoom})`;
+      }
       return;
     }
 
     let currentZoom = baseZoom;
 
     const updateZoom = () => {
-      if (bgContainerRef.current) {
-        if (isAudioCaptureActive()) {
-          // Use beat detection instead of average frequency
-          const beatIntensity = detectBeat();
+      const applyTransform = (element: HTMLDivElement | null) => {
+        if (!element) return;
+        element.style.transform = `scale(${currentZoom})`;
+      };
 
-          // Calculate target zoom based on beat intensity (using prop)
-          const targetZoom = baseZoom + beatIntensity * syncConfig.intensity;
+      if (isAudioCaptureActive()) {
+        // Use beat detection instead of average frequency
+        const beatIntensity = detectBeat();
 
-          // Smooth transition towards target (using prop)
-          currentZoom += (targetZoom - currentZoom) * syncConfig.speed;
+        // Calculate target zoom based on beat intensity (using prop)
+        const targetZoom = baseZoom + beatIntensity * syncConfig.intensity;
 
-          bgContainerRef.current.style.transform = `scale(${currentZoom})`;
-        } else {
-          // Smoothly return to base zoom when no audio
-          currentZoom += (baseZoom - currentZoom) * syncConfig.speed;
-          bgContainerRef.current.style.transform = `scale(${currentZoom})`;
-        }
+        // Smooth transition towards target (using prop)
+        currentZoom += (targetZoom - currentZoom) * syncConfig.speed;
+      } else {
+        // Smoothly return to base zoom when no audio
+        currentZoom += (baseZoom - currentZoom) * syncConfig.speed;
       }
+
+      applyTransform(bgContainerRef.current);
+      applyTransform(videoContainerRef.current);
+
       animationFrameRef.current = requestAnimationFrame(updateZoom);
     };
 
@@ -149,6 +157,9 @@ export default function Background({
       cancelAnimationFrame(animationFrameRef.current);
       if (bgContainerRef.current) {
         bgContainerRef.current.style.transform = `scale(${baseZoom})`;
+      }
+      if (videoContainerRef.current) {
+        videoContainerRef.current.style.transform = `scale(${baseZoom})`;
       }
     };
   }, [
@@ -336,73 +347,88 @@ export default function Background({
         />
       )}
 
-      {/* Video/YouTube player container - changes position based on modal state */}
+      {/* Wrapper for applying filters and beat sync transforms (only when not in modal) */}
       <div
-        className={
-          isModal
-            ? "fixed w-[80vw] max-w-4xl aspect-video left-1/2 top-1/2 rounded-xl overflow-hidden shadow-2xl border border-white/10 bg-black"
-            : "fixed inset-0 w-full h-full"
-        }
+        ref={isModal ? undefined : videoContainerRef}
+        className={isModal ? "" : "fixed inset-0 w-full h-full overflow-hidden"}
         style={
           isModal
-            ? {
-                zIndex: 99999,
-                transform: "translate(-50%, -50%)",
-                animation: "modalFadeIn 0.3s ease-out forwards",
-              }
+            ? {} // No filters/transforms in modal mode
             : {
-                zIndex: -1, // Behind everything when in background mode
-                pointerEvents: "none",
+                zIndex: -1,
+                filter: getFilterStyle(),
+                transformOrigin: "center center",
+                transition: "filter 700ms ease-in-out",
               }
         }
       >
-        {/* Instructional text & close button - only in modal mode */}
-        {isModal && (
-          <>
-            {scene.type === "youtube" &&
-              internalShowYoutubeModal &&
-              !hasStartedPlayingRef.current && (
-                <div className="absolute top-3 left-3 z-10 px-3 py-1.5 rounded-lg bg-black/60 text-white/90 text-sm">
-                  Click the video to start playback
-                </div>
-              )}
-            <button
-              onClick={handleCloseModal}
-              className="absolute top-3 right-3 z-10 w-8 h-8 flex items-center justify-center rounded-full bg-black/60 hover:bg-black/80 text-white/80 hover:text-white transition-all cursor-pointer"
-            >
-              ✕
-            </button>
-          </>
-        )}
+        {/* Video/YouTube player container - changes position based on modal state */}
+        <div
+          className={
+            isModal
+              ? "fixed w-[80vw] max-w-4xl aspect-video left-1/2 top-1/2 rounded-xl overflow-hidden shadow-2xl border border-white/10 bg-black"
+              : "w-full h-full"
+          }
+          style={
+            isModal
+              ? {
+                  zIndex: 99999,
+                  transform: "translate(-50%, -50%)",
+                  animation: "modalFadeIn 0.3s ease-out forwards",
+                }
+              : {
+                  pointerEvents: "none",
+                }
+          }
+        >
+          {/* Instructional text & close button - only in modal mode */}
+          {isModal && (
+            <>
+              {scene.type === "youtube" &&
+                internalShowYoutubeModal &&
+                !hasStartedPlayingRef.current && (
+                  <div className="absolute top-3 left-3 z-10 px-3 py-1.5 rounded-lg bg-black/60 text-white/90 text-sm">
+                    Click the video to start playback
+                  </div>
+                )}
+              <button
+                onClick={handleCloseModal}
+                className="absolute top-3 right-3 z-10 w-8 h-8 flex items-center justify-center rounded-full bg-black/60 hover:bg-black/80 text-white/80 hover:text-white transition-all cursor-pointer"
+              >
+                ✕
+              </button>
+            </>
+          )}
 
-        {scene.type === "video" ? (
-          <video
-            autoPlay
-            loop
-            muted={isMuted}
-            controls={isModal}
-            playsInline
-            className="w-full h-full object-cover"
-            key={scene.url}
-          >
-            <source src={scene.url} type="video/mp4" />
-          </video>
-        ) : (
-          /* Single YouTube player */
-          <YouTube
-            videoId={getYoutubeVideoId(scene.url) || ""}
-            opts={youtubeOpts}
-            onReady={onPlayerReady}
-            onStateChange={onPlayerStateChange}
-            onError={onPlayerError}
-            className="w-full h-full"
-            iframeClassName={`w-full h-full ${
-              isModal ? "" : "pointer-events-none"
-            }`}
-            style={{ width: "100%", height: "100%" }}
-            key={scene.url} // Only reload when scene URL changes
-          />
-        )}
+          {scene.type === "video" ? (
+            <video
+              autoPlay
+              loop
+              muted={isMuted}
+              controls={isModal}
+              playsInline
+              className="w-full h-full object-cover"
+              key={scene.url}
+            >
+              <source src={scene.url} type="video/mp4" />
+            </video>
+          ) : (
+            /* Single YouTube player */
+            <YouTube
+              videoId={getYoutubeVideoId(scene.url) || ""}
+              opts={youtubeOpts}
+              onReady={onPlayerReady}
+              onStateChange={onPlayerStateChange}
+              onError={onPlayerError}
+              className="w-full h-full"
+              iframeClassName={`w-full h-full ${
+                isModal ? "" : "pointer-events-none"
+              }`}
+              style={{ width: "100%", height: "100%" }}
+              key={scene.url} // Only reload when scene URL changes
+            />
+          )}
+        </div>
       </div>
     </>
   );
