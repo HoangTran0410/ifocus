@@ -1,9 +1,23 @@
 import React, { useRef, useEffect, useState, useCallback } from "react";
 import { createPortal } from "react-dom";
 import type { YouTubeProps } from "react-youtube";
-import { Scene, EffectType } from "../types";
 import loadable from "@loadable/component";
 import { LoadingFallback } from "../utils/loader";
+import { isAudioCaptureActive, detectBeat } from "../utils/audioAnalyzer";
+import {
+  DEFAULT_BG_FILTERS,
+  DEFAULT_SYNC_VISUALIZER_CONFIG,
+} from "../constants";
+import {
+  useCurrentScene,
+  useCurrentEffect,
+  useIsBgMuted,
+  useBgFilters,
+  useBgInitialZoom,
+  useSyncVisualizerConfig,
+  useShowVideoModal,
+  useSetShowVideoModal,
+} from "../stores/useAppStore";
 
 const YouTube = loadable(() => import("react-youtube"), {
   fallback: LoadingFallback,
@@ -13,24 +27,24 @@ const EffectsLayer = loadable(() => import("./EffectsLayer"), {
 });
 
 interface BackgroundProps {
-  scene: Scene;
-  effect?: EffectType;
-  isMuted?: boolean;
   disableYouTube?: boolean; // Option to disable YouTube for PiP
-  showVideoModal?: boolean;
-  setShowVideoModal?: (show: boolean) => void;
   isPiP?: boolean; // When true, don't use portals (they'd render to wrong document)
 }
 
 export default function Background({
-  scene,
-  effect = "none",
-  isMuted = true,
   disableYouTube = false,
-  showVideoModal = false,
-  setShowVideoModal = (_: boolean) => {},
   isPiP = false,
 }: BackgroundProps) {
+  // Get state from Zustand store
+  const scene = useCurrentScene();
+  const effect = useCurrentEffect();
+  const isMuted = useIsBgMuted();
+  const bgFilters = useBgFilters();
+  const bgInitialZoom = useBgInitialZoom();
+  const syncVisualizerConfig = useSyncVisualizerConfig();
+  const showVideoModal = useShowVideoModal();
+  const setShowVideoModal = useSetShowVideoModal();
+
   const playerRef = useRef<any>(null);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [youtubeError, setYoutubeError] = useState(false);
@@ -41,6 +55,108 @@ export default function Background({
   const hasStartedPlayingRef = useRef(false);
 
   const isModal = showVideoModal || internalShowYoutubeModal;
+
+  // Ref for direct DOM manipulation (avoids React re-renders for smooth animation)
+  const bgContainerRef = useRef<HTMLDivElement>(null);
+  const animationFrameRef = useRef<number>(0);
+
+  // Merge with defaults to handle missing properties
+  const syncConfig = {
+    ...DEFAULT_SYNC_VISUALIZER_CONFIG,
+    ...syncVisualizerConfig,
+  };
+
+  // Generate CSS filter string from settings
+  const getFilterStyle = () => {
+    const filters: string[] = [];
+
+    // Merge with defaults to handle missing properties
+    const f = { ...DEFAULT_BG_FILTERS, ...bgFilters };
+
+    if (f.blur > 0) {
+      filters.push(`blur(${f.blur}px)`);
+    }
+    if (f.brightness !== 100) {
+      filters.push(`brightness(${f.brightness}%)`);
+    }
+    if (f.contrast !== 100) {
+      filters.push(`contrast(${f.contrast}%)`);
+    }
+    if (f.grayscale > 0) {
+      filters.push(`grayscale(${f.grayscale}%)`);
+    }
+    if (f.hueRotate !== 0) {
+      filters.push(`hue-rotate(${f.hueRotate}deg)`);
+    }
+    if (f.invert > 0) {
+      filters.push(`invert(${f.invert}%)`);
+    }
+    if (f.opacity !== 100) {
+      filters.push(`opacity(${f.opacity}%)`);
+    }
+    if (f.saturate !== 100) {
+      filters.push(`saturate(${f.saturate}%)`);
+    }
+    if (f.sepia > 0) {
+      filters.push(`sepia(${f.sepia}%)`);
+    }
+
+    return filters.length > 0 ? filters.join(" ") : "none";
+  };
+
+  // Calculate initial zoom scale
+  const getInitialZoomScale = () => bgInitialZoom / 100;
+
+  // Audio-reactive zoom effect using requestAnimationFrame + direct DOM manipulation
+  useEffect(() => {
+    const baseZoom = getInitialZoomScale();
+
+    if (!syncConfig.enabled) {
+      // Apply only initial zoom when audio zoom is disabled
+      if (bgContainerRef.current) {
+        bgContainerRef.current.style.transform = `scale(${baseZoom})`;
+      }
+      return;
+    }
+
+    let currentZoom = baseZoom;
+
+    const updateZoom = () => {
+      if (bgContainerRef.current) {
+        if (isAudioCaptureActive()) {
+          // Use beat detection instead of average frequency
+          const beatIntensity = detectBeat();
+
+          // Calculate target zoom based on beat intensity (using prop)
+          const targetZoom = baseZoom + beatIntensity * syncConfig.intensity;
+
+          // Smooth transition towards target (using prop)
+          currentZoom += (targetZoom - currentZoom) * syncConfig.speed;
+
+          bgContainerRef.current.style.transform = `scale(${currentZoom})`;
+        } else {
+          // Smoothly return to base zoom when no audio
+          currentZoom += (baseZoom - currentZoom) * syncConfig.speed;
+          bgContainerRef.current.style.transform = `scale(${currentZoom})`;
+        }
+      }
+      animationFrameRef.current = requestAnimationFrame(updateZoom);
+    };
+
+    animationFrameRef.current = requestAnimationFrame(updateZoom);
+
+    return () => {
+      cancelAnimationFrame(animationFrameRef.current);
+      if (bgContainerRef.current) {
+        bgContainerRef.current.style.transform = `scale(${baseZoom})`;
+      }
+    };
+  }, [
+    syncConfig.enabled,
+    syncConfig.speed,
+    syncConfig.intensity,
+    bgInitialZoom,
+  ]);
 
   const handleCloseModal = () => {
     setShowVideoModal(false);
@@ -61,12 +177,19 @@ export default function Background({
     setInternalShowYoutubeModal(false);
     hasStartedPlayingRef.current = false;
 
+    // Programmatically load image to detect when ready (works in PiP context)
+    if (scene.type === "image") {
+      const img = new Image();
+      img.onload = () => setImageLoaded(true);
+      img.src = scene.url;
+    }
+
     // Clear player ref when scene changes to prevent stale references
     // This helps avoid the "Cannot read properties of null" error
     return () => {
       playerRef.current = null;
     };
-  }, [scene.url, setShowVideoModal]);
+  }, [scene.url, scene.type, setShowVideoModal]);
 
   // Handle mute/unmute changes
   useEffect(() => {
@@ -294,7 +417,15 @@ export default function Background({
   );
 
   return (
-    <div className="absolute inset-0 w-full h-full -z-10 overflow-hidden transition-all duration-700 ease-in-out bg-black">
+    <div
+      ref={bgContainerRef}
+      className="absolute inset-0 w-full h-full -z-10 overflow-hidden bg-black"
+      style={{
+        filter: getFilterStyle(),
+        transformOrigin: "center center",
+        transition: "filter 700ms ease-in-out, opacity 700ms ease-in-out", // Only transition filter and opacity, not transform
+      }}
+    >
       {scene.type === "color" && (
         <div className="w-full h-full" style={{ backgroundColor: scene.url }} />
       )}
@@ -319,7 +450,6 @@ export default function Background({
             src={scene.url}
             alt="background"
             loading="eager"
-            onLoad={() => setImageLoaded(true)}
             className={`w-full h-full object-cover transition-opacity duration-700 ${
               imageLoaded ? "opacity-100" : "opacity-0"
             }`}

@@ -9,48 +9,59 @@ import {
   Save,
   Trash2,
   Check,
+  Settings,
+  BarChart,
+  ZoomIn,
+  RotateCcw,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
-import type { Scene } from "../types";
+import type { Scene, BgFilters, SyncVisualizerConfig } from "../types";
 import {
   DEFAULT_IMAGES,
   DEFAULT_VIDEOS,
   DEFAULT_COLORS,
   DEFAULT_GRADIENTS,
   DEFAULT_YOUTUBE,
+  DEFAULT_BG_FILTERS,
 } from "../constants";
-import useDebounce from "../hooks/useHook";
+import useDebounce from "../hooks/useDebounce";
+import { useLocalStorage } from "../hooks/useLocalStorage";
+import {
+  useCurrentScene,
+  useSetCurrentScene,
+  useIsBgMuted,
+  useSetIsBgMuted,
+  useSetShowVideoModal,
+  useBgFilters,
+  useSetBgFilters,
+  useBgInitialZoom,
+  useSetBgInitialZoom,
+  useSyncVisualizerConfig,
+  useSetSyncVisualizerConfig,
+} from "../stores/useAppStore";
 
-interface SceneSelectorProps {
-  currentScene: Scene;
-  setScene: (scene: Scene) => void;
-  isBgMuted: boolean;
-  setIsBgMuted: (muted: boolean) => void;
-  setShowVideoModal?: (show: boolean) => void;
-}
+type TabType = "image" | "color" | "video" | "settings";
 
-const STORAGE_KEY_COLORS = "zen_user_colors";
-const STORAGE_KEY_GRADIENTS = "zen_user_gradients";
-
-type TabType = "image" | "color" | "video" | "custom";
-
-export default function SceneSelector({
-  currentScene,
-  setScene,
-  isBgMuted,
-  setIsBgMuted,
-  setShowVideoModal = (_: boolean) => {},
-}: SceneSelectorProps) {
+export default function SceneSelector() {
+  // Get state from Zustand store
+  const currentScene = useCurrentScene();
+  const setScene = useSetCurrentScene();
+  const isBgMuted = useIsBgMuted();
+  const setIsBgMuted = useSetIsBgMuted();
+  const setShowVideoModal = useSetShowVideoModal();
+  const bgFilters = useBgFilters();
+  const setBgFilters = useSetBgFilters();
+  const bgInitialZoom = useBgInitialZoom();
+  const setBgInitialZoom = useSetBgInitialZoom();
+  const syncVisualizerConfig = useSyncVisualizerConfig();
+  const setSyncVisualizerConfig = useSetSyncVisualizerConfig();
   const [activeTab, setActiveTab] = useState<TabType>("image");
 
   const [visitedTabs, setVisitedTabs] = useState<Set<TabType>>(
     new Set(["image"])
   );
 
-  useEffect(() => {
-    if (!visitedTabs.has(activeTab)) {
-      setVisitedTabs((prev) => new Set([...prev, activeTab]));
-    }
-  }, [activeTab, visitedTabs]);
   const [customVideoUrl, setCustomVideoUrl] = useState("");
   const [customImageUrl, setCustomImageUrl] = useState("");
   const [customColor, setCustomColorRaw] = useState("#1a1a1a");
@@ -65,27 +76,23 @@ export default function SceneSelector({
   const setGradientStops = useDebounce(setGradientStopsRaw, 100);
 
   // User saved presets
-  const [userColors, setUserColors] = useState<Scene[]>([]);
-  const [userGradients, setUserGradients] = useState<Scene[]>([]);
+  const [userColors, setUserColors] = useLocalStorage<Scene[]>(
+    "zen_user_colors",
+    []
+  );
+  const [userGradients, setUserGradients] = useLocalStorage<Scene[]>(
+    "zen_user_gradients",
+    []
+  );
 
-  // Load user presets from localStorage on mount
+  // Collapsible settings sections
+  const [filtersExpanded, setFiltersExpanded] = useState(false);
+
   useEffect(() => {
-    const savedColors = localStorage.getItem(STORAGE_KEY_COLORS);
-    const savedGradients = localStorage.getItem(STORAGE_KEY_GRADIENTS);
-    if (savedColors) setUserColors(JSON.parse(savedColors));
-    if (savedGradients) setUserGradients(JSON.parse(savedGradients));
-  }, []);
-
-  // Save user presets to localStorage
-  const saveUserColors = (colors: Scene[]) => {
-    setUserColors(colors);
-    localStorage.setItem(STORAGE_KEY_COLORS, JSON.stringify(colors));
-  };
-
-  const saveUserGradients = (gradients: Scene[]) => {
-    setUserGradients(gradients);
-    localStorage.setItem(STORAGE_KEY_GRADIENTS, JSON.stringify(gradients));
-  };
+    if (!visitedTabs.has(activeTab)) {
+      setVisitedTabs((prev) => new Set([...prev, activeTab]));
+    }
+  }, [activeTab, visitedTabs]);
 
   const handleSaveColor = () => {
     const name = prompt("Enter a name for this color:");
@@ -96,7 +103,7 @@ export default function SceneSelector({
       url: customColor,
       name,
     };
-    saveUserColors([...userColors, newColor]);
+    setUserColors([...userColors, newColor]);
   };
 
   const handleSaveGradient = () => {
@@ -108,15 +115,15 @@ export default function SceneSelector({
       url: getGradientUrl(),
       name,
     };
-    saveUserGradients([...userGradients, newGradient]);
+    setUserGradients([...userGradients, newGradient]);
   };
 
   const handleDeleteUserColor = (id: string) => {
-    saveUserColors(userColors.filter((c) => c.id !== id));
+    setUserColors(userColors.filter((c) => c.id !== id));
   };
 
   const handleDeleteUserGradient = (id: string) => {
-    saveUserGradients(userGradients.filter((g) => g.id !== id));
+    setUserGradients(userGradients.filter((g) => g.id !== id));
   };
 
   const handleCustomColorApply = () => {
@@ -287,14 +294,14 @@ export default function SceneSelector({
         Video
       </button>
       <button
-        onClick={() => setActiveTab("custom")}
+        onClick={() => setActiveTab("settings")}
         className={`flex-1 py-3 text-sm font-medium transition-colors ${
-          activeTab === "custom"
+          activeTab === "settings"
             ? "text-white border-b-2 border-white"
             : "text-white/50 hover:text-white"
         }`}
       >
-        Upload
+        Settings
       </button>
     </div>
   );
@@ -318,13 +325,27 @@ export default function SceneSelector({
             type="submit"
             className="bg-white text-black p-2 rounded-lg hover:bg-white/90"
           >
-            <Upload size={18} />
+            <Check size={18} />
           </button>
         </form>
         <p className="text-[10px] text-white/30 mt-1">
           Supports direct image URLs (.jpg, .png, .gif, etc.)
         </p>
       </div>
+
+      {/* File Upload */}
+      <label className="p-3 rounded-xl bg-white/5 border border-white/10 cursor-pointer hover:bg-white/10 transition-all flex items-center gap-3">
+        <input
+          type="file"
+          className="hidden"
+          accept="image/*"
+          onChange={handleFileUpload}
+        />
+        <Upload size={18} className="text-white/50" />
+        <span className="text-xs text-white/70 font-medium">
+          Upload from device
+        </span>
+      </label>
 
       {/* Preset Images */}
       <div className="grid grid-cols-2 gap-3">
@@ -696,13 +717,27 @@ export default function SceneSelector({
                 type="submit"
                 className="bg-white text-black p-2 rounded-lg hover:bg-white/90"
               >
-                <Video size={18} />
+                <Check size={18} />
               </button>
             </form>
             <p className="text-[10px] text-white/30 mt-1">
               Supports YouTube links or direct .mp4 URLs.
             </p>
           </div>
+
+          {/* File Upload */}
+          <label className="p-3 rounded-xl bg-white/5 border border-white/10 cursor-pointer hover:bg-white/10 transition-all flex items-center gap-3">
+            <input
+              type="file"
+              className="hidden"
+              accept="video/*"
+              onChange={handleFileUpload}
+            />
+            <Upload size={18} className="text-white/50" />
+            <span className="text-xs text-white/70 font-medium">
+              Upload from device
+            </span>
+          </label>
 
           {/* Preset Videos */}
           <div className="grid grid-cols-2 gap-3 pb-4">
@@ -756,33 +791,322 @@ export default function SceneSelector({
     </>
   );
 
-  const renderCustomTab = () => (
-    <div className="space-y-4">
-      <div className="p-3 rounded-xl bg-white/5 border border-white/10">
-        <label className="text-xs font-bold text-white/50 uppercase mb-2 block">
-          Upload File
-        </label>
-        <label className="relative cursor-pointer group w-full aspect-video rounded-xl border-2 border-dashed border-white/20 hover:border-white/50 flex flex-col items-center justify-center transition-all bg-white/5 hover:bg-white/10">
+  const renderSettingsTab = () => {
+    // Helper to update a single filter value
+    const updateFilter = (key: keyof BgFilters, value: number | string) => {
+      setBgFilters({ ...bgFilters, [key]: value });
+    };
+
+    // Reset all filters to defaults
+    const resetFilters = () => {
+      setBgFilters(DEFAULT_BG_FILTERS);
+      setBgInitialZoom(100);
+    };
+
+    // Merge with defaults to handle missing properties
+    const f = { ...DEFAULT_BG_FILTERS, ...bgFilters };
+
+    return (
+      <div className="space-y-4 pb-4">
+        {/* Zoom with Audio */}
+        <div className="p-3 rounded-xl bg-white/5 border border-white/10">
+          <label className="flex justify-between items-center text-xs text-white/70">
+            <span className="flex items-center gap-2">
+              <BarChart size={14} />
+              Sync with Visualizer
+            </span>
+            <button
+              onClick={() =>
+                setSyncVisualizerConfig({
+                  ...syncVisualizerConfig,
+                  enabled: !syncVisualizerConfig.enabled,
+                })
+              }
+              className={`relative w-10 h-5 rounded-full transition-colors ${
+                syncVisualizerConfig.enabled ? "bg-purple-500" : "bg-white/20"
+              }`}
+            >
+              <span
+                className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white transition-transform ${
+                  syncVisualizerConfig.enabled ? "translate-x-5" : ""
+                }`}
+              />
+            </button>
+          </label>
+          <p className="text-[10px] text-white/30 mt-2">
+            Background will zoom in/out following the audio intensity.
+          </p>
+
+          {/* Sub-settings for zoom (only visible when enabled) */}
+          {syncVisualizerConfig.enabled && (
+            <div className="mt-3 pt-3 border-t border-white/10 space-y-3">
+              {/* Zoom Intensity */}
+              <div>
+                <label className="flex justify-between text-[10px] text-white/50 mb-1">
+                  <span>Intensity</span>
+                  <span>
+                    {Math.round(syncVisualizerConfig.intensity * 100)}%
+                  </span>
+                </label>
+                <input
+                  type="range"
+                  min="0.05"
+                  max="0.5"
+                  step="0.01"
+                  value={syncVisualizerConfig.intensity}
+                  onChange={(e) =>
+                    setSyncVisualizerConfig({
+                      ...syncVisualizerConfig,
+                      intensity: Number(e.target.value),
+                    })
+                  }
+                  className="w-full h-1 bg-white/10 rounded-lg appearance-none cursor-pointer accent-purple-500"
+                />
+              </div>
+
+              {/* Zoom Speed */}
+              <div>
+                <label className="flex justify-between text-[10px] text-white/50 mb-1">
+                  <span>Smoothing</span>
+                  <span>{Math.round(syncVisualizerConfig.speed * 100)}%</span>
+                </label>
+                <input
+                  type="range"
+                  min="0.05"
+                  max="0.5"
+                  step="0.01"
+                  value={syncVisualizerConfig.speed}
+                  onChange={(e) =>
+                    setSyncVisualizerConfig({
+                      ...syncVisualizerConfig,
+                      speed: Number(e.target.value),
+                    })
+                  }
+                  className="w-full h-1 bg-white/10 rounded-lg appearance-none cursor-pointer accent-purple-500"
+                />
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Initial Zoom */}
+        <div className="p-3 rounded-xl bg-white/5 border border-white/10">
+          <label className="flex justify-between text-xs text-white/70 mb-2">
+            <span className="flex items-center gap-2">
+              <ZoomIn size={14} />
+              Initial Zoom
+            </span>
+            <span className="text-purple-400">{bgInitialZoom}%</span>
+          </label>
           <input
-            type="file"
-            className="hidden"
-            accept="image/*,video/*"
-            onChange={handleFileUpload}
+            type="range"
+            min="100"
+            max="200"
+            value={bgInitialZoom}
+            onChange={(e) => setBgInitialZoom(Number(e.target.value))}
+            className="w-full h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer accent-purple-500"
           />
-          <Upload
-            size={24}
-            className="mb-2 text-white/50 group-hover:text-white"
-          />
-          <span className="text-xs text-white/50 group-hover:text-white font-medium">
-            Click to Upload
-          </span>
-        </label>
-        <p className="text-[10px] text-white/30 mt-2">
-          Supports images and video files from your device.
-        </p>
+          <p className="text-[10px] text-white/30 mt-1">
+            Base zoom level for the background (100% = no zoom)
+          </p>
+        </div>
+
+        {/* Filters Section */}
+        <div className="rounded-xl bg-white/5 border border-white/10 overflow-hidden">
+          <button
+            onClick={() => setFiltersExpanded(!filtersExpanded)}
+            className="w-full p-3 flex justify-between items-center text-xs font-bold text-white/50 uppercase hover:bg-white/5 transition-colors"
+          >
+            <span className="flex items-center gap-2">
+              <Palette size={14} />
+              Filters
+            </span>
+            {filtersExpanded ? (
+              <ChevronUp size={16} className="text-white/30" />
+            ) : (
+              <ChevronDown size={16} className="text-white/30" />
+            )}
+          </button>
+
+          {filtersExpanded && (
+            <div className="p-3 space-y-4">
+              {/* Reset Button */}
+              <button
+                onClick={resetFilters}
+                className="w-full p-2 rounded-lg bg-white/5 border border-white/10 text-xs text-white/70 hover:bg-white/10 hover:text-white transition-all flex items-center justify-center gap-2"
+                style={{
+                  boxShadow: "border-box",
+                }}
+              >
+                <RotateCcw size={14} />
+                Reset All Filters
+              </button>
+
+              {/* Blur */}
+              <div>
+                <label className="flex justify-between text-[10px] text-white/50 mb-1">
+                  <span>Blur</span>
+                  <span>{f.blur}px</span>
+                </label>
+                <input
+                  type="range"
+                  min="0"
+                  max="20"
+                  value={f.blur}
+                  onChange={(e) => updateFilter("blur", Number(e.target.value))}
+                  className="w-full h-1 bg-white/10 rounded-lg appearance-none cursor-pointer accent-purple-500"
+                />
+              </div>
+
+              {/* Brightness */}
+              <div>
+                <label className="flex justify-between text-[10px] text-white/50 mb-1">
+                  <span>Brightness</span>
+                  <span>{f.brightness}%</span>
+                </label>
+                <input
+                  type="range"
+                  min="0"
+                  max="200"
+                  value={f.brightness}
+                  onChange={(e) =>
+                    updateFilter("brightness", Number(e.target.value))
+                  }
+                  className="w-full h-1 bg-white/10 rounded-lg appearance-none cursor-pointer accent-purple-500"
+                />
+              </div>
+
+              {/* Contrast */}
+              <div>
+                <label className="flex justify-between text-[10px] text-white/50 mb-1">
+                  <span>Contrast</span>
+                  <span>{f.contrast}%</span>
+                </label>
+                <input
+                  type="range"
+                  min="0"
+                  max="200"
+                  value={f.contrast}
+                  onChange={(e) =>
+                    updateFilter("contrast", Number(e.target.value))
+                  }
+                  className="w-full h-1 bg-white/10 rounded-lg appearance-none cursor-pointer accent-purple-500"
+                />
+              </div>
+
+              {/* Grayscale */}
+              <div>
+                <label className="flex justify-between text-[10px] text-white/50 mb-1">
+                  <span>Grayscale</span>
+                  <span>{f.grayscale}%</span>
+                </label>
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={f.grayscale}
+                  onChange={(e) =>
+                    updateFilter("grayscale", Number(e.target.value))
+                  }
+                  className="w-full h-1 bg-white/10 rounded-lg appearance-none cursor-pointer accent-purple-500"
+                />
+              </div>
+
+              {/* Hue Rotate */}
+              <div>
+                <label className="flex justify-between text-[10px] text-white/50 mb-1">
+                  <span>Hue Rotate</span>
+                  <span>{f.hueRotate}°</span>
+                </label>
+                <input
+                  type="range"
+                  min="0"
+                  max="360"
+                  value={f.hueRotate}
+                  onChange={(e) =>
+                    updateFilter("hueRotate", Number(e.target.value))
+                  }
+                  className="w-full h-1 bg-white/10 rounded-lg appearance-none cursor-pointer accent-purple-500"
+                />
+              </div>
+
+              {/* Invert */}
+              <div>
+                <label className="flex justify-between text-[10px] text-white/50 mb-1">
+                  <span>Invert</span>
+                  <span>{f.invert}%</span>
+                </label>
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={f.invert}
+                  onChange={(e) =>
+                    updateFilter("invert", Number(e.target.value))
+                  }
+                  className="w-full h-1 bg-white/10 rounded-lg appearance-none cursor-pointer accent-purple-500"
+                />
+              </div>
+
+              {/* Opacity */}
+              <div>
+                <label className="flex justify-between text-[10px] text-white/50 mb-1">
+                  <span>Opacity</span>
+                  <span>{f.opacity}%</span>
+                </label>
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={f.opacity}
+                  onChange={(e) =>
+                    updateFilter("opacity", Number(e.target.value))
+                  }
+                  className="w-full h-1 bg-white/10 rounded-lg appearance-none cursor-pointer accent-purple-500"
+                />
+              </div>
+
+              {/* Saturate */}
+              <div>
+                <label className="flex justify-between text-[10px] text-white/50 mb-1">
+                  <span>Saturate</span>
+                  <span>{f.saturate}%</span>
+                </label>
+                <input
+                  type="range"
+                  min="0"
+                  max="300"
+                  value={f.saturate}
+                  onChange={(e) =>
+                    updateFilter("saturate", Number(e.target.value))
+                  }
+                  className="w-full h-1 bg-white/10 rounded-lg appearance-none cursor-pointer accent-purple-500"
+                />
+              </div>
+
+              {/* Sepia */}
+              <div>
+                <label className="flex justify-between text-[10px] text-white/50 mb-1">
+                  <span>Sepia</span>
+                  <span>{f.sepia}%</span>
+                </label>
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={f.sepia}
+                  onChange={(e) =>
+                    updateFilter("sepia", Number(e.target.value))
+                  }
+                  className="w-full h-1 bg-white/10 rounded-lg appearance-none cursor-pointer accent-purple-500"
+                />
+              </div>
+            </div>
+          )}
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   return (
     <div className="flex flex-col h-full text-white">
@@ -814,9 +1138,9 @@ export default function SceneSelector({
           {visitedTabs.has("video") && renderVideoTab()}
         </div>
 
-        {/* CUSTOM TAB */}
-        <div className={activeTab === "custom" ? "block" : "hidden"}>
-          {visitedTabs.has("custom") && renderCustomTab()}
+        {/* SETTINGS TAB */}
+        <div className={activeTab === "settings" ? "block" : "hidden"}>
+          {visitedTabs.has("settings") && renderSettingsTab()}
         </div>
       </div>
     </div>

@@ -1,29 +1,28 @@
 import React from "react";
 import { BarChart, Clock } from "lucide-react";
-import type { EffectType } from "../types";
 import { EFFECTS } from "../constants";
+import {
+  useCurrentEffect,
+  useSetCurrentEffect,
+  useShowVisualizer,
+  useSetShowVisualizer,
+  useShowTimer,
+  useSetShowTimer,
+  useVisualizerMode,
+  useSetVisualizerMode,
+} from "../stores/useAppStore";
 
-interface EffectsSelectorProps {
-  currentEffect: EffectType;
-  setEffect: (effect: EffectType) => void;
-  showVisualizer: boolean;
-  setShowVisualizer: (show: boolean) => void;
-  showTimer: boolean;
-  setShowTimer: (show: boolean) => void;
-  visualizerMode: "center" | "window";
-  setVisualizerMode: (mode: "center" | "window") => void;
-}
+export default function EffectsSelector() {
+  // Get state from Zustand store
+  const currentEffect = useCurrentEffect();
+  const setEffect = useSetCurrentEffect();
+  const showVisualizer = useShowVisualizer();
+  const setShowVisualizer = useSetShowVisualizer();
+  const showTimer = useShowTimer();
+  const setShowTimer = useSetShowTimer();
+  const visualizerMode = useVisualizerMode();
+  const setVisualizerMode = useSetVisualizerMode();
 
-export default function EffectsSelector({
-  currentEffect,
-  setEffect,
-  showVisualizer,
-  setShowVisualizer,
-  showTimer,
-  setShowTimer,
-  visualizerMode,
-  setVisualizerMode,
-}: EffectsSelectorProps) {
   return (
     <div className="flex flex-col h-full text-white">
       <div className="flex-1 overflow-y-auto custom-scrollbar p-2">

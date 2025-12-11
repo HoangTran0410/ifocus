@@ -1,4 +1,11 @@
-import { Scene, SoundTrack, TimerMode, EffectType } from "./types";
+import {
+  Scene,
+  SoundTrack,
+  TimerMode,
+  EffectType,
+  BgFilters,
+  SyncVisualizerConfig,
+} from "./types";
 
 export const TIMER_SETTINGS: Record<TimerMode, number> = {
   pomodoro: 25 * 60,
@@ -6,6 +13,24 @@ export const TIMER_SETTINGS: Record<TimerMode, number> = {
   longBreak: 15 * 60,
   clock: 0, // Placeholder, not used for counting down
   stopwatch: 0, // Starts at 0 and counts up
+};
+
+export const DEFAULT_BG_FILTERS: BgFilters = {
+  blur: 0,
+  brightness: 100,
+  contrast: 100,
+  grayscale: 0,
+  hueRotate: 0,
+  invert: 0,
+  opacity: 100,
+  saturate: 100,
+  sepia: 0,
+};
+
+export const DEFAULT_SYNC_VISUALIZER_CONFIG: SyncVisualizerConfig = {
+  enabled: false,
+  intensity: 0.12,
+  speed: 0.15,
 };
 
 export const DEFAULT_IMAGES: Scene[] = [
@@ -120,6 +145,38 @@ export const DEFAULT_IMAGES: Scene[] = [
     thumbnail:
       "https://images.unsplash.com/photo-1511300636408-a63a89df3482?w=150&auto=format&fit=crop",
     name: "Purple",
+  },
+  {
+    id: "sunset",
+    type: "image",
+    url: "https://images.unsplash.com/photo-1502759683299-cdcd6974244f?q=80&w=2560&auto=format&fit=crop",
+    thumbnail:
+      "https://images.unsplash.com/photo-1502759683299-cdcd6974244f?w=150&auto=format&fit=crop",
+    name: "Sunset",
+  },
+  {
+    id: "astronaut",
+    type: "image",
+    url: "https://images.unsplash.com/photo-1674402728113-c6b4deac529e?q=80&w=2560&auto=format&fit=crop",
+    thumbnail:
+      "https://images.unsplash.com/photo-1674402728113-c6b4deac529e?w=150&auto=format&fit=crop",
+    name: "Astronaut",
+  },
+  {
+    id: "deep",
+    type: "image",
+    url: "https://images.unsplash.com/photo-1530053969600-caed2596d242?q=80&w=2560&auto=format&fit=crop",
+    thumbnail:
+      "https://images.unsplash.com/photo-1530053969600-caed2596d242?w=150&auto=format&fit=crop",
+    name: "Deep",
+  },
+  {
+    id: "water",
+    type: "image",
+    url: "https://images.unsplash.com/photo-1460501501851-d5946a18e552?q=80&w=2560&auto=format&fit=crop",
+    thumbnail:
+      "https://images.unsplash.com/photo-1460501501851-d5946a18e552?w=150&auto=format&fit=crop",
+    name: "Water",
   },
 ];
 

@@ -27,6 +27,10 @@ import {
   Upload,
   Trash2,
 } from "lucide-react";
+import {
+  useVisualizerMode as useVisualizerDisplayMode,
+  useSetVisualizerMode as useSetVisualizerDisplayMode,
+} from "../stores/useAppStore";
 
 type VisualizerMode = "bars" | "wave" | "circular" | "trap-nation";
 
@@ -57,19 +61,18 @@ type DisplayMode = "center" | "window";
 
 interface VisualizerProps {
   onClose?: () => void;
-  displayMode?: DisplayMode;
-  setDisplayMode?: (mode: DisplayMode) => void;
   isCenterMode?: boolean;
   allowPiP?: boolean;
 }
 
 export default function Visualizer({
   onClose,
-  displayMode = "window",
-  setDisplayMode,
   isCenterMode = false,
   allowPiP = true,
 }: VisualizerProps) {
+  // Get visualizer display mode from Zustand
+  const displayMode = useVisualizerDisplayMode();
+  const setDisplayMode = useSetVisualizerDisplayMode();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const animationRef = useRef<number>(0);
@@ -343,20 +346,8 @@ export default function Visualizer({
         const dx = e.clientX - dragStartRef.current.x;
         const dy = e.clientY - dragStartRef.current.y;
         setPosition({
-          x: Math.max(
-            0,
-            Math.min(
-              window.innerWidth - size.width,
-              dragStartRef.current.posX + dx
-            )
-          ),
-          y: Math.max(
-            0,
-            Math.min(
-              window.innerHeight - size.height,
-              dragStartRef.current.posY + dy
-            )
-          ),
+          x: dragStartRef.current.posX + dx,
+          y: dragStartRef.current.posY + dy,
         });
       } else if (isResizing) {
         const dx = e.clientX - resizeStartRef.current.x;
@@ -707,7 +698,7 @@ export default function Visualizer({
     <div
       ref={containerRef}
       className={`select-none ${
-        isCenterMode ? "relative mx-auto" : "fixed cursor-move"
+        isCenterMode ? "relative" : "fixed cursor-move"
       }`}
       style={
         isCenterMode
@@ -715,7 +706,8 @@ export default function Visualizer({
               zIndex: 1,
               width: size.width,
               height: size.height,
-              maxWidth: "100%",
+              left: "50%",
+              transform: "translateX(-50%)",
             }
           : {
               left: position.x,

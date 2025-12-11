@@ -206,3 +206,107 @@ export function getNormalizedFrequencyData(): number[] {
 export function isAudioCaptureActive(): boolean {
   return isCapturing && analyser !== null;
 }
+
+// ============================================
+// Beat Detection System
+// ============================================
+
+// Beat detection state
+const beatState = {
+  energyHistory: [] as number[],
+  historySize: 43, // ~43 frames at 60fps = ~0.7 seconds of history
+  beatThreshold: 1.3, // Current energy must be 30% higher than average to be a beat
+  beatCooldown: 0, // Frames to wait before detecting another beat
+  cooldownFrames: 8, // Minimum frames between beats (~133ms at 60fps)
+  lastBeatIntensity: 0, // Intensity of the last detected beat (0-1)
+  beatDecay: 0.92, // How fast beat intensity decays (lower = faster decay)
+};
+
+/**
+ * Get the current bass energy from low frequencies (best for beat detection)
+ * Bass frequencies are typically in the 20-150Hz range, which corresponds to
+ * the first few bins of the FFT output
+ */
+export function getBassEnergy(): number {
+  if (!analyser || !dataArray) return 0;
+
+  // @ts-ignore - TypeScript buffer type strictness
+  analyser.getByteFrequencyData(dataArray);
+
+  // Use first 4-8 bins for bass (low frequencies)
+  const bassEndIndex = 8;
+  let sum = 0;
+  for (let i = 0; i < bassEndIndex && i < dataArray.length; i++) {
+    sum += dataArray[i];
+  }
+
+  return sum / (bassEndIndex * 255); // Normalize to 0-1
+}
+
+/**
+ * Detect if a beat is occurring
+ * Returns a value 0-1 indicating beat intensity (0 = no beat, 1 = strong beat)
+ * Uses energy comparison against rolling average
+ */
+export function detectBeat(): number {
+  const currentEnergy = getBassEnergy();
+
+  // Add to history
+  beatState.energyHistory.push(currentEnergy);
+  if (beatState.energyHistory.length > beatState.historySize) {
+    beatState.energyHistory.shift();
+  }
+
+  // Need enough history to compare
+  if (beatState.energyHistory.length < 10) {
+    return (beatState.lastBeatIntensity *= beatState.beatDecay);
+  }
+
+  // Calculate average energy from history
+  const avgEnergy =
+    beatState.energyHistory.reduce((a, b) => a + b, 0) /
+    beatState.energyHistory.length;
+
+  // Decrease cooldown
+  if (beatState.beatCooldown > 0) {
+    beatState.beatCooldown--;
+  }
+
+  // Check if current energy exceeds threshold compared to average
+  const isBeat =
+    beatState.beatCooldown === 0 &&
+    currentEnergy > avgEnergy * beatState.beatThreshold &&
+    currentEnergy > 0.1; // Minimum energy threshold
+
+  if (isBeat) {
+    // Calculate beat intensity based on how much it exceeds the average
+    const intensity = Math.min(1, (currentEnergy - avgEnergy) / avgEnergy);
+    beatState.lastBeatIntensity = Math.max(
+      beatState.lastBeatIntensity,
+      intensity
+    );
+    beatState.beatCooldown = beatState.cooldownFrames;
+  }
+
+  // Decay the beat intensity over time for smooth animation
+  beatState.lastBeatIntensity *= beatState.beatDecay;
+
+  return beatState.lastBeatIntensity;
+}
+
+/**
+ * Get the current beat intensity without detecting new beats
+ * Useful for checking the current "pulse" level
+ */
+export function getBeatIntensity(): number {
+  return beatState.lastBeatIntensity;
+}
+
+/**
+ * Reset beat detection state (call when stopping capture)
+ */
+export function resetBeatDetection(): void {
+  beatState.energyHistory = [];
+  beatState.beatCooldown = 0;
+  beatState.lastBeatIntensity = 0;
+}

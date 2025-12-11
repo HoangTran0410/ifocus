@@ -1,7 +1,12 @@
 import React, { useEffect, useState } from "react";
-import { Scene, EffectType, TimerMode } from "../types";
 import loadable from "@loadable/component";
 import { LoadingFallback } from "../utils/loader";
+import {
+  useShowTimer,
+  useSetShowTimer,
+  useShowVisualizer,
+  useSetShowVisualizer,
+} from "../stores/useAppStore";
 
 const Background = loadable(() => import("./Background"), {
   fallback: LoadingFallback,
@@ -13,29 +18,13 @@ const Visualizer = loadable(() => import("./Visualizer"), {
   fallback: LoadingFallback,
 });
 
-interface PiPContentProps {
-  currentScene: Scene;
-  currentEffect: EffectType;
-  isBgMuted: boolean;
-  timerMode: TimerMode;
-  setTimerMode: (mode: TimerMode) => void;
-  showTimer: boolean;
-  setShowTimer: (show: boolean) => void;
-  showVisualizer: boolean;
-  setShowVisualizer: (show: boolean) => void;
-}
+export default function PiPContent() {
+  // Get state from Zustand store
+  const showTimer = useShowTimer();
+  const setShowTimer = useSetShowTimer();
+  const showVisualizer = useShowVisualizer();
+  const setShowVisualizer = useSetShowVisualizer();
 
-export default function PiPContent({
-  currentScene,
-  currentEffect,
-  isBgMuted,
-  timerMode,
-  setTimerMode,
-  showTimer,
-  setShowTimer,
-  showVisualizer,
-  setShowVisualizer,
-}: PiPContentProps) {
   const [isReady, setIsReady] = useState(false);
 
   // Wait for the PiP window to be fully ready
@@ -59,13 +48,7 @@ export default function PiPContent({
   return (
     <div className="relative w-screen h-screen overflow-hidden font-sans">
       {/* Dynamic Background */}
-      <Background
-        scene={currentScene}
-        effect={currentEffect}
-        isMuted={isBgMuted}
-        disableYouTube={true}
-        isPiP={true}
-      />
+      <Background disableYouTube={true} isPiP={true} />
 
       {/* Main Content Layer */}
       <div className="relative z-10 w-full h-full flex flex-col pointer-events-none">
@@ -80,11 +63,7 @@ export default function PiPContent({
               />
             </div>
           ) : showTimer ? (
-            <Timer
-              mode={timerMode}
-              setMode={setTimerMode}
-              onClose={() => setShowTimer(false)}
-            />
+            <Timer onClose={() => setShowTimer(false)} />
           ) : null}
         </div>
       </div>

@@ -52,6 +52,24 @@ export interface SoundState {
   isPlaying: boolean;
 }
 
+export interface BgFilters {
+  blur: number;
+  brightness: number;
+  contrast: number;
+  grayscale: number;
+  hueRotate: number;
+  invert: number;
+  opacity: number;
+  saturate: number;
+  sepia: number;
+}
+
+export interface SyncVisualizerConfig {
+  enabled: boolean;
+  intensity: number;
+  speed: number;
+}
+
 export interface AppState {
   timer: {
     timeLeft: number;

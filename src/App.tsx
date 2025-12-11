@@ -12,9 +12,13 @@ import {
   Sparkles,
   PictureInPicture2,
 } from "lucide-react";
-import { useLocalStorage } from "./hooks/useLocalStorage";
-import { DEFAULT_IMAGES } from "./constants";
-import { Scene, Task, Note, TimerMode, EffectType } from "./types";
+import {
+  useShowVisualizer,
+  useSetShowVisualizer,
+  useVisualizerMode,
+  useShowTimer,
+  useSetShowTimer,
+} from "./stores/useAppStore";
 import { LoadingFallback } from "./utils/loader";
 
 // Lazy load all components with @loadable/component
@@ -63,46 +67,19 @@ declare global {
 type PanelType = "none" | "audio" | "tasks" | "notes" | "scenes" | "effects";
 
 function App() {
-  // Application State
-  const [currentScene, setCurrentScene] = useLocalStorage<Scene>(
-    "zen_scene",
-    DEFAULT_IMAGES[0]
-  );
-  const [currentEffect, setCurrentEffect] = useLocalStorage<EffectType>(
-    "zen_effect",
-    "none"
-  );
+  // Get state from Zustand store
+  const showVisualizer = useShowVisualizer();
+  const setShowVisualizer = useSetShowVisualizer();
+  const visualizerMode = useVisualizerMode();
+  const showTimer = useShowTimer();
+  const setShowTimer = useSetShowTimer();
 
-  // Visualizer toggle (independent of effects)
-  const [showVisualizer, setShowVisualizer] = useLocalStorage<boolean>(
-    "zen_show_visualizer",
-    false
-  );
-
-  // Visualizer display mode: "center" replaces timer, "window" is draggable
-  const [visualizerMode, setVisualizerMode] = useLocalStorage<
-    "center" | "window"
-  >("zen_visualizer_mode_display", "window");
-
-  // Timer visibility toggle
-  const [showTimer, setShowTimer] = useLocalStorage<boolean>(
-    "zen_show_timer",
-    true
-  );
-
-  const [tasks, setTasks] = useLocalStorage<Task[]>("zen_tasks", []);
-  const [notes, setNotes] = useLocalStorage<Note[]>("zen_notes", []);
-
-  const [isBgMuted, setIsBgMuted] = useLocalStorage<boolean>(
-    "zen_bg_muted",
-    true
-  );
-  const [timerMode, setTimerMode] = useLocalStorage<TimerMode>(
-    "zen_timerMode",
-    "pomodoro"
-  );
+  // Local UI state (not persisted)
   const [activePanel, setActivePanel] = useState<PanelType>("none");
   const [visitedPanels, setVisitedPanels] = useState<Set<PanelType>>(new Set());
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isPiP, setIsPiP] = useState(false);
+  const pipWindowRef = useRef<Window | null>(null);
 
   // Lazy load panels
   useEffect(() => {
@@ -110,11 +87,6 @@ function App() {
       setVisitedPanels((prev) => new Set([...prev, activePanel]));
     }
   }, [activePanel, visitedPanels]);
-
-  const [isFullscreen, setIsFullscreen] = useState(false);
-  const [isPiP, setIsPiP] = useState(false);
-  const [showVideoModal, setShowVideoModal] = useState(false);
-  const pipWindowRef = useRef<Window | null>(null);
 
   // auto open effect panel when timer is closed, and no other panel is open
   useEffect(() => {
@@ -222,22 +194,12 @@ function App() {
 
   return (
     <div className="pip-capture-root relative w-screen h-screen overflow-hidden font-sans">
-      {/* Dynamic Background */}
-      <Background
-        scene={currentScene}
-        effect={currentEffect}
-        isMuted={isBgMuted}
-        showVideoModal={showVideoModal}
-        setShowVideoModal={setShowVideoModal}
-      />
+      {/* Dynamic Background - now uses Zustand internally */}
+      <Background />
 
       {/* Visualizer in Window mode - independent of other effects */}
       {showVisualizer && visualizerMode === "window" && (
-        <Visualizer
-          onClose={() => setShowVisualizer(false)}
-          displayMode={visualizerMode}
-          setDisplayMode={setVisualizerMode}
-        />
+        <Visualizer onClose={() => setShowVisualizer(false)} />
       )}
 
       {/* Main Content Layer */}
@@ -282,18 +244,12 @@ function App() {
             <div className={`transition-all duration-500 w-full max-w-2xl`}>
               <Visualizer
                 onClose={() => setShowVisualizer(false)}
-                displayMode={visualizerMode}
-                setDisplayMode={setVisualizerMode}
                 isCenterMode
               />
             </div>
           ) : showTimer ? (
             <div className={`transition-all duration-500`}>
-              <Timer
-                mode={timerMode}
-                setMode={setTimerMode}
-                onClose={() => setShowTimer(false)}
-              />
+              <Timer onClose={() => setShowTimer(false)} />
             </div>
           ) : null}
         </div>
@@ -368,7 +324,7 @@ function App() {
             </button>
           </div>
 
-          {/* All panels stay mounted, just hidden */}
+          {/* All panels stay mounted, just hidden - now use Zustand internally */}
           <div className="flex-1 overflow-hidden relative">
             <div
               className={`absolute inset-0 ${
@@ -382,51 +338,28 @@ function App() {
                 activePanel === "tasks" ? "block" : "hidden"
               }`}
             >
-              {visitedPanels.has("tasks") && (
-                <Tasks tasks={tasks} setTasks={setTasks} />
-              )}
+              {visitedPanels.has("tasks") && <Tasks />}
             </div>
             <div
               className={`absolute inset-0 ${
                 activePanel === "notes" ? "block" : "hidden"
               }`}
             >
-              {visitedPanels.has("notes") && (
-                <Notes notes={notes} setNotes={setNotes} />
-              )}
+              {visitedPanels.has("notes") && <Notes />}
             </div>
             <div
               className={`absolute inset-0 ${
                 activePanel === "scenes" ? "block" : "hidden"
               }`}
             >
-              {visitedPanels.has("scenes") && (
-                <SceneSelector
-                  currentScene={currentScene}
-                  setScene={setCurrentScene}
-                  isBgMuted={isBgMuted}
-                  setIsBgMuted={setIsBgMuted}
-                  setShowVideoModal={setShowVideoModal}
-                />
-              )}
+              {visitedPanels.has("scenes") && <SceneSelector />}
             </div>
             <div
               className={`absolute inset-0 ${
                 activePanel === "effects" ? "block" : "hidden"
               }`}
             >
-              {visitedPanels.has("effects") && (
-                <EffectsSelector
-                  currentEffect={currentEffect}
-                  setEffect={setCurrentEffect}
-                  showVisualizer={showVisualizer}
-                  setShowVisualizer={setShowVisualizer}
-                  showTimer={showTimer}
-                  setShowTimer={setShowTimer}
-                  visualizerMode={visualizerMode}
-                  setVisualizerMode={setVisualizerMode}
-                />
-              )}
+              {visitedPanels.has("effects") && <EffectsSelector />}
             </div>
           </div>
         </div>
@@ -435,20 +368,7 @@ function App() {
       {/* Render PiP content using Portal when PiP is active */}
       {isPiP &&
         pipWindowRef.current &&
-        createPortal(
-          <PiPContent
-            currentScene={currentScene}
-            currentEffect={currentEffect}
-            isBgMuted={isBgMuted}
-            timerMode={timerMode}
-            setTimerMode={setTimerMode}
-            showTimer={showTimer}
-            setShowTimer={setShowTimer}
-            showVisualizer={showVisualizer}
-            setShowVisualizer={setShowVisualizer}
-          />,
-          pipWindowRef.current.document.body
-        )}
+        createPortal(<PiPContent />, pipWindowRef.current.document.body)}
     </div>
   );
 }

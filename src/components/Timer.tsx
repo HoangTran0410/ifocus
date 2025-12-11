@@ -3,10 +3,9 @@ import { Play, Pause, RotateCcw, X } from "lucide-react";
 import { TIMER_SETTINGS } from "../constants";
 import { useLocalStorage } from "../hooks/useLocalStorage";
 import type { TimerMode } from "../types";
+import { useTimerMode, useSetTimerMode } from "../stores/useAppStore";
 
 interface TimerProps {
-  mode: TimerMode;
-  setMode: (mode: TimerMode) => void;
   onTick?: () => void; // Optional callback for ticks
   onClose?: () => void; // Optional callback to hide timer
 }
@@ -14,8 +13,12 @@ interface TimerProps {
 // Type for storing time left for each mode
 type TimerStates = Record<TimerMode, number>;
 
-export default function Timer({ mode, setMode, onClose }: TimerProps) {
-  // Store timeLeft for each mode separately
+export default function Timer({ onClose }: TimerProps) {
+  // Get timer mode from Zustand store
+  const mode = useTimerMode();
+  const setMode = useSetTimerMode();
+
+  // Store timeLeft for each mode separately (keeping useLocalStorage for timer states as it's timer-specific)
   const [timerStates, setTimerStates] = useLocalStorage<TimerStates>(
     "zen_timer_states",
     {

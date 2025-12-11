@@ -1,13 +1,13 @@
 import React, { useState } from "react";
 import { Trash2, CheckCircle, Circle, Clock } from "lucide-react";
 import type { Task } from "../types";
+import { useTasks, useSetTasks } from "../stores/useAppStore";
 
-interface TasksProps {
-  tasks: Task[];
-  setTasks: (tasks: Task[]) => void;
-}
+export default function Tasks() {
+  // Get state from Zustand store
+  const tasks = useTasks();
+  const setTasks = useSetTasks();
 
-export default function Tasks({ tasks, setTasks }: TasksProps) {
   const [newTaskText, setNewTaskText] = useState("");
   const [estPomos, setEstPomos] = useState(1);
 

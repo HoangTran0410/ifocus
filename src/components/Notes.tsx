@@ -1,13 +1,13 @@
 import React, { useState } from "react";
 import { PenLine, Plus, Trash2, ArrowLeft } from "lucide-react";
 import type { Note } from "../types";
+import { useNotes, useSetNotes } from "../stores/useAppStore";
 
-interface NotesProps {
-  notes: Note[];
-  setNotes: (notes: Note[]) => void;
-}
+export default function Notes() {
+  // Get state from Zustand store
+  const notes = useNotes();
+  const setNotes = useSetNotes();
 
-export default function Notes({ notes, setNotes }: NotesProps) {
   const [activeNoteId, setActiveNoteId] = useState<string | null>(null);
 
   const activeNote = notes.find((n) => n.id === activeNoteId);
