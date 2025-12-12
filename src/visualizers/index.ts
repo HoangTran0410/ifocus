@@ -24,6 +24,12 @@ const RenderMode = {
   "⚡ Lightning": () => import("./Lightning"),
   "🐝 Hexagons": () => import("./Hexagons"),
   "🌿 Fractal": () => import("./Fractal"),
+  "💧 Fluid (WebGL)": () => import("./WebGL_Fluid"),
+  "🕳️ BlackHole (WebGL)": () => import("./WebGL_BlackHole"),
+  "⚡ Lightning (WebGL)": () => import("./WebGL_Lightning"),
+  "🌅 Sunset (WebGL)": () => import("./WebGL_Sunset"),
+  "🎲 HoloDice (WebGL)": () => import("./WebGL_HoloDice"),
+  "📦 Cube (WebGL)": () => import("./WebGL_Cube"),
 };
 export type VisualizerMode = keyof typeof RenderMode;
 export const MODES = Object.keys(RenderMode) as VisualizerMode[];

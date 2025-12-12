@@ -10,6 +10,7 @@ import {
   updateAnalyzerConfig,
   AudioAnalyzerConfig,
   detectBeat,
+  getFrequencyBands,
 } from "../utils/audioAnalyzer";
 import {
   Mic,
@@ -22,6 +23,8 @@ import {
   Upload,
   Trash2,
   Zap,
+  Search,
+  Grid3X3,
 } from "lucide-react";
 import {
   useVisualizerMode as useVisualizerDisplayMode,
@@ -106,6 +109,9 @@ export default function Visualizer({
 
   // Settings panel state
   const [showSettings, setShowSettings] = useState(false);
+  // Mode panel state
+  const [showModePanel, setShowModePanel] = useState(false);
+  const [modeSearch, setModeSearch] = useState("");
   const [config, setConfig] = useLocalStorage<AudioAnalyzerConfig>(
     "zen_visualizer_config",
     getAnalyzerConfig()
@@ -481,71 +487,63 @@ export default function Visualizer({
         ? detectBeat()
         : Math.sin(timeRef.current * 4) * 0.3 + 0.3;
 
-      let rendered = false;
+      // Get frequency band energies for precise audio-reactive effects
+      const frequencyBands = isAudioCaptureActive()
+        ? getFrequencyBands()
+        : {
+            bass: Math.sin(timeRef.current * 2) * 0.3 + 0.4,
+            mid: Math.sin(timeRef.current * 3) * 0.25 + 0.35,
+            high: Math.sin(timeRef.current * 5) * 0.2 + 0.3,
+          };
 
-      // Also render to PiP canvas if active
+      let _ctx = ctx,
+        _canvas = canvas;
+
       if (pipCanvasRef.current) {
         const pipCtx = pipCanvasRef.current.getContext("2d");
         if (pipCtx) {
-          pipCtx.clearRect(
-            0,
-            0,
-            pipCanvasRef.current.width,
-            pipCanvasRef.current.height
-          );
-
-          // Create PiP props object
-          const pipProps: VisualizeFnProps = {
-            ctx: pipCtx,
-            canvas: pipCanvasRef.current,
-            data,
-            barCount,
-            performanceMode: performanceModeRef.current,
-            logoImage: logoImageRef.current,
-            beatIntensity,
-          };
-
-          await render(mode, pipProps);
-          rendered = true;
+          _ctx = pipCtx;
+          _canvas = pipCanvasRef.current;
         }
       }
 
-      if (!rendered) {
-        // Clear canvas
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
+      // Clear canvas
+      _ctx.clearRect(0, 0, _canvas.width, _canvas.height);
 
-        const visualizerProps: VisualizeFnProps = {
-          ctx,
-          canvas,
-          data,
-          barCount,
-          performanceMode: performanceModeRef.current,
-          logoImage: logoImageRef.current,
-          beatIntensity,
-        };
+      const visualizerProps: VisualizeFnProps = {
+        ctx: _ctx,
+        canvas: _canvas,
+        data,
+        barCount,
+        performanceMode: performanceModeRef.current,
+        logoImage: logoImageRef.current,
+        beatIntensity,
+        bass: frequencyBands.bass,
+        mid: frequencyBands.mid,
+        high: frequencyBands.high,
+      };
 
-        await render(mode, visualizerProps);
+      await render(mode, visualizerProps);
 
-        // Draw FPS counter on main canvas
-        if (showFpsRef.current) {
-          ctx.save();
-          ctx.font = "bold 12px monospace";
-          ctx.fillStyle = "rgba(255, 255, 255, 0.8)";
-          ctx.shadowColor = "rgba(0, 0, 0, 0.8)";
-          ctx.shadowBlur = 4;
-          ctx.fillText(`${fpsRef.current} FPS`, 10, 20);
-          ctx.restore();
+      // Draw FPS counter on main canvas
+      if (showFpsRef.current) {
+        _ctx.save();
+        _ctx.font = "bold 12px monospace";
+        _ctx.fillStyle = "rgba(255, 255, 255, 0.8)";
+        _ctx.shadowColor = "rgba(0, 0, 0, 0.8)";
+        _ctx.shadowBlur = 4;
+        _ctx.fillText(`${fpsRef.current} FPS`, 10, 20);
+        _ctx.restore();
+
+        // Calculate FPS
+        frameCountRef.current++;
+        const now = performance.now();
+        const elapsed = now - lastFpsUpdateRef.current;
+        if (elapsed >= 1000) {
+          fpsRef.current = Math.round((frameCountRef.current * 1000) / elapsed);
+          frameCountRef.current = 0;
+          lastFpsUpdateRef.current = now;
         }
-      }
-
-      // Calculate FPS
-      frameCountRef.current++;
-      const now = performance.now();
-      const elapsed = now - lastFpsUpdateRef.current;
-      if (elapsed >= 1000) {
-        fpsRef.current = Math.round((frameCountRef.current * 1000) / elapsed);
-        frameCountRef.current = 0;
-        lastFpsUpdateRef.current = now;
       }
 
       animationRef.current = requestAnimationFrame(animate);
@@ -769,6 +767,68 @@ export default function Visualizer({
     </div>
   );
 
+  // Filter modes based on search query
+  const filteredModes = MODES.filter((m) =>
+    m.toLowerCase().includes(modeSearch.toLowerCase())
+  );
+
+  const renderModePanel = () => (
+    <div
+      className="absolute top-10 left-0 right-0 z-20 p-3 mx-2 rounded-lg"
+      style={{
+        background: "rgba(15, 15, 30, 0.95)",
+        border: "1px solid rgba(168, 85, 247, 0.3)",
+        maxHeight: size.height - 50,
+        overflowY: "auto",
+      }}
+      onMouseDown={(e) => e.stopPropagation()}
+    >
+      {/* Search Input */}
+      <div className="relative mb-3">
+        <Search
+          size={14}
+          className="absolute left-2 top-1/2 -translate-y-1/2 text-white/50"
+        />
+        <input
+          type="text"
+          placeholder="Search modes..."
+          value={modeSearch}
+          onChange={(e) => setModeSearch(e.target.value)}
+          className="w-full pl-7 pr-3 py-1.5 text-xs bg-white/10 text-white/90 rounded-md border border-white/20 focus:outline-none focus:border-purple-500 placeholder:text-white/40"
+          autoFocus
+        />
+      </div>
+
+      {/* Mode Grid */}
+      <div className="grid grid-cols-3 gap-1.5">
+        {filteredModes.map((m) => (
+          <button
+            key={m}
+            onClick={() => {
+              setMode(m);
+              setShowModePanel(false);
+              setModeSearch("");
+            }}
+            className={`px-2 py-2 text-xs font-medium rounded-md transition-all cursor-pointer truncate ${
+              mode === m
+                ? "text-purple-400 bg-purple-500/30 border border-purple-500/50"
+                : "text-white/80 bg-white/10 hover:bg-white/20 border border-transparent"
+            }`}
+            title={m}
+          >
+            {m}
+          </button>
+        ))}
+      </div>
+
+      {filteredModes.length === 0 && (
+        <div className="text-center text-white/50 text-xs py-4">
+          No modes found
+        </div>
+      )}
+    </div>
+  );
+
   return (
     <div
       ref={containerRef}
@@ -800,19 +860,21 @@ export default function Visualizer({
       {/* Main visualizer container */}
       <div
         className={`relative w-full h-full rounded-2xl overflow-hidden transition-all duration-300 ${
-          isCenterMode && !isHovered && !showSettings ? "" : "backdrop-blur-md"
+          isCenterMode && !isHovered && !showSettings && !showModePanel
+            ? ""
+            : "backdrop-blur-md"
         }`}
         style={{
           background:
-            isCenterMode && !isHovered && !showSettings
+            isCenterMode && !isHovered && !showSettings && !showModePanel
               ? "transparent"
               : "linear-gradient(135deg, rgba(15, 15, 30, 0.85), rgba(30, 20, 50, 0.85))",
           border:
-            isCenterMode && !isHovered && !showSettings
+            isCenterMode && !isHovered && !showSettings && !showModePanel
               ? "1px solid transparent"
               : "1px solid rgba(168, 85, 247, 0.3)",
           boxShadow:
-            isCenterMode && !isHovered && !showSettings
+            isCenterMode && !isHovered && !showSettings && !showModePanel
               ? "none"
               : "0 8px 32px rgba(0, 0, 0, 0.4), 0 0 60px rgba(168, 85, 247, 0.1)",
         }}
@@ -820,17 +882,13 @@ export default function Visualizer({
         {/* Header - in center mode, hide toolbar buttons unless hovered */}
         <div
           className={`absolute top-0 left-0 right-0 flex items-center justify-between px-3 py-2 z-10 transition-opacity duration-300 ${
-            isCenterMode && !isHovered && !showSettings ? "opacity-0" : ""
+            isCenterMode && !isHovered && !showSettings && !showModePanel
+              ? "opacity-0"
+              : ""
           }`}
           style={{
             background: "linear-gradient(180deg, rgba(0,0,0,0.4), transparent)",
-            opacity: isCenterMode
-              ? isHovered || showSettings
-                ? 1
-                : 0
-              : showSettings || isHovered
-              ? 1
-              : 0.4,
+            opacity: isHovered || showSettings || showModePanel ? 1 : 0,
           }}
         >
           <span className="text-xs font-medium text-white/60 uppercase tracking-wider">
@@ -875,19 +933,23 @@ export default function Visualizer({
             >
               <Settings size={14} />
             </button>
-            {/* Mode Selector */}
-            <select
-              value={mode}
-              onChange={handleModeChange}
+            {/* Mode Panel Button */}
+            <button
+              onClick={() => {
+                setShowModePanel(!showModePanel);
+                if (showSettings) setShowSettings(false);
+              }}
               onMouseDown={(e) => e.stopPropagation()}
-              className="px-2 py-1 text-xs font-medium text-white/80 bg-white/10 hover:bg-white/20 rounded-md transition-colors cursor-pointer border-none focus:outline-none"
+              className={`px-2 py-1 text-xs font-medium rounded-md transition-colors cursor-pointer flex items-center gap-1.5 ${
+                showModePanel
+                  ? "text-purple-400 bg-purple-500/20 hover:bg-purple-500/30"
+                  : "text-white/80 bg-white/10 hover:bg-white/20"
+              }`}
+              title="Select visualizer mode"
             >
-              {MODES.map((m) => (
-                <option key={m} value={m} className="bg-gray-900 text-white">
-                  {m}
-                </option>
-              ))}
-            </select>
+              <Grid3X3 size={12} />
+              <span className="max-w-[80px] truncate">{mode}</span>
+            </button>
             {/* Display Mode Toggle Button */}
             {setVisualizerMode && !forceCenter && (
               <button
@@ -934,6 +996,9 @@ export default function Visualizer({
 
         {/* Settings Panel */}
         {showSettings && renderSettings()}
+
+        {/* Mode Panel */}
+        {showModePanel && renderModePanel()}
 
         {/* Canvas */}
         <canvas

@@ -12,6 +12,8 @@ export default function renderFractal({
   data,
   performanceMode = false,
   beatIntensity = 0,
+  bass = 0,
+  mid = 0,
 }: VisualizeFnProps) {
   const width = canvas.width;
   const height = canvas.height;
@@ -20,9 +22,9 @@ export default function renderFractal({
   const avgIntensity = data.reduce((a, b) => a + b, 0) / data.length;
   const maxRadius = Math.min(centerX, centerY) * 0.95;
 
-  // Update animation
-  kaleidoState.rotation += 0.005 + avgIntensity * 0.01 + beatIntensity * 0.02;
-  kaleidoState.pulsePhase += 0.03 + beatIntensity * 0.05;
+  // Update animation - bass drives rotation, mid drives pulse
+  kaleidoState.rotation += 0.005 + avgIntensity * 0.01 + bass * 0.025;
+  kaleidoState.pulsePhase += 0.03 + mid * 0.06;
 
   const segments = performanceMode ? 6 : 8;
   const layers = performanceMode ? 4 : 6;

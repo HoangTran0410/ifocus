@@ -6,6 +6,7 @@ export default function renderWave({
   data,
   barCount,
   performanceMode = false,
+  mid = 0,
 }: VisualizeFnProps) {
   const sliceWidth = canvas.width / (barCount - 1);
   const centerY = canvas.height / 2;
@@ -78,7 +79,7 @@ export default function renderWave({
 
   // 2. Draw outer glow wave (larger, more blurred)
   ctx.shadowColor = "rgba(168, 85, 247, 0.5)";
-  ctx.shadowBlur = 20 + avgIntensity * 30;
+  ctx.shadowBlur = 20 + avgIntensity * 30 + mid * 15;
 
   const glowGradient = ctx.createLinearGradient(
     0,

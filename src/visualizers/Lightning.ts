@@ -68,13 +68,14 @@ export default function renderLightning({
   data,
   performanceMode = false,
   beatIntensity = 0,
+  bass = 0,
 }: VisualizeFnProps) {
   const width = canvas.width;
   const height = canvas.height;
   const avgIntensity = data.reduce((a, b) => a + b, 0) / data.length;
 
-  // Spawn bolts on beats
-  if (beatIntensity > 0.4 && Date.now() - lightningState.lastBeat > 120) {
+  // Spawn bolts on bass (kick drums)
+  if (bass > 0.35 && Date.now() - lightningState.lastBeat > 120) {
     const numBolts = performanceMode ? 1 : Math.floor(1 + beatIntensity * 2);
     for (let i = 0; i < numBolts; i++) {
       const startX = width * 0.2 + Math.random() * width * 0.6;

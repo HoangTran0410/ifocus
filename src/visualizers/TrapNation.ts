@@ -68,6 +68,7 @@ export default function renderTrapNation({
   data,
   logoImage,
   performanceMode = false,
+  bass = 0,
 }: VisualizeFnProps) {
   const centerX = canvas.width / 2;
   const centerY = canvas.height / 2;
@@ -93,7 +94,9 @@ export default function renderTrapNation({
         (-Math.pow(intermediate, transformer) + transformer * intermediate)
     )
   );
-  const curRadius = multiplier * (maxRadius - minRadius) + minRadius;
+  // Add bass pulse to radius
+  const curRadius =
+    multiplier * (maxRadius - minRadius) + minRadius + bass * maxRadius * 0.1;
 
   const ghostsToRender = TRAP_NATION_GHOSTS;
 

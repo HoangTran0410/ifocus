@@ -244,6 +244,94 @@ export function getBassEnergy(): number {
 }
 
 /**
+ * Get the current mid-range energy (best for synths, vocals, guitars)
+ * Mid frequencies are typically in the 250-2000Hz range
+ */
+export function getMidEnergy(): number {
+  if (!analyser || !dataArray) return 0;
+
+  // @ts-ignore - TypeScript buffer type strictness
+  analyser.getByteFrequencyData(dataArray);
+
+  // Use bins 16-64 for mids (approximately 250-2000Hz at 44.1kHz with 8192 FFT)
+  const midStartIndex = 16;
+  const midEndIndex = 64;
+  let sum = 0;
+  for (let i = midStartIndex; i < midEndIndex && i < dataArray.length; i++) {
+    sum += dataArray[i];
+  }
+
+  return sum / ((midEndIndex - midStartIndex) * 255); // Normalize to 0-1
+}
+
+/**
+ * Get the current high frequency energy (best for hi-hats, cymbals, brightness)
+ * High frequencies are typically in the 2000-16000Hz range
+ */
+export function getHighEnergy(): number {
+  if (!analyser || !dataArray) return 0;
+
+  // @ts-ignore - TypeScript buffer type strictness
+  analyser.getByteFrequencyData(dataArray);
+
+  // Use bins 64-256 for highs (approximately 2000-16000Hz at 44.1kHz with 8192 FFT)
+  const highStartIndex = 64;
+  const highEndIndex = 256;
+  let sum = 0;
+  for (let i = highStartIndex; i < highEndIndex && i < dataArray.length; i++) {
+    sum += dataArray[i];
+  }
+
+  return sum / ((highEndIndex - highStartIndex) * 255); // Normalize to 0-1
+}
+
+/**
+ * Get all frequency band energies at once
+ * More efficient than calling each function separately
+ */
+export function getFrequencyBands(): {
+  bass: number;
+  mid: number;
+  high: number;
+} {
+  if (!analyser || !dataArray) {
+    return { bass: 0, mid: 0, high: 0 };
+  }
+
+  // @ts-ignore - TypeScript buffer type strictness
+  analyser.getByteFrequencyData(dataArray);
+
+  // Bass: bins 0-8 (~20-250Hz)
+  let bassSum = 0;
+  const bassEnd = 8;
+  for (let i = 0; i < bassEnd && i < dataArray.length; i++) {
+    bassSum += dataArray[i];
+  }
+
+  // Mid: bins 16-64 (~250-2000Hz)
+  let midSum = 0;
+  const midStart = 16;
+  const midEnd = 64;
+  for (let i = midStart; i < midEnd && i < dataArray.length; i++) {
+    midSum += dataArray[i];
+  }
+
+  // High: bins 64-256 (~2000-16000Hz)
+  let highSum = 0;
+  const highStart = 64;
+  const highEnd = 256;
+  for (let i = highStart; i < highEnd && i < dataArray.length; i++) {
+    highSum += dataArray[i];
+  }
+
+  return {
+    bass: bassSum / (bassEnd * 255),
+    mid: midSum / ((midEnd - midStart) * 255),
+    high: highSum / ((highEnd - highStart) * 255),
+  };
+}
+
+/**
  * Detect if a beat is occurring
  * Returns a value 0-1 indicating beat intensity (0 = no beat, 1 = strong beat)
  * Uses energy comparison against rolling average

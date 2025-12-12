@@ -14,6 +14,7 @@ export default function renderRadialLines({
   barCount,
   performanceMode = false,
   beatIntensity = 0,
+  bass = 0,
 }: VisualizeFnProps) {
   const centerX = canvas.width / 2;
   const centerY = canvas.height / 2;
@@ -21,10 +22,10 @@ export default function renderRadialLines({
   const minRadius = maxRadius * 0.12;
   const avgIntensity = data.reduce((a, b) => a + b, 0) / data.length;
 
-  // Update animations
-  radialState.rotation += 0.003 + avgIntensity * 0.008 + beatIntensity * 0.015;
+  // Update animations - bass drives rotation speed and pulse
+  radialState.rotation += 0.003 + avgIntensity * 0.008 + bass * 0.02;
   radialState.innerRotation -= 0.005 + avgIntensity * 0.01;
-  radialState.pulsePhase += 0.05 + beatIntensity * 0.1;
+  radialState.pulsePhase += 0.05 + bass * 0.12;
 
   const lineCount = performanceMode ? Math.min(barCount, 48) : barCount;
 

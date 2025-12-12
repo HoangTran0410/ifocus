@@ -42,12 +42,13 @@ export default function renderMatrix({
   data,
   performanceMode = false,
   beatIntensity = 0,
+  bass = 0,
 }: VisualizeFnProps) {
   const avgIntensity = data.reduce((a, b) => a + b, 0) / data.length;
 
-  // Base font size with beat-reactive scaling
+  // Base font size with bass-reactive scaling (kick drums make it pulse)
   const baseFontSize = performanceMode ? 16 : 14;
-  const beatScale = 1 + beatIntensity * 1; // Scale up to 40% larger on beats
+  const beatScale = 1 + bass * 1.2; // Scale up to 120% larger on bass
   const fontSize = Math.round(baseFontSize * beatScale);
 
   const columns = Math.floor(canvas.width / baseFontSize); // Use base size for consistent column count

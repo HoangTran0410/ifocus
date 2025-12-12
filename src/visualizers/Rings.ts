@@ -12,21 +12,22 @@ export default function renderRings({
   data,
   performanceMode = false,
   beatIntensity = 0,
+  bass = 0,
 }: VisualizeFnProps) {
   const centerX = canvas.width / 2;
   const centerY = canvas.height / 2;
   const maxRadius = Math.min(centerX, centerY) * 0.9;
   const avgIntensity = data.reduce((a, b) => a + b, 0) / data.length;
 
-  // Speed up rotation on beats
-  ringsState.rotation += 0.005 + avgIntensity * 0.02 + beatIntensity * 0.05;
-  ringsState.pulsePhase += 0.05 + beatIntensity * 0.1;
+  // Speed up rotation on bass
+  ringsState.rotation += 0.005 + avgIntensity * 0.02 + bass * 0.06;
+  ringsState.pulsePhase += 0.05 + bass * 0.15;
 
   const ringCount = performanceMode ? 5 : 8;
   const segmentsPerRing = performanceMode ? 32 : 64;
 
-  // Beat-reactive radius expansion
-  const beatExpansion = beatIntensity * maxRadius * 0.1;
+  // Beat-reactive radius expansion on bass
+  const beatExpansion = bass * maxRadius * 0.15;
 
   // Draw from outer to inner for proper layering
   for (let ring = ringCount - 1; ring >= 0; ring--) {

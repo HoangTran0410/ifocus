@@ -56,6 +56,7 @@ export default function renderFireworks({
   data,
   performanceMode = false,
   beatIntensity = 0,
+  bass = 0,
 }: VisualizeFnProps) {
   const avgIntensity = data.reduce((a, b) => a + b, 0) / data.length;
   const maxParticles = performanceMode ? 150 : 400;
@@ -83,17 +84,17 @@ export default function renderFireworks({
     fireworksState.beatFlash -= 0.05;
   }
 
-  // Launch rockets when beat is detected
-  if (beatIntensity > 0.3 && now - fireworksState.lastBeatTime > 200) {
+  // Launch rockets when bass (kick drum) is detected
+  if (bass > 0.25 && now - fireworksState.lastBeatTime > 200) {
     fireworksState.lastBeatTime = now;
-    fireworksState.beatFlash = beatIntensity;
+    fireworksState.beatFlash = bass;
 
-    const rocketCount = Math.ceil(2 + beatIntensity * 3);
+    const rocketCount = Math.ceil(2 + bass * 4);
     for (let i = 0; i < rocketCount; i++) {
       fireworksState.rockets.push({
         x: canvas.width * (0.1 + Math.random() * 0.8),
         y: canvas.height,
-        vy: -(ROCKET_SPEED + beatIntensity * 4 + Math.random() * 3),
+        vy: -(ROCKET_SPEED + bass * 5 + Math.random() * 3),
         targetY: canvas.height * (0.15 + Math.random() * 0.35),
         color: randomColor(),
         trail: [],

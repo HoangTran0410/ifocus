@@ -39,6 +39,7 @@ export default function renderHexagons({
   data,
   performanceMode = false,
   beatIntensity = 0,
+  bass = 0,
 }: VisualizeFnProps) {
   const width = canvas.width;
   const height = canvas.height;
@@ -48,8 +49,8 @@ export default function renderHexagons({
 
   const now = Date.now();
 
-  // Add new pulse on beats
-  if (beatIntensity > 0.6 && now - hexState.lastBeat > 150) {
+  // Add new pulse on bass (kick drums)
+  if (bass > 0.3 && now - hexState.lastBeat > 150) {
     hexState.pulses.push({
       x: Math.random() * width,
       y: Math.random() * height,

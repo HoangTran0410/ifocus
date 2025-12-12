@@ -11,13 +11,16 @@ export default function renderPlasma({
   data,
   performanceMode = false,
   beatIntensity = 0,
+  bass = 0,
+  mid = 0,
+  high = 0,
 }: VisualizeFnProps) {
   const width = canvas.width;
   const height = canvas.height;
   const avgIntensity = data.reduce((a, b) => a + b, 0) / data.length;
 
-  // Update time - speed influenced by audio
-  plasmaState.time += 0.02 + avgIntensity * 0.03 + beatIntensity * 0.05;
+  // Update time - speed influenced by mid frequencies
+  plasmaState.time += 0.02 + avgIntensity * 0.03 + mid * 0.06;
   const t = plasmaState.time;
 
   // Resolution for performance - lower = faster but blockier
@@ -25,18 +28,10 @@ export default function renderPlasma({
   const cols = Math.ceil(width / resolution);
   const rows = Math.ceil(height / resolution);
 
-  // Pre-calculate frequency influences
-  const bassIntensity =
-    data.slice(0, Math.floor(data.length * 0.2)).reduce((a, b) => a + b, 0) /
-    (data.length * 0.2);
-  const midIntensity =
-    data
-      .slice(Math.floor(data.length * 0.2), Math.floor(data.length * 0.6))
-      .reduce((a, b) => a + b, 0) /
-    (data.length * 0.4);
-  const highIntensity =
-    data.slice(Math.floor(data.length * 0.6)).reduce((a, b) => a + b, 0) /
-    (data.length * 0.4);
+  // Use passed frequency bands for wave modulation
+  const bassIntensity = bass;
+  const midIntensity = mid;
+  const highIntensity = high;
 
   for (let y = 0; y < rows; y++) {
     for (let x = 0; x < cols; x++) {
@@ -67,8 +62,8 @@ export default function renderPlasma({
     }
   }
 
-  // Add glow overlay on beats
-  if (!performanceMode && beatIntensity > 0.3) {
+  // Add glow overlay on bass hits
+  if (!performanceMode && bass > 0.3) {
     const glowGradient = ctx.createRadialGradient(
       width / 2,
       height / 2,

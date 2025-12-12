@@ -8,14 +8,15 @@ export default function renderGalaxy({
   canvas,
   data,
   performanceMode = false,
+  bass = 0,
 }: VisualizeFnProps) {
   const centerX = canvas.width / 2;
   const centerY = canvas.height / 2;
   const maxRadius = Math.min(centerX, centerY) * 0.85;
   const avgIntensity = data.reduce((a, b) => a + b, 0) / data.length;
 
-  // Update rotation
-  galaxyState.rotation += 0.01 + avgIntensity * 0.02;
+  // Update rotation - bass makes it spin faster
+  galaxyState.rotation += 0.01 + avgIntensity * 0.02 + bass * 0.02;
 
   const arms = 3;
   const pointsPerArm = performanceMode ? 40 : 80;

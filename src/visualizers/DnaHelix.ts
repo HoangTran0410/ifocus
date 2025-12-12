@@ -11,6 +11,7 @@ export default function renderDnaHelix({
   data,
   performanceMode = false,
   beatIntensity = 0,
+  bass = 0,
 }: VisualizeFnProps) {
   const centerX = canvas.width / 2;
   const centerY = canvas.height / 2;
@@ -19,8 +20,8 @@ export default function renderDnaHelix({
   const startX = (canvas.width - helixLength) / 2;
   const avgIntensity = data.reduce((a, b) => a + b, 0) / data.length;
 
-  // Animate rotation
-  dnaState.time += 0.03 + avgIntensity * 0.02 + beatIntensity * 0.04;
+  // Animate rotation - bass makes it spin faster
+  dnaState.time += 0.03 + avgIntensity * 0.02 + bass * 0.05;
 
   const segments = performanceMode ? 50 : 80;
   const twists = 1.5;

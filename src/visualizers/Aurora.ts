@@ -11,6 +11,7 @@ export default function renderAurora({
   canvas,
   data,
   performanceMode = false,
+  mid = 0,
 }: VisualizeFnProps) {
   const avgIntensity = data.reduce((a, b) => a + b, 0) / data.length;
   auroraState.time += 0.02;
@@ -158,7 +159,7 @@ export default function renderAurora({
       ctx.shadowBlur = 0;
     }
 
-    wave.offset += wave.speed * (1 + avgIntensity);
+    wave.offset += wave.speed * (1 + avgIntensity + mid * 0.5);
   });
 
   // Add stars - randomly scattered with twinkling

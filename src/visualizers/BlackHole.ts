@@ -18,6 +18,7 @@ export default function renderBlackHole({
   canvas,
   data,
   performanceMode = false,
+  bass = 0,
 }: VisualizeFnProps) {
   const centerX = canvas.width / 2;
   const centerY = canvas.height / 2;
@@ -25,8 +26,8 @@ export default function renderBlackHole({
   const avgIntensity = data.reduce((a, b) => a + b, 0) / data.length;
   const eventHorizonRadius = maxRadius * 0.15 + avgIntensity * maxRadius * 0.05;
 
-  // Update rotation
-  blackHoleState.rotation += 0.02 + avgIntensity * 0.03;
+  // Update rotation - bass makes it spin faster
+  blackHoleState.rotation += 0.02 + avgIntensity * 0.03 + bass * 0.02;
 
   // Spawn particles for accretion disk
   const maxParticles = performanceMode ? 100 : 200;

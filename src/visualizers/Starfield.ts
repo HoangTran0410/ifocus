@@ -31,6 +31,7 @@ export default function renderStarfield({
   data,
   performanceMode = false,
   beatIntensity = 0,
+  bass = 0,
 }: VisualizeFnProps) {
   const centerX = canvas.width / 2;
   const centerY = canvas.height / 2;
@@ -56,8 +57,8 @@ export default function renderStarfield({
     starfieldState.initialized = true;
   }
 
-  // Spawn shockwave on strong beats (less frequent)
-  if (beatIntensity > 0.6 && now - starfieldState.lastBeatTime > 400) {
+  // Spawn shockwave on strong bass (kick drums)
+  if (bass > 0.5 && now - starfieldState.lastBeatTime > 400) {
     starfieldState.lastBeatTime = now;
     starfieldState.shockwaves.push({
       radius: 10,
@@ -66,11 +67,11 @@ export default function renderStarfield({
     });
   }
 
-  // Speed based on bass frequencies and beat - gentler boost on beats
+  // Speed based on bass frequencies - more responsive to kick drums
   const bassIntensity =
     data.slice(0, Math.floor(data.length / 4)).reduce((a, b) => a + b, 0) /
     (data.length / 4);
-  const speed = 1 + bassIntensity * 4 + beatIntensity * 6; // Slower speed burst
+  const speed = 1 + bassIntensity * 4 + bass * 8; // Faster speed on bass
 
   // Color shift on beat - stars turn golden/warm (higher threshold)
   const beatColorShift = beatIntensity > 0.5;

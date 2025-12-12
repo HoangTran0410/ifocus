@@ -31,6 +31,8 @@ export default function renderParticles({
   data,
   performanceMode = false,
   beatIntensity = 0,
+  bass = 0,
+  high = 0,
 }: VisualizeFnProps) {
   const centerX = canvas.width / 2;
   const centerY = canvas.height / 2;
@@ -39,18 +41,18 @@ export default function renderParticles({
 
   particleState.orbitAngle += 0.02 + avgIntensity * 0.03;
 
-  // Burst particles on beats
-  if (beatIntensity > 0.5 && Date.now() - particleState.lastBeat > 100) {
+  // Burst particles on bass (kick drums)
+  if (bass > 0.4 && Date.now() - particleState.lastBeat > 100) {
     const burstCount = performanceMode ? 8 : 20;
     for (let i = 0; i < burstCount; i++) {
       const angle = (i / burstCount) * Math.PI * 2 + Math.random() * 0.3;
-      const speed = 4 + beatIntensity * 8 + Math.random() * 4;
+      const speed = 4 + bass * 10 + Math.random() * 4;
       particleState.particles.push({
         x: centerX,
         y: centerY,
         vx: Math.cos(angle) * speed,
         vy: Math.sin(angle) * speed,
-        size: 3 + beatIntensity * 4,
+        size: 3 + bass * 5,
         life: 1.0,
         maxLife: 1.0,
         hue: 280 + Math.random() * 60,
