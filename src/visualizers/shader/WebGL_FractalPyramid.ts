@@ -1,20 +1,7 @@
-import { VisualizeFnProps } from "../types";
-import {
-  createProgram,
-  getUniforms,
-  FULLSCREEN_VERTEX_SHADER,
-  copyToCanvas2D,
-  getSharedCanvas,
-  getSharedGL,
-  ensureSharedCanvasSize,
-  ensureSharedQuad,
-  drawSharedQuad,
-} from "./utils";
-
 // Fractal Pyramid
 // https://www.shadertoy.com/view/tsXBzS
 
-const FRAGMENT_SHADER = /*glsl*/ `
+export default /*glsl*/ `
   precision highp float;
 
   varying vec2 v_uv;
@@ -96,71 +83,3 @@ const FRAGMENT_SHADER = /*glsl*/ `
     gl_FragColor = vec4(col.rgb, alpha);
   }
 `;
-
-// State for WebGL resources (uses shared canvas)
-const state = {
-  program: null as WebGLProgram | null,
-  uniforms: {} as Record<string, WebGLUniformLocation | null>,
-  time: 0,
-};
-
-export default function renderWebGLFractalPyramid({
-  ctx,
-  canvas,
-  data,
-  performanceMode = false,
-  beatIntensity = 0,
-  bass = 0,
-  mid = 0,
-  high = 0,
-}: VisualizeFnProps) {
-  // Use shared WebGL canvas and context
-  if (!ensureSharedCanvasSize(canvas.width, canvas.height)) return;
-  const glCanvas = getSharedCanvas();
-  const gl = getSharedGL();
-  if (!gl) return;
-
-  // Initialize program if needed
-  if (!state.program) {
-    state.program = createProgram(
-      gl,
-      FULLSCREEN_VERTEX_SHADER,
-      FRAGMENT_SHADER
-    );
-    if (!state.program) return;
-    state.uniforms = getUniforms(gl, state.program);
-  }
-
-  ensureSharedQuad();
-  if (!state.program) return;
-
-  // Update time
-  state.time += performanceMode ? 0.012 : 0.016;
-
-  const avgIntensity = data.reduce((a, b) => a + b, 0) / data.length;
-
-  // Render
-  gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
-  gl.clearColor(0.0, 0.0, 0.0, 0.0);
-  gl.clear(gl.COLOR_BUFFER_BIT);
-
-  gl.useProgram(state.program);
-  gl.uniform1f(state.uniforms.u_time, state.time);
-  gl.uniform1f(state.uniforms.u_intensity, avgIntensity);
-  gl.uniform1f(state.uniforms.u_beatIntensity, beatIntensity);
-  gl.uniform1f(state.uniforms.u_bass, bass);
-  gl.uniform1f(state.uniforms.u_mid, mid);
-  gl.uniform1f(state.uniforms.u_high, high);
-  gl.uniform2f(state.uniforms.u_resolution, canvas.width, canvas.height);
-
-  gl.enable(gl.BLEND);
-  gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-  drawSharedQuad(state.program);
-
-  copyToCanvas2D(glCanvas, ctx, canvas);
-}
-
-export function cleanup(): void {
-  state.program = null;
-  state.uniforms = {};
-}

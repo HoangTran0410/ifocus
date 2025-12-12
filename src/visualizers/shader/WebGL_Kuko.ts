@@ -1,23 +1,10 @@
-import { VisualizeFnProps } from "../types";
-import {
-  createProgram,
-  getUniforms,
-  FULLSCREEN_VERTEX_SHADER,
-  copyToCanvas2D,
-  getSharedCanvas,
-  getSharedGL,
-  ensureSharedCanvasSize,
-  ensureSharedQuad,
-  drawSharedQuad,
-} from "./utils";
-
 // KuKo - Holofoil Dice by Jaenam
 // Adapted from Shadertoy
 // License: Creative Commons (CC BY-NC-SA 4.0)
 // Original: https://x.com/Jaenam97/status/1997653539078693351
 // https://www.shadertoy.com/view/3fdfzn
 
-const FRAGMENT_SHADER = /*glsl*/ `
+export default /*glsl*/ `
   precision highp float;
 
   varying vec2 v_uv;
@@ -29,7 +16,6 @@ const FRAGMENT_SHADER = /*glsl*/ `
   uniform float u_mid;
   uniform float u_high;
   uniform vec2 u_resolution;
-  uniform vec2 u_mouse;
 
   // Polyfill for tanh (not available in WebGL 1.0)
   float tanhf(float x) {
@@ -79,12 +65,8 @@ const FRAGMENT_SHADER = /*glsl*/ `
       // Early exit if ray goes too far off screen
       if (abs(p.x) > 5.0) break;
 
-      // Apply rotations for camera orientation
-      if (u_mouse.x > 0.0) {
-        p.yz *= rotY;
-      } else {
-        p.xy *= rotY;
-      }
+      // Apply rotations for camera orientation - auto rotate
+      p.xy *= rotY;
 
       // Move along z direction
       p.z += time;
@@ -136,10 +118,8 @@ const FRAGMENT_SHADER = /*glsl*/ `
     vec2 fragCoord = v_uv * u_resolution;
     vec2 R = u_resolution;
 
-    // Mouse control for rotation, or auto-rotate based on time
-    vec2 Ma = u_mouse.x > 0.0 ?
-              (u_mouse / R - 0.5) * 6.28 :
-              vec2(u_time / 6.0);
+    // Auto-rotate based on time
+    vec2 Ma = vec2(u_time / 6.0);
 
     // Rotation matrices for 3D camera orientation
     mat2 rotX = rot2D(Ma.x);
@@ -167,106 +147,3 @@ const FRAGMENT_SHADER = /*glsl*/ `
     gl_FragColor = vec4(O.rgb, alpha);
   }
 `;
-
-// State for WebGL resources (uses shared canvas)
-const state = {
-  program: null as WebGLProgram | null,
-  uniforms: {} as Record<string, WebGLUniformLocation | null>,
-  time: 0,
-  mouseX: 0,
-  mouseY: 0,
-  mouseDown: false,
-  mouseSetup: false,
-};
-
-// Mouse event handlers
-function setupMouseHandlers(canvas: HTMLCanvasElement) {
-  if (state.mouseSetup) return;
-  state.mouseSetup = true;
-
-  const handleMouseMove = (e: MouseEvent) => {
-    if (state.mouseDown) {
-      state.mouseX = e.clientX;
-      state.mouseY = canvas.height - e.clientY;
-    }
-  };
-
-  const handleMouseDown = (e: MouseEvent) => {
-    state.mouseDown = true;
-    state.mouseX = e.clientX;
-    state.mouseY = canvas.height - e.clientY;
-  };
-
-  const handleMouseUp = () => {
-    state.mouseDown = false;
-  };
-
-  canvas.addEventListener("mousemove", handleMouseMove);
-  canvas.addEventListener("mousedown", handleMouseDown);
-  canvas.addEventListener("mouseup", handleMouseUp);
-  canvas.addEventListener("mouseleave", handleMouseUp);
-}
-
-export default function renderWebGLKuko({
-  ctx,
-  canvas,
-  data,
-  performanceMode = false,
-  beatIntensity = 0,
-  bass = 0,
-  mid = 0,
-  high = 0,
-}: VisualizeFnProps) {
-  // Use shared WebGL canvas and context
-  if (!ensureSharedCanvasSize(canvas.width, canvas.height)) return;
-  const glCanvas = getSharedCanvas();
-  const gl = getSharedGL();
-  if (!gl) return;
-
-  setupMouseHandlers(canvas);
-
-  // Initialize program if needed
-  if (!state.program) {
-    state.program = createProgram(
-      gl,
-      FULLSCREEN_VERTEX_SHADER,
-      FRAGMENT_SHADER
-    );
-    if (!state.program) return;
-    state.uniforms = getUniforms(gl, state.program);
-  }
-
-  ensureSharedQuad();
-  if (!state.program) return;
-
-  // Update time
-  state.time += performanceMode ? 0.012 : 0.016;
-
-  const avgIntensity = data.reduce((a, b) => a + b, 0) / data.length;
-
-  // Render
-  gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
-  gl.clearColor(0.0, 0.0, 0.0, 0.0);
-  gl.clear(gl.COLOR_BUFFER_BIT);
-
-  gl.useProgram(state.program);
-  gl.uniform1f(state.uniforms.u_time, state.time);
-  gl.uniform1f(state.uniforms.u_intensity, avgIntensity);
-  gl.uniform1f(state.uniforms.u_beatIntensity, beatIntensity);
-  gl.uniform1f(state.uniforms.u_bass, bass);
-  gl.uniform1f(state.uniforms.u_mid, mid);
-  gl.uniform1f(state.uniforms.u_high, high);
-  gl.uniform2f(state.uniforms.u_resolution, canvas.width, canvas.height);
-  gl.uniform2f(state.uniforms.u_mouse, state.mouseX || 0, state.mouseY || 0);
-
-  gl.enable(gl.BLEND);
-  gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-  drawSharedQuad(state.program);
-
-  copyToCanvas2D(glCanvas, ctx, canvas);
-}
-
-export function cleanup(): void {
-  state.program = null;
-  state.uniforms = {};
-}

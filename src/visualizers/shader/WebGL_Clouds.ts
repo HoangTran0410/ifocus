@@ -1,21 +1,8 @@
-import { VisualizeFnProps } from "../types";
-import {
-  createProgram,
-  getUniforms,
-  FULLSCREEN_VERTEX_SHADER,
-  copyToCanvas2D,
-  getSharedCanvas,
-  getSharedGL,
-  ensureSharedCanvasSize,
-  ensureSharedQuad,
-  drawSharedQuad,
-} from "./utils";
-
 // WebGL Volumetric Clouds - Adapted from Inigo Quilez's work
 // Audio-reactive procedural clouds with raymarching
 // https://www.shadertoy.com/view/XslGRr
 
-const FRAGMENT_SHADER = /*glsl*/ `
+export default /*glsl*/ `
   precision highp float;
 
   varying vec2 v_uv;
@@ -25,8 +12,8 @@ const FRAGMENT_SHADER = /*glsl*/ `
   uniform float u_beatIntensity;
   uniform float u_bass;
   uniform float u_mid;
+  uniform float u_high;
   uniform vec2 u_resolution;
-  uniform vec2 u_mouse;
 
   #define PI 3.14159265359
 
@@ -209,9 +196,10 @@ const FRAGMENT_SHADER = /*glsl*/ `
   void main() {
     vec2 p = (2.0 * v_uv - 1.0) * vec2(u_resolution.x / u_resolution.y, 1.0);
 
-    // Camera - orbiting around with mouse control
-    vec2 m = u_mouse;
-    vec3 ro = 4.0 * normalize(vec3(sin(3.0 * m.x), 0.8 * m.y, cos(3.0 * m.x))) - vec3(0.0, 0.1, 0.0);
+    // Camera - gentle auto-orbit with audio influence
+    float mx = u_time * 0.03;
+    float my = 0.3 + sin(u_time * 0.1) * 0.1;
+    vec3 ro = 4.0 * normalize(vec3(sin(3.0 * mx), 0.8 * my, cos(3.0 * mx))) - vec3(0.0, 0.1, 0.0);
     vec3 ta = vec3(0.0, -1.0, 0.0);
     mat3 ca = setCamera(ro, ta, 0.07 * cos(0.25 * u_time));
 
@@ -220,90 +208,9 @@ const FRAGMENT_SHADER = /*glsl*/ `
 
     vec4 color = render(ro, rd);
 
+    // Audio-reactive brightness
+    color.rgb *= 1.0 + u_bass * 0.3;
+
     gl_FragColor = color;
   }
 `;
-
-// State for WebGL resources
-const state = {
-  program: null as WebGLProgram | null,
-  uniforms: {} as Record<string, WebGLUniformLocation | null>,
-  time: 0,
-  mouseX: 0.5,
-  mouseY: 0.3,
-};
-
-export default function renderWebGLClouds({
-  ctx,
-  canvas,
-  data,
-  performanceMode = false,
-  beatIntensity = 0,
-  bass = 0,
-  mid = 0,
-}: VisualizeFnProps) {
-  // Use shared WebGL canvas and context
-  if (!ensureSharedCanvasSize(canvas.width, canvas.height)) return;
-  const glCanvas = getSharedCanvas();
-  const gl = getSharedGL();
-  if (!gl) return;
-
-  // Initialize program if needed
-  if (!state.program) {
-    state.program = createProgram(
-      gl,
-      FULLSCREEN_VERTEX_SHADER,
-      FRAGMENT_SHADER
-    );
-    if (!state.program) return;
-    state.uniforms = getUniforms(gl, state.program);
-  }
-
-  // Ensure quad is setup
-  ensureSharedQuad();
-
-  if (!state.program) return;
-
-  // Update time - bass makes time flow faster
-  state.time += (performanceMode ? 0.012 : 0.016) * (1.0 + bass * 0.3);
-
-  // Gentle mouse drift for auto-animation
-  state.mouseX += 0.0003;
-  state.mouseY = 0.3 + Math.sin(state.time * 0.1) * 0.1;
-
-  // Calculate average intensity
-  const avgIntensity = data.reduce((a, b) => a + b, 0) / data.length;
-
-  // Render
-  gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
-  gl.clearColor(0.0, 0.0, 0.0, 0.0);
-  gl.clear(gl.COLOR_BUFFER_BIT);
-
-  gl.useProgram(state.program);
-
-  // Set uniforms
-  gl.uniform1f(state.uniforms.u_time, state.time);
-  gl.uniform1f(state.uniforms.u_intensity, avgIntensity);
-  gl.uniform1f(state.uniforms.u_beatIntensity, beatIntensity);
-  gl.uniform1f(state.uniforms.u_bass, bass);
-  gl.uniform1f(state.uniforms.u_mid, mid);
-  gl.uniform2f(state.uniforms.u_resolution, canvas.width, canvas.height);
-  gl.uniform2f(state.uniforms.u_mouse, state.mouseX % 1.0, state.mouseY % 1.0);
-
-  gl.enable(gl.BLEND);
-  gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-
-  drawSharedQuad(state.program);
-
-  // Copy to 2D canvas
-  copyToCanvas2D(glCanvas, ctx, canvas);
-}
-
-/**
- * Cleanup function - just reset local program state
- * The shared context is managed globally
- */
-export function cleanup(): void {
-  state.program = null;
-  state.uniforms = {};
-}

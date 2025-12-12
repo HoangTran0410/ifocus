@@ -1,22 +1,9 @@
-import { VisualizeFnProps } from "../types";
-import {
-  createProgram,
-  getUniforms,
-  FULLSCREEN_VERTEX_SHADER,
-  copyToCanvas2D,
-  getSharedCanvas,
-  getSharedGL,
-  ensureSharedCanvasSize,
-  ensureSharedQuad,
-  drawSharedQuad,
-} from "./utils";
-
 // WebGL HoloDice - Holofoil dice effect with procedural fractal patterns
 // Adapted from Shadertoy shader by Jaenam (CC BY-NC-SA 4.0)
 // Original: https://x.com/Jaenam97/status/1997653539078693351
 // https://www.shadertoy.com/view/tfGyzt
 
-const FRAGMENT_SHADER = /*glsl*/ `
+export default /*glsl*/ `
   precision highp float;
 
   varying vec2 v_uv;
@@ -25,8 +12,9 @@ const FRAGMENT_SHADER = /*glsl*/ `
   uniform float u_intensity;
   uniform float u_beatIntensity;
   uniform float u_bass;
+  uniform float u_mid;
+  uniform float u_high;
   uniform vec2 u_resolution;
-  uniform vec2 u_mouse;
 
   #define PI 3.14159265359
 
@@ -57,7 +45,7 @@ const FRAGMENT_SHADER = /*glsl*/ `
   }
 
   // Render one color channel of the dice
-  float renderChannel(vec2 I, vec3 r, mat2 Rx, mat2 Ry, float Z, float mouseZ) {
+  float renderChannel(vec2 I, vec3 r, mat2 Rx, mat2 Ry, float Z) {
     float O = 0.0;
 
     for (float i = 0.0; i < 80.0; i++) {
@@ -72,13 +60,9 @@ const FRAGMENT_SHADER = /*glsl*/ `
 
         if (abs(p.x) > 5.0) break;
 
-        // Apply rotation based on mouse or time
+        // Apply rotation based on time
         p.xz = p.xz * Rx;
-        if (mouseZ > 0.0) {
-          p.yz = p.yz * Ry;
-        } else {
-          p.xy = p.xy * Ry;
-        }
+        p.xy = p.xy * Ry;
 
         // Grid coordinates for dot pattern
         vec3 g = floor(p * 6.0);
@@ -129,17 +113,17 @@ const FRAGMENT_SHADER = /*glsl*/ `
     float beatScale = 1.0 + u_bass * 0.25;
     fragCoord = (fragCoord - r.xy * 0.5) / beatScale + r.xy * 0.5;
 
-    // Mouse or automatic rotation
-    vec2 m = u_mouse.x > 0.0 ? (-u_mouse.xy / r.xy - 0.5) * 6.28 : vec2(u_time / 2.0);
+    // Automatic rotation
+    vec2 m = vec2(u_time / 2.0);
 
     // Create rotation matrices
     mat2 Rx = rotMat(m.x);
     mat2 Ry = rotMat(m.y);
 
     // Render each color channel with offset for holographic effect
-    float red = renderChannel(fragCoord, r, Rx, Ry, -1.0, u_mouse.x);
-    float green = renderChannel(fragCoord, r, Rx, Ry, 0.0, u_mouse.x);
-    float blue = renderChannel(fragCoord, r, Rx, Ry, 1.0, u_mouse.x);
+    float red = renderChannel(fragCoord, r, Rx, Ry, -1.0);
+    float green = renderChannel(fragCoord, r, Rx, Ry, 0.0);
+    float blue = renderChannel(fragCoord, r, Rx, Ry, 1.0);
 
     vec4 O = vec4(red, green, blue, 1.0);
 
@@ -158,107 +142,3 @@ const FRAGMENT_SHADER = /*glsl*/ `
     gl_FragColor = vec4(tonemapped, alpha);
   }
 `;
-
-// State for WebGL resources (uses shared canvas)
-const state = {
-  program: null as WebGLProgram | null,
-  uniforms: {} as Record<string, WebGLUniformLocation | null>,
-  time: 0,
-  mouseX: 0,
-  mouseY: 0,
-  mouseDown: false,
-  mouseSetup: false,
-};
-
-// Mouse event handlers
-function setupMouseHandlers(canvas: HTMLCanvasElement) {
-  if (state.mouseSetup) return;
-  state.mouseSetup = true;
-
-  const handleMouseMove = (e: MouseEvent) => {
-    if (state.mouseDown) {
-      state.mouseX = e.clientX;
-      state.mouseY = canvas.height - e.clientY;
-    }
-  };
-
-  const handleMouseDown = (e: MouseEvent) => {
-    state.mouseDown = true;
-    state.mouseX = e.clientX;
-    state.mouseY = canvas.height - e.clientY;
-  };
-
-  const handleMouseUp = () => {
-    state.mouseDown = false;
-  };
-
-  canvas.addEventListener("mousemove", handleMouseMove);
-  canvas.addEventListener("mousedown", handleMouseDown);
-  canvas.addEventListener("mouseup", handleMouseUp);
-  canvas.addEventListener("mouseleave", handleMouseUp);
-}
-
-export default function renderWebGLHoloDice({
-  ctx,
-  canvas,
-  data,
-  performanceMode = false,
-  beatIntensity = 0,
-  bass = 0,
-}: VisualizeFnProps) {
-  // Use shared WebGL canvas and context
-  if (!ensureSharedCanvasSize(canvas.width, canvas.height)) return;
-  const glCanvas = getSharedCanvas();
-  const gl = getSharedGL();
-  if (!gl) return;
-
-  setupMouseHandlers(canvas);
-
-  // Initialize program if needed
-  if (!state.program) {
-    state.program = createProgram(
-      gl,
-      FULLSCREEN_VERTEX_SHADER,
-      FRAGMENT_SHADER
-    );
-    if (!state.program) return;
-    state.uniforms = getUniforms(gl, state.program);
-  }
-
-  ensureSharedQuad();
-  if (!state.program) return;
-
-  // Update time
-  state.time += performanceMode ? 0.012 : 0.016;
-
-  // Calculate intensity from audio data
-  const avgIntensity = data.reduce((a, b) => a + b, 0) / data.length;
-
-  // Render
-  gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
-  gl.clearColor(0.0, 0.0, 0.0, 0.0);
-  gl.clear(gl.COLOR_BUFFER_BIT);
-
-  gl.useProgram(state.program);
-  gl.uniform1f(state.uniforms.u_time, state.time);
-  gl.uniform1f(state.uniforms.u_intensity, avgIntensity);
-  gl.uniform1f(state.uniforms.u_beatIntensity, beatIntensity);
-  gl.uniform1f(state.uniforms.u_bass, bass);
-  gl.uniform2f(state.uniforms.u_resolution, canvas.width, canvas.height);
-  gl.uniform2f(
-    state.uniforms.u_mouse,
-    state.mouseDown ? state.mouseX : 0,
-    state.mouseDown ? state.mouseY : 0
-  );
-
-  gl.enable(gl.BLEND);
-  gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-  drawSharedQuad(state.program);
-
-  copyToCanvas2D(glCanvas, ctx, canvas);
-}
-
-export function cleanup(): void {
-  state.program = null;
-  state.uniforms = {};
-}

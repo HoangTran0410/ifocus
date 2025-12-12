@@ -1,21 +1,8 @@
-import { VisualizeFnProps } from "../types";
-import {
-  createProgram,
-  getUniforms,
-  FULLSCREEN_VERTEX_SHADER,
-  copyToCanvas2D,
-  getSharedCanvas,
-  getSharedGL,
-  ensureSharedCanvasSize,
-  ensureSharedQuad,
-  drawSharedQuad,
-} from "./utils";
-
 // The Universe Within - by Martijn Steinrucken aka BigWings 2018
 // https://www.shadertoy.com/view/lscczl
 // License: Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported License
 
-const FRAGMENT_SHADER = /*glsl*/ `
+export default /*glsl*/ `
   precision highp float;
 
   varying vec2 v_uv;
@@ -27,7 +14,6 @@ const FRAGMENT_SHADER = /*glsl*/ `
   uniform float u_mid;
   uniform float u_high;
   uniform vec2 u_resolution;
-  uniform vec2 u_mouse;
 
   #define S(a, b, t) smoothstep(a, b, t)
   #define NUM_LAYERS 4.
@@ -147,7 +133,11 @@ const FRAGMENT_SHADER = /*glsl*/ `
 
   void main() {
     vec2 uv = (v_uv - 0.5) * vec2(u_resolution.x / u_resolution.y, 1.0);
-    vec2 M = u_mouse * 0.5;
+
+    // Auto-animate mouse drift
+    float mx = u_time * 0.02;
+    float my = 0.5 + sin(u_time * 0.05) * 0.1;
+    vec2 M = vec2(mx, my) * 0.5;
 
     float t = u_time * 0.1;
 
@@ -193,78 +183,3 @@ const FRAGMENT_SHADER = /*glsl*/ `
     gl_FragColor = vec4(col, alpha);
   }
 `;
-
-// State for WebGL resources (uses shared canvas)
-const state = {
-  program: null as WebGLProgram | null,
-  uniforms: {} as Record<string, WebGLUniformLocation | null>,
-  time: 0,
-  mouseX: 0,
-  mouseY: 0,
-};
-
-export default function renderWebGLUniverse({
-  ctx,
-  canvas,
-  data,
-  performanceMode = false,
-  beatIntensity = 0,
-  bass = 0,
-  mid = 0,
-  high = 0,
-}: VisualizeFnProps) {
-  // Use shared WebGL canvas and context
-  if (!ensureSharedCanvasSize(canvas.width, canvas.height)) return;
-  const glCanvas = getSharedCanvas();
-  const gl = getSharedGL();
-  if (!gl) return;
-
-  // Initialize program if needed
-  if (!state.program) {
-    state.program = createProgram(
-      gl,
-      FULLSCREEN_VERTEX_SHADER,
-      FRAGMENT_SHADER
-    );
-    if (!state.program) return;
-    state.uniforms = getUniforms(gl, state.program);
-  }
-
-  ensureSharedQuad();
-  if (!state.program) return;
-
-  // Update time - consistent speed without bass jitter
-  state.time += performanceMode ? 0.012 : 0.016;
-
-  // Gentle mouse drift for auto-animation
-  state.mouseX += 0.0002;
-  state.mouseY = 0.5 + Math.sin(state.time * 0.05) * 0.1;
-
-  const avgIntensity = data.reduce((a, b) => a + b, 0) / data.length;
-
-  // Render
-  gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
-  gl.clearColor(0.0, 0.0, 0.0, 0.0);
-  gl.clear(gl.COLOR_BUFFER_BIT);
-
-  gl.useProgram(state.program);
-  gl.uniform1f(state.uniforms.u_time, state.time);
-  gl.uniform1f(state.uniforms.u_intensity, avgIntensity);
-  gl.uniform1f(state.uniforms.u_beatIntensity, beatIntensity);
-  gl.uniform1f(state.uniforms.u_bass, bass);
-  gl.uniform1f(state.uniforms.u_mid, mid);
-  gl.uniform1f(state.uniforms.u_high, high);
-  gl.uniform2f(state.uniforms.u_resolution, canvas.width, canvas.height);
-  gl.uniform2f(state.uniforms.u_mouse, state.mouseX % 1.0, state.mouseY);
-
-  gl.enable(gl.BLEND);
-  gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-  drawSharedQuad(state.program);
-
-  copyToCanvas2D(glCanvas, ctx, canvas);
-}
-
-export function cleanup(): void {
-  state.program = null;
-  state.uniforms = {};
-}
