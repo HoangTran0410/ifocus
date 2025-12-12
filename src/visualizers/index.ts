@@ -61,6 +61,7 @@ const RenderMode: Record<
   "⚛️ Plasma (WebGL)": () => import("./shader/WebGL_Plasma"),
   "🚗 Drive (WebGL)": () => import("./shader/WebGL_Drive"),
   "🌈 Rainbow (WebGL)": () => import("./shader/WebGL_Rainbow"),
+  "✡️ Octagram (WebGL)": () => import("./shader/WebGL_Octagram"),
 };
 export type VisualizerMode = keyof typeof RenderMode;
 export const MODES = Object.keys(RenderMode) as VisualizerMode[];

@@ -44,7 +44,8 @@ export function renderShaderCode(props: VisualizeFnProps, shaderCode: string) {
   if (!gl) return;
 
   // Initialize program if needed
-  let state = stateCached.get(props.mode);
+  const mode = props.mode || "default";
+  let state = stateCached.get(mode);
   if (!state) {
     state = {
       program: null,
@@ -53,7 +54,7 @@ export function renderShaderCode(props: VisualizeFnProps, shaderCode: string) {
       audioTexture: null,
       audioData: null,
     };
-    stateCached.set(props.mode, state);
+    stateCached.set(mode, state);
   }
   if (!state.program) {
     state.program = createProgram(gl, FULLSCREEN_VERTEX_SHADER, shaderCode);
@@ -62,8 +63,8 @@ export function renderShaderCode(props: VisualizeFnProps, shaderCode: string) {
   }
 
   // Create audio texture if needed (like Shadertoy's iChannel0)
-  // Only create/update if shader uses u_audioData uniform
-  const needsAudioTexture = state.uniforms.u_audioData !== undefined;
+  // Only create/update if shader uses u_audioData uniform (getUniforms returns null for missing uniforms)
+  const needsAudioTexture = state.uniforms.u_audioData != null;
 
   if (needsAudioTexture) {
     if (!state.audioTexture) {

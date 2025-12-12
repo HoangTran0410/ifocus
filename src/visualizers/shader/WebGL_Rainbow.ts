@@ -1,5 +1,6 @@
 // Rainbow - Audio-reactive rainbow spectrum visualizer
 // GPU-accelerated WebGL visualizer
+// https://www.shadertoy.com/view/ldX3D8
 
 export default /*glsl*/ `
   precision highp float;
