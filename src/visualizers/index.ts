@@ -1,79 +1,77 @@
-import type { VisualizeFnProps } from "./shared";
+import { cleanup, renderShaderCode } from "./shader/renderer";
+import type { VisualizeFnProps } from "./types";
 
-export type VisualizerRenderFn = (props: VisualizeFnProps) => void;
-export type VisualizerCleanupFn = () => void;
+const RenderMode: Record<
+  string,
+  () => Promise<{ default: string | VisualizerRenderFn }>
+> = {
+  // simple
+  "🔧 (Test)": () => import("./simple/FrequencyBands"),
+  "📊 Bars": () => import("./simple/Bars"),
+  "🌊 Wave": () => import("./simple/Wave"),
+  "🟣 Circular": () => import("./simple/Circular"),
+  "🔊 TrapNation": () => import("./simple/TrapNation"),
+  "🌈 Spectrum": () => import("./simple/Spectrum"),
+  "✨ Particles": () => import("./simple/Particles"),
+  "🧬 DnaHelix": () => import("./simple/DnaHelix"),
+  "〰️ Oscilloscope": () => import("./simple/Oscilloscope"),
+  "🔆 RadialLines": () => import("./simple/RadialLines"),
+  "🌌 Galaxy": () => import("./simple/Galaxy"),
+  "⚫ BlackHole": () => import("./simple/BlackHole"),
+  "💻 Matrix": () => import("./simple/Matrix"),
+  "🎆 Fireworks": () => import("./simple/Fireworks"),
+  "🌠 Aurora": () => import("./simple/Aurora"),
+  "💍 Rings": () => import("./simple/Rings"),
+  "📈 Waveform3D": () => import("./simple/Waveform3D"),
+  "⭐ Starfield": () => import("./simple/Starfield"),
+  "🌀 Plasma": () => import("./simple/Plasma"),
+  "⚡ Lightning": () => import("./simple/Lightning"),
+  "🐝 Hexagons": () => import("./simple/Hexagons"),
+  "🌿 Fractal": () => import("./simple/Fractal"),
 
-const RenderMode = {
-  "🔧 (Test)": () => import("./FrequencyBands"),
-  "📊 Bars": () => import("./Bars"),
-  "🌊 Wave": () => import("./Wave"),
-  "🟣 Circular": () => import("./Circular"),
-  "🔊 TrapNation": () => import("./TrapNation"),
-  "🌈 Spectrum": () => import("./Spectrum"),
-  "✨ Particles": () => import("./Particles"),
-  "🧬 DnaHelix": () => import("./DnaHelix"),
-  "〰️ Oscilloscope": () => import("./Oscilloscope"),
-  "🔆 RadialLines": () => import("./RadialLines"),
-  "🌌 Galaxy": () => import("./Galaxy"),
-  "⚫ BlackHole": () => import("./BlackHole"),
-  "💻 Matrix": () => import("./Matrix"),
-  "🎆 Fireworks": () => import("./Fireworks"),
-  "🌠 Aurora": () => import("./Aurora"),
-  "💍 Rings": () => import("./Rings"),
-  "📈 Waveform3D": () => import("./Waveform3D"),
-  "⭐ Starfield": () => import("./Starfield"),
-  "🌀 Plasma": () => import("./Plasma"),
-  "⚡ Lightning": () => import("./Lightning"),
-  "🐝 Hexagons": () => import("./Hexagons"),
-  "🌿 Fractal": () => import("./Fractal"),
-  "💧 Fluid (WebGL)": () => import("./WebGL_Fluid"),
-  "🕳️ BlackHole (WebGL)": () => import("./WebGL_BlackHole"),
-  "🌀 Accretion (WebGL)": () => import("./WebGL_Accretion"),
-  "⚡ Lightning (WebGL)": () => import("./WebGL_Lightning"),
-  "🌅 Sunset (WebGL)": () => import("./WebGL_Sunset"),
-  "🎲 HoloDice (WebGL)": () => import("./WebGL_HoloDice"),
-  "📦 Cube (WebGL)": () => import("./WebGL_Cube"),
-  "☁️ Clouds (WebGL)": () => import("./WebGL_Clouds"),
-  "🌌 Universe (WebGL)": () => import("./WebGL_Universe"),
-  "✨ Kuko (WebGL)": () => import("./WebGL_Kuko"),
-  "🧵 Fiber (WebGL)": () => import("./WebGL_Fiber"),
-  "⚡ Zippy (WebGL)": () => import("./WebGL_Zippy"),
-  "🎨 Art (WebGL)": () => import("./WebGL_Art"),
-  "🌟 StarNest (WebGL)": () => import("./WebGL_StarNest"),
-  "🏞️ Landscape (WebGL)": () => import("./WebGL_Landscape"),
-  "🔥 Fire (WebGL)": () => import("./WebGL_Fire"),
-  "💎 Fragment (WebGL)": () => import("./WebGL_Fragment"),
-  "🪐 Orbital (WebGL)": () => import("./WebGL_Orbital"),
-  "🎨 Palettes (WebGL)": () => import("./WebGL_Palettes"),
-  "🍩 Torus (WebGL)": () => import("./WebGL_Torus"),
-  "🔺 Fractal (WebGL)": () => import("./WebGL_FractalPyramid"),
-  "🧊 4D (WebGL)": () => import("./WebGL_4D"),
+  // webgl
+  "💧 Fluid (WebGL)": () => import("./shader/WebGL_Fluid"),
+  "🕳️ BlackHole (WebGL)": () => import("./shader/WebGL_BlackHole"),
+  "🌀 Accretion (WebGL)": () => import("./shader/WebGL_Accretion"),
+  "⚡ Lightning (WebGL)": () => import("./shader/WebGL_Lightning"),
+  "🌅 Sunset (WebGL)": () => import("./shader/WebGL_Sunset"),
+  "🎲 HoloDice (WebGL)": () => import("./shader/WebGL_HoloDice"),
+  "📦 Cube (WebGL)": () => import("./shader/WebGL_Cube"),
+  "☁️ Clouds (WebGL)": () => import("./shader/WebGL_Clouds"),
+  "🌌 Universe (WebGL)": () => import("./shader/WebGL_Universe"),
+  "✨ Kuko (WebGL)": () => import("./shader/WebGL_Kuko"),
+  "🧵 Fiber (WebGL)": () => import("./shader/WebGL_Fiber"),
+  "⚡ Zippy (WebGL)": () => import("./shader/WebGL_Zippy"),
+  "🎨 Art (WebGL)": () => import("./shader/WebGL_Art"),
+  "🌟 StarNest (WebGL)": () => import("./shader/WebGL_StarNest"),
+  "🏞️ Landscape (WebGL)": () => import("./shader/WebGL_Landscape"),
+  "🔥 Fire (WebGL)": () => import("./shader/WebGL_Fire"),
+  "💎 Fragment (WebGL)": () => import("./shader/WebGL_Fragment"),
+  "🪐 Orbital (WebGL)": () => import("./shader/WebGL_Orbital"),
+  "🎨 Palettes (WebGL)": () => import("./shader/WebGL_Palettes"),
+  "🍩 Torus (WebGL)": () => import("./shader/WebGL_Torus"),
+  "🔺 Fractal (WebGL)": () => import("./shader/WebGL_FractalPyramid"),
+  "🧊 4D (WebGL)": () => import("./shader/WebGL_4D"),
 };
 export type VisualizerMode = keyof typeof RenderMode;
 export const MODES = Object.keys(RenderMode) as VisualizerMode[];
 export const DEFAULT_MODE = MODES[1];
 
+export type VisualizerRenderFn = (props: VisualizeFnProps) => void;
+export type VisualizerCleanupFn = () => void;
+
 // Cache for loaded render functions to avoid re-importing every frame
 const renderFnCache = new Map<VisualizerMode, VisualizerRenderFn>();
-// Cache for cleanup functions
-const cleanupFnCache = new Map<VisualizerMode, VisualizerCleanupFn>();
 
 // Track the previous mode to detect mode changes
 let previousMode: VisualizerMode | null = null;
 
-// Helper to check if a mode is WebGL-based
-function isWebGLMode(mode: VisualizerMode): boolean {
-  return mode.includes("(WebGL)");
-}
+export async function render(props: VisualizeFnProps) {
+  const mode = props?.mode as VisualizerMode;
 
-export async function render(mode: VisualizerMode, props: VisualizeFnProps) {
   // Detect mode change and cleanup previous WebGL visualizer
   if (previousMode !== null && previousMode !== mode) {
-    // Call cleanup function if available for the previous mode
-    const cleanupFn = cleanupFnCache.get(previousMode);
-    if (cleanupFn) {
-      cleanupFn();
-    }
+    cleanup(previousMode);
   }
   previousMode = mode;
 
@@ -87,18 +85,21 @@ export async function render(mode: VisualizerMode, props: VisualizeFnProps) {
     if (!module.default) {
       throw new Error(`Invalid render function for mode: ${mode}`);
     }
-    cachedRenderFn = module.default;
-    renderFnCache.set(mode, cachedRenderFn);
 
-    // Cache cleanup function if available
-    const moduleWithCleanup = module as { cleanup?: VisualizerCleanupFn };
-    if (moduleWithCleanup.cleanup) {
-      cleanupFnCache.set(mode, moduleWithCleanup.cleanup);
-    }
+    cachedRenderFn =
+      typeof module.default === "string"
+        ? createShaderRenderFn(module.default)
+        : module.default;
+
+    renderFnCache.set(mode, cachedRenderFn);
   }
 
   // Call the cached render function synchronously
   cachedRenderFn(props);
+}
+
+function createShaderRenderFn(shaderCode: string): VisualizerRenderFn {
+  return (props) => renderShaderCode(props, shaderCode);
 }
 
 /**
@@ -106,7 +107,5 @@ export async function render(mode: VisualizerMode, props: VisualizeFnProps) {
  * Releases all WebGL contexts
  */
 export function cleanupAllVisualizers(): void {
-  for (const cleanupFn of cleanupFnCache.values()) {
-    cleanupFn();
-  }
+  cleanup(0);
 }

@@ -30,8 +30,15 @@ import {
   useVisualizerMode as useVisualizerDisplayMode,
   useSetVisualizerMode as useSetVisualizerDisplayMode,
 } from "../stores/useAppStore";
-import { DEFAULT_MODE, MODES, render, VisualizerMode } from "../visualizers";
-import { clearGradientCache, VisualizeFnProps } from "../visualizers/shared";
+import {
+  cleanupAllVisualizers,
+  DEFAULT_MODE,
+  MODES,
+  render,
+  VisualizerMode,
+} from "../visualizers";
+import { clearGradientCache } from "../visualizers/utils";
+import type { VisualizeFnProps } from "../visualizers/types";
 
 interface Position {
   x: number;
@@ -207,6 +214,7 @@ export default function Visualizer({
     (e: React.MouseEvent) => {
       e.stopPropagation();
       onClose?.();
+      cleanupAllVisualizers();
     },
     [onClose]
   );
@@ -517,7 +525,7 @@ export default function Visualizer({
       // Clear canvas
       _ctx.clearRect(0, 0, _canvas.width, _canvas.height);
 
-      const visualizerProps: VisualizeFnProps = {
+      await render({
         ctx: _ctx,
         canvas: _canvas,
         data,
@@ -528,9 +536,8 @@ export default function Visualizer({
         bass: frequencyBands.bass,
         mid: frequencyBands.mid,
         high: frequencyBands.high,
-      };
-
-      await render(mode, visualizerProps);
+        mode,
+      });
 
       // Draw FPS counter on main canvas
       if (showFpsRef.current) {
