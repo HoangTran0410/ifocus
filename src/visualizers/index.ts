@@ -62,6 +62,9 @@ const RenderMode: Record<
   "🚗 Drive (WebGL)": () => import("./shader/WebGL_Drive"),
   "🌈 Rainbow (WebGL)": () => import("./shader/WebGL_Rainbow"),
   "✡️ Octagram (WebGL)": () => import("./shader/WebGL_Octagram"),
+  "💓 Beat (WebGL)": () => import("./shader/WebGL_Beat"),
+  "👁️ Eye (WebGL)": () => import("./shader/WebGL_Eye"),
+  "🌌 Lensing (WebGL)": () => import("./shader/WebGL_Lensing"),
 };
 export type VisualizerMode = keyof typeof RenderMode;
 export const MODES = Object.keys(RenderMode) as VisualizerMode[];

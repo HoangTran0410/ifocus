@@ -1,5 +1,6 @@
 // Octagram - Raymarched 3D geometric visualizer
 // GPU-accelerated WebGL visualizer
+// https://www.shadertoy.com/view/tlVGDt
 
 export default /*glsl*/ `
   precision highp float;
