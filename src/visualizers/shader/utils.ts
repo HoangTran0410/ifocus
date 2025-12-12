@@ -36,6 +36,13 @@ export function getWebGLContext(
     glContextCache.set(canvas, gl);
     activeContexts.add({ canvas, gl });
     gl.clearColor(0.0, 0.0, 0.0, 0.0);
+
+    // Warn if too many contexts are active (browser typically limits to 8-16)
+    if (activeContexts.size > 6) {
+      console.warn(
+        `[WebGL] WARNING: ${activeContexts.size} active WebGL contexts! Risk of context loss.`
+      );
+    }
   }
 
   return gl;
@@ -70,6 +77,119 @@ export function releaseWebGLContext(canvas: HTMLCanvasElement): void {
  */
 export function getActiveContextCount(): number {
   return activeContexts.size;
+}
+
+// ============================================
+// Shared WebGL State Manager
+// ============================================
+// Single canvas and context shared by all WebGL visualizers
+// This prevents "Too many active WebGL contexts" warnings
+
+interface SharedWebGLState {
+  glCanvas: HTMLCanvasElement | null;
+  gl: WebGLRenderingContext | null;
+  quadBuffer: WebGLBuffer | null;
+  quadSetup: boolean;
+}
+
+const sharedState: SharedWebGLState = {
+  glCanvas: null,
+  gl: null,
+  quadBuffer: null,
+  quadSetup: false,
+};
+
+/**
+ * Get the shared WebGL canvas, creating it if necessary
+ */
+export function getSharedCanvas(): HTMLCanvasElement {
+  if (!sharedState.glCanvas) {
+    sharedState.glCanvas = document.createElement("canvas");
+  }
+  return sharedState.glCanvas;
+}
+
+/**
+ * Ensure the shared canvas is the correct size and has a valid GL context
+ */
+export function ensureSharedCanvasSize(width: number, height: number): boolean {
+  const canvas = getSharedCanvas();
+
+  // Resize if needed
+  if (canvas.width !== width || canvas.height !== height) {
+    canvas.width = width;
+    canvas.height = height;
+  }
+
+  // Ensure we have a GL context
+  if (!sharedState.gl) {
+    console.log("[WebGL] Creating shared WebGL context");
+    sharedState.gl = getWebGLContext(canvas);
+    sharedState.quadSetup = false;
+
+    if (!sharedState.gl) {
+      console.warn("[WebGL] Failed to create shared WebGL context!");
+    }
+  }
+
+  return sharedState.gl !== null;
+}
+
+/**
+ * Get the shared WebGL context
+ */
+export function getSharedGL(): WebGLRenderingContext | null {
+  return sharedState.gl;
+}
+
+/**
+ * Setup the shared fullscreen quad (call once per visualizer switch if needed)
+ */
+export function ensureSharedQuad(): void {
+  const gl = sharedState.gl;
+  if (!gl || sharedState.quadSetup) return;
+
+  // Create quad buffer if not exists
+  if (!sharedState.quadBuffer) {
+    sharedState.quadBuffer = gl.createBuffer();
+  }
+
+  gl.bindBuffer(gl.ARRAY_BUFFER, sharedState.quadBuffer);
+  gl.bufferData(
+    gl.ARRAY_BUFFER,
+    new Float32Array([-1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, 1]),
+    gl.STATIC_DRAW
+  );
+
+  sharedState.quadSetup = true;
+}
+
+/**
+ * Draw a fullscreen quad using the shared buffer
+ */
+export function drawSharedQuad(program: WebGLProgram): void {
+  const gl = sharedState.gl;
+  if (!gl || !sharedState.quadBuffer) return;
+
+  const posLoc = gl.getAttribLocation(program, "a_position");
+  gl.bindBuffer(gl.ARRAY_BUFFER, sharedState.quadBuffer);
+  gl.enableVertexAttribArray(posLoc);
+  gl.vertexAttribPointer(posLoc, 2, gl.FLOAT, false, 0, 0);
+  gl.drawArrays(gl.TRIANGLES, 0, 6);
+}
+
+/**
+ * Release the shared WebGL resources
+ */
+export function releaseSharedContext(): void {
+  console.log("[WebGL] Releasing shared WebGL context");
+  if (sharedState.gl && sharedState.glCanvas) {
+    releaseWebGLContext(sharedState.glCanvas);
+  }
+  sharedState.glCanvas = null;
+  sharedState.gl = null;
+  sharedState.quadBuffer = null;
+  sharedState.quadSetup = false;
 }
 
 /**

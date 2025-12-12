@@ -1,5 +1,4 @@
 import type { VisualizeFnProps } from "./shared";
-import { releaseWebGLContext } from "./shader/utils";
 
 export type VisualizerRenderFn = (props: VisualizeFnProps) => void;
 export type VisualizerCleanupFn = () => void;
@@ -29,12 +28,16 @@ const RenderMode = {
   "🌿 Fractal": () => import("./Fractal"),
   "💧 Fluid (WebGL)": () => import("./WebGL_Fluid"),
   "🕳️ BlackHole (WebGL)": () => import("./WebGL_BlackHole"),
+  "🌀 Accretion (WebGL)": () => import("./WebGL_Accretion"),
   "⚡ Lightning (WebGL)": () => import("./WebGL_Lightning"),
   "🌅 Sunset (WebGL)": () => import("./WebGL_Sunset"),
   "🎲 HoloDice (WebGL)": () => import("./WebGL_HoloDice"),
   "📦 Cube (WebGL)": () => import("./WebGL_Cube"),
   "☁️ Clouds (WebGL)": () => import("./WebGL_Clouds"),
   "🌌 Universe (WebGL)": () => import("./WebGL_Universe"),
+  "✨ Kuko (WebGL)": () => import("./WebGL_Kuko"),
+  "🧵 Fiber (WebGL)": () => import("./WebGL_Fiber"),
+  "⚡ Zippy (WebGL)": () => import("./WebGL_Zippy"),
 };
 export type VisualizerMode = keyof typeof RenderMode;
 export const MODES = Object.keys(RenderMode) as VisualizerMode[];

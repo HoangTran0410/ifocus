@@ -1,13 +1,14 @@
 import { VisualizeFnProps } from "./shared";
 import {
-  getWebGLContext,
   createProgram,
   getUniforms,
   FULLSCREEN_VERTEX_SHADER,
-  setupFullscreenQuad,
-  drawFullscreenQuad,
   copyToCanvas2D,
-  releaseWebGLContext,
+  getSharedCanvas,
+  getSharedGL,
+  ensureSharedCanvasSize,
+  ensureSharedQuad,
+  drawSharedQuad,
 } from "./shader/utils";
 
 // WebGL Cube - Glowing raymarched cube with reflections
@@ -146,13 +147,10 @@ const FRAGMENT_SHADER = /*glsl*/ `
   }
 `;
 
-// State for WebGL resources
+// State for WebGL resources (uses shared canvas)
 const state = {
   program: null as WebGLProgram | null,
   uniforms: {} as Record<string, WebGLUniformLocation | null>,
-  initialized: false,
-  lastCanvas: null as HTMLCanvasElement | null,
-  glCanvas: null as HTMLCanvasElement | null,
   time: 0,
 };
 
@@ -165,40 +163,24 @@ export default function renderWebGLCube({
   bass = 0,
   mid = 0,
 }: VisualizeFnProps) {
-  // Create or get WebGL canvas
-  if (!state.glCanvas || state.lastCanvas !== canvas) {
-    state.glCanvas = document.createElement("canvas");
-    state.initialized = false;
-  }
-
-  // Resize if needed
-  if (
-    state.glCanvas.width !== canvas.width ||
-    state.glCanvas.height !== canvas.height
-  ) {
-    state.glCanvas.width = canvas.width;
-    state.glCanvas.height = canvas.height;
-    state.initialized = false;
-  }
-
-  const gl = getWebGLContext(state.glCanvas);
+  // Use shared WebGL canvas and context
+  if (!ensureSharedCanvasSize(canvas.width, canvas.height)) return;
+  const glCanvas = getSharedCanvas();
+  const gl = getSharedGL();
   if (!gl) return;
 
-  // Initialize WebGL resources
-  if (!state.initialized) {
+  // Initialize program if needed
+  if (!state.program) {
     state.program = createProgram(
       gl,
       FULLSCREEN_VERTEX_SHADER,
       FRAGMENT_SHADER
     );
     if (!state.program) return;
-
     state.uniforms = getUniforms(gl, state.program);
-    setupFullscreenQuad(gl);
-    state.initialized = true;
-    state.lastCanvas = canvas;
   }
 
+  ensureSharedQuad();
   if (!state.program) return;
 
   // Update time
@@ -213,8 +195,6 @@ export default function renderWebGLCube({
   gl.clear(gl.COLOR_BUFFER_BIT);
 
   gl.useProgram(state.program);
-
-  // Set uniforms
   gl.uniform1f(state.uniforms.u_time, state.time);
   gl.uniform1f(state.uniforms.u_intensity, avgIntensity);
   gl.uniform1f(state.uniforms.u_beatIntensity, beatIntensity);
@@ -224,22 +204,12 @@ export default function renderWebGLCube({
 
   gl.enable(gl.BLEND);
   gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+  drawSharedQuad(state.program);
 
-  drawFullscreenQuad(gl, state.program);
-
-  // Copy to 2D canvas
-  copyToCanvas2D(state.glCanvas, ctx, canvas);
+  copyToCanvas2D(glCanvas, ctx, canvas);
 }
 
-/**
- * Cleanup function to release WebGL resources
- */
 export function cleanup(): void {
-  if (state.glCanvas) {
-    releaseWebGLContext(state.glCanvas);
-    state.glCanvas = null;
-    state.program = null;
-    state.initialized = false;
-    state.lastCanvas = null;
-  }
+  state.program = null;
+  state.uniforms = {};
 }

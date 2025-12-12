@@ -1558,5 +1558,11 @@ export class FluidSimulation {
     for (const fbo of this.bloomFramebuffers) {
       deleteFBO(fbo);
     }
+
+    // Release the WebGL context to prevent "too many active contexts" warning
+    const loseContext = gl.getExtension("WEBGL_lose_context");
+    if (loseContext) {
+      loseContext.loseContext();
+    }
   }
 }
