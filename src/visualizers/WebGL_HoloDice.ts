@@ -14,6 +14,7 @@ import {
 // WebGL HoloDice - Holofoil dice effect with procedural fractal patterns
 // Adapted from Shadertoy shader by Jaenam (CC BY-NC-SA 4.0)
 // Original: https://x.com/Jaenam97/status/1997653539078693351
+// https://www.shadertoy.com/view/tfGyzt
 
 const FRAGMENT_SHADER = /*glsl*/ `
   precision highp float;
@@ -123,6 +124,10 @@ const FRAGMENT_SHADER = /*glsl*/ `
   void main() {
     vec2 fragCoord = v_uv * u_resolution;
     vec3 r = vec3(u_resolution.xy, 1.0);
+
+    // Scale on beat - zoom in when bass hits
+    float beatScale = 1.0 + u_bass * 0.25;
+    fragCoord = (fragCoord - r.xy * 0.5) / beatScale + r.xy * 0.5;
 
     // Mouse or automatic rotation
     vec2 m = u_mouse.x > 0.0 ? (-u_mouse.xy / r.xy - 0.5) * 6.28 : vec2(u_time / 2.0);

@@ -11,8 +11,9 @@ import {
   drawSharedQuad,
 } from "./shader/utils";
 
-// WebGL Lightning - GPU-accelerated electric storm with fractal bolts
-// https://www.shadertoy.com/view/dsXfDn
+// "3D Fire" by @XorDev
+// https://mini.gmshaders.com/p/turbulence
+// https://www.shadertoy.com/view/3XXSWS
 
 const FRAGMENT_SHADER = /*glsl*/ `
   precision highp float;
@@ -23,81 +24,75 @@ const FRAGMENT_SHADER = /*glsl*/ `
   uniform float u_intensity;
   uniform float u_beatIntensity;
   uniform float u_bass;
+  uniform float u_mid;
   uniform float u_high;
   uniform vec2 u_resolution;
 
-  float hash11(float p) {
-    p = fract(p * 0.1031);
-    p *= p + 33.33;
-    p *= p + p;
-    return fract(p);
+  // Polyfill for tanh (not available in WebGL 1.0)
+  float tanhf(float x) {
+    float e2x = exp(2.0 * x);
+    return (e2x - 1.0) / (e2x + 1.0);
   }
 
-  float hash12(vec2 p) {
-    vec3 p3 = fract(vec3(p.xyx) * 0.1031);
-    p3 += dot(p3, p3.yzx + 33.33);
-    return fract((p3.x + p3.y) * p3.z);
-  }
-
-  mat2 rotate2d(float theta) {
-    float c = cos(theta);
-    float s = sin(theta);
-    return mat2(c, -s, s, c);
-  }
-
-  float noise(vec2 p) {
-    vec2 ip = floor(p);
-    vec2 fp = fract(p);
-    float a = hash12(ip);
-    float b = hash12(ip + vec2(1.0, 0.0));
-    float c = hash12(ip + vec2(0.0, 1.0));
-    float d = hash12(ip + vec2(1.0, 1.0));
-
-    vec2 t = smoothstep(0.0, 1.0, fp);
-    return mix(mix(a, b, t.x), mix(c, d, t.x), t.y);
-  }
-
-  float fbm(vec2 p, int octaveCount) {
-    float value = 0.0;
-    float amplitude = 0.5;
-    for (int i = 0; i < 10; i++) {
-      if (i >= octaveCount) break;
-      value += amplitude * noise(p);
-      p *= rotate2d(0.45);
-      p *= 2.0;
-      amplitude *= 0.5;
-    }
-    return value;
+  vec4 tanh4(vec4 v) {
+    return vec4(tanhf(v.x), tanhf(v.y), tanhf(v.z), tanhf(v.w));
   }
 
   void main() {
-    vec2 uv = v_uv;
-    uv = 2.0 * uv - 1.0;
-    uv.x *= u_resolution.x / u_resolution.y;
+    vec2 fragCoord = v_uv * u_resolution;
 
-    // Audio affects lightning intensity, distortion, and scale
-    float scale = 1.0 - u_bass * 0.3;  // Zoom in on beat
-    float distortionAmount = 1.0 + u_bass * 2.0;  // More wiggly on beat
-    float brightness = 0.3 + u_bass * 5.0;  // Much brighter on beat
-    float glowWidth = 0.01 + u_bass * 0.5;  // Thicker glow on beat
+    // Audio affects fire height and intensity
+    float fireHeight = 1.0 + u_bass * 0.8;
+    float fireBrightness = 1.0 + u_bass * 2.0;
 
-    // Apply scale
-    uv *= scale;
+    float t = u_time;
+    float z = 0.0;
+    float d;
 
-    uv += (2.0 * fbm(uv + 0.8 * u_time, 10) - 1.0) * distortionAmount;
+    vec4 O = vec4(0.0);
 
-    float dist = abs(uv.x);
-    vec3 col = vec3(0.2, 0.3, 0.8) * pow(mix(0.0, glowWidth, hash11(u_time)) / dist, 1.0);
+    // Raymarching loop with 50 iterations
+    for (int iter = 0; iter < 50; iter++) {
+      // Compute raymarch sample point
+      vec3 p = z * normalize(vec3(fragCoord + fragCoord, 0.0) - u_resolution.xyy);
 
-    // Apply brightness boost
-    col *= brightness;
+      // Shift back and animate
+      p.z += 5.0 + cos(t);
 
-    col = pow(col, vec3(1.0));
+      // Twist and rotate using mat2
+      float angle = p.y * 0.5;
+      mat2 rotMat = mat2(cos(angle), cos(angle - 33.0), cos(angle - 11.0), cos(angle));
+
+      // Expand upward - audio affects the expansion
+      float expand = max(p.y * 0.1 / fireHeight + 1.0, 0.1);
+      p.xz = rotMat * p.xz / expand;
+
+      // Turbulence loop
+      d = 2.0;
+      for (int j = 0; j < 8; j++) {
+        if (d >= 15.0) break;
+        p += cos((p.yzx - vec3(t / 0.1, t, d)) * d) / d;
+        d /= 0.6;
+      }
+
+      // Sample approximate distance to hollow cone
+      d = 0.01 + abs(length(p.xz) + p.y * 0.3 - 0.5) / 7.0;
+      z += d;
+
+      // Add color and glow attenuation
+      O += (sin(z / 3.0 + vec4(7.0, 2.0, 3.0, 0.0)) + 1.1) / d;
+    }
+
+    // Apply audio brightness boost
+    O *= fireBrightness;
+
+    // Tanh tonemapping
+    O = tanh4(O / 1000.0);
 
     // Calculate alpha based on brightness
-    float alpha = clamp(length(col) * 2.0, 0.0, 1.0);
+    float alpha = clamp(length(O.rgb) * 2.0, 0.0, 1.0);
 
-    gl_FragColor = vec4(col, alpha);
+    gl_FragColor = vec4(O.rgb, alpha);
   }
 `;
 
@@ -108,13 +103,14 @@ const state = {
   time: 0,
 };
 
-export default function renderWebGLLightning({
+export default function renderWebGLFire({
   ctx,
   canvas,
   data,
   performanceMode = false,
   beatIntensity = 0,
   bass = 0,
+  mid = 0,
   high = 0,
 }: VisualizeFnProps) {
   // Use shared WebGL canvas and context
@@ -137,7 +133,7 @@ export default function renderWebGLLightning({
   ensureSharedQuad();
   if (!state.program) return;
 
-  // Update time based on performance mode
+  // Update time
   state.time += performanceMode ? 0.012 : 0.016;
 
   const avgIntensity = data.reduce((a, b) => a + b, 0) / data.length;
@@ -152,6 +148,7 @@ export default function renderWebGLLightning({
   gl.uniform1f(state.uniforms.u_intensity, avgIntensity);
   gl.uniform1f(state.uniforms.u_beatIntensity, beatIntensity);
   gl.uniform1f(state.uniforms.u_bass, bass);
+  gl.uniform1f(state.uniforms.u_mid, mid);
   gl.uniform1f(state.uniforms.u_high, high);
   gl.uniform2f(state.uniforms.u_resolution, canvas.width, canvas.height);
 

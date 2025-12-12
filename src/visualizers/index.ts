@@ -38,6 +38,13 @@ const RenderMode = {
   "✨ Kuko (WebGL)": () => import("./WebGL_Kuko"),
   "🧵 Fiber (WebGL)": () => import("./WebGL_Fiber"),
   "⚡ Zippy (WebGL)": () => import("./WebGL_Zippy"),
+  "🎨 Art (WebGL)": () => import("./WebGL_Art"),
+  "🌟 StarNest (WebGL)": () => import("./WebGL_StarNest"),
+  "🏞️ Landscape (WebGL)": () => import("./WebGL_Landscape"),
+  "🔥 Fire (WebGL)": () => import("./WebGL_Fire"),
+  "💎 Fragment (WebGL)": () => import("./WebGL_Fragment"),
+  "🪐 Orbital (WebGL)": () => import("./WebGL_Orbital"),
+  "🎨 Palettes (WebGL)": () => import("./WebGL_Palettes"),
 };
 export type VisualizerMode = keyof typeof RenderMode;
 export const MODES = Object.keys(RenderMode) as VisualizerMode[];

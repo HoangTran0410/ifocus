@@ -15,6 +15,7 @@ import {
 // Adapted from Shadertoy
 // License: Creative Commons (CC BY-NC-SA 4.0)
 // Original: https://x.com/Jaenam97/status/1997653539078693351
+// https://www.shadertoy.com/view/3fdfzn
 
 const FRAGMENT_SHADER = /*glsl*/ `
   precision highp float;

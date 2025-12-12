@@ -9,6 +9,7 @@ import {
 // Inspired by motion design in "Kurzgesagt - Trees Are So Weird"
 // https://youtu.be/ZSch_NgZpQs?t=193
 // Multi-pass version with framebuffer for proper blur effect
+// https://www.shadertoy.com/view/3fKyDG
 
 const VERTEX_SHADER = /*glsl*/ `
   attribute vec2 a_position;

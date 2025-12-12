@@ -12,7 +12,7 @@ import {
 } from "./shader/utils";
 
 // WebGL Sunset - Synthwave sunset with procedural grid terrain
-// Adapted from Shadertoy shader: https://www.shadertoy.com/view/tsScRK
+// https://www.shadertoy.com/view/tsScRK
 
 const FRAGMENT_SHADER = /*glsl*/ `
   precision highp float;

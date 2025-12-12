@@ -12,7 +12,7 @@ import {
 } from "./shader/utils";
 
 // The Universe Within - by Martijn Steinrucken aka BigWings 2018
-// Adapted from Shadertoy: https://www.shadertoy.com/view/lscczl
+// https://www.shadertoy.com/view/lscczl
 // License: Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported License
 
 const FRAGMENT_SHADER = /*glsl*/ `
@@ -221,7 +221,11 @@ export default function renderWebGLUniverse({
 
   // Initialize program if needed
   if (!state.program) {
-    state.program = createProgram(gl, FULLSCREEN_VERTEX_SHADER, FRAGMENT_SHADER);
+    state.program = createProgram(
+      gl,
+      FULLSCREEN_VERTEX_SHADER,
+      FRAGMENT_SHADER
+    );
     if (!state.program) return;
     state.uniforms = getUniforms(gl, state.program);
   }

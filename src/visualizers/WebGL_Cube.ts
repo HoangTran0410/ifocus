@@ -14,6 +14,7 @@ import {
 // WebGL Cube - Glowing raymarched cube with reflections
 // Adapted from Shadertoy shader (CC0 License)
 // Original: https://twigl.app?ol=true&ss=-OW-y9xgRgWubwKcn0Nd
+// https://www.shadertoy.com/view/3XdXRr
 
 const FRAGMENT_SHADER = /*glsl*/ `
   precision highp float;
