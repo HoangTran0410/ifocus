@@ -1,4 +1,4 @@
-import{e as d,d as h,f as p,F as _,j as v,b,i as y,k as C,l as x}from"./utils-E6iCwlZp.js";const S=`
+import{e as d,d as h,f as p,b as _,i as v,j as b,k as y,l as C,F as x}from"./utils-E6iCwlZp.js";const S=`
   precision highp float;
 
   varying vec2 v_uv;
@@ -76,4 +76,4 @@ import{e as d,d as h,f as p,F as _,j as v,b,i as y,k as C,l as x}from"./utils-E6
 
     gl_FragColor = vec4(o.rgb, alpha);
   }
-`,t={program:null,uniforms:{},time:0};function A({ctx:r,canvas:a,data:e,performanceMode:n=!1,beatIntensity:i=0,bass:u=0,mid:f=0,high:s=0}){if(!d(a.width,a.height))return;const l=h(),o=v();if(!o)return;if(!t.program){if(t.program=p(o,_,S),!t.program)return;t.uniforms=b(o,t.program)}if(y(),!t.program)return;t.time+=n?.012:.016;const m=e.reduce((c,g)=>c+g,0)/e.length;o.viewport(0,0,o.drawingBufferWidth,o.drawingBufferHeight),o.clearColor(0,0,0,0),o.clear(o.COLOR_BUFFER_BIT),o.useProgram(t.program),o.uniform1f(t.uniforms.u_time,t.time),o.uniform1f(t.uniforms.u_intensity,m),o.uniform1f(t.uniforms.u_beatIntensity,i),o.uniform1f(t.uniforms.u_bass,u),o.uniform1f(t.uniforms.u_mid,f),o.uniform1f(t.uniforms.u_high,s),o.uniform2f(t.uniforms.u_resolution,a.width,a.height),o.enable(o.BLEND),o.blendFunc(o.SRC_ALPHA,o.ONE_MINUS_SRC_ALPHA),C(t.program),x(l,r,a)}function E(){t.program=null,t.uniforms={}}export{E as cleanup,A as default};
+`,t={program:null,uniforms:{},time:0};function A({ctx:r,canvas:a,data:e,performanceMode:n=!1,beatIntensity:i=0,bass:u=0,mid:f=0,high:s=0}){if(!d(a.width,a.height))return;const l=h(),o=b();if(!o)return;if(!t.program){if(t.program=p(o,x,S),!t.program)return;t.uniforms=_(o,t.program)}if(v(),!t.program)return;t.time+=n?.012:.016;const m=e.reduce((c,g)=>c+g,0)/e.length;o.viewport(0,0,o.drawingBufferWidth,o.drawingBufferHeight),o.clearColor(0,0,0,0),o.clear(o.COLOR_BUFFER_BIT),o.useProgram(t.program),o.uniform1f(t.uniforms.u_time,t.time),o.uniform1f(t.uniforms.u_intensity,m),o.uniform1f(t.uniforms.u_beatIntensity,i),o.uniform1f(t.uniforms.u_bass,u),o.uniform1f(t.uniforms.u_mid,f),o.uniform1f(t.uniforms.u_high,s),o.uniform2f(t.uniforms.u_resolution,a.width,a.height),o.enable(o.BLEND),o.blendFunc(o.SRC_ALPHA,o.ONE_MINUS_SRC_ALPHA),y(t.program),C(l,r,a)}function E(){t.program=null,t.uniforms={}}export{E as cleanup,A as default};

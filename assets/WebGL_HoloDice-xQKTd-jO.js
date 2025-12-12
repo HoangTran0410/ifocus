@@ -1,4 +1,4 @@
-import{e as c,d,f as h,b as p,i as g,j as v,k as b,l as x,F as y}from"./utils-E6iCwlZp.js";const _=`
+import{e as c,d,f as h,b as p,i as g,j as b,k as v,l as x,F as y}from"./utils-E6iCwlZp.js";const _=`
   precision highp float;
 
   varying vec2 v_uv;
@@ -107,6 +107,10 @@ import{e as c,d,f as h,b as p,i as g,j as v,k as b,l as x,F as y}from"./utils-E6
     vec2 fragCoord = v_uv * u_resolution;
     vec3 r = vec3(u_resolution.xy, 1.0);
 
+    // Scale on beat - zoom in when bass hits
+    float beatScale = 1.0 + u_bass * 0.25;
+    fragCoord = (fragCoord - r.xy * 0.5) / beatScale + r.xy * 0.5;
+
     // Mouse or automatic rotation
     vec2 m = u_mouse.x > 0.0 ? (-u_mouse.xy / r.xy - 0.5) * 6.28 : vec2(u_time / 2.0);
 
@@ -135,4 +139,4 @@ import{e as c,d,f as h,b as p,i as g,j as v,k as b,l as x,F as y}from"./utils-E6
 
     gl_FragColor = vec4(tonemapped, alpha);
   }
-`,e={program:null,uniforms:{},time:0,mouseX:0,mouseY:0,mouseDown:!1,mouseSetup:!1};function R(t){if(e.mouseSetup)return;e.mouseSetup=!0;const a=r=>{e.mouseDown&&(e.mouseX=r.clientX,e.mouseY=t.height-r.clientY)},n=r=>{e.mouseDown=!0,e.mouseX=r.clientX,e.mouseY=t.height-r.clientY},s=()=>{e.mouseDown=!1};t.addEventListener("mousemove",a),t.addEventListener("mousedown",n),t.addEventListener("mouseup",s),t.addEventListener("mouseleave",s)}function C({ctx:t,canvas:a,data:n,performanceMode:s=!1,beatIntensity:r=0,bass:u=0}){if(!c(a.width,a.height))return;const i=d(),o=v();if(!o)return;if(R(a),!e.program){if(e.program=h(o,y,_),!e.program)return;e.uniforms=p(o,e.program)}if(g(),!e.program)return;e.time+=s?.012:.016;const f=n.reduce((m,l)=>m+l,0)/n.length;o.viewport(0,0,o.drawingBufferWidth,o.drawingBufferHeight),o.clearColor(0,0,0,0),o.clear(o.COLOR_BUFFER_BIT),o.useProgram(e.program),o.uniform1f(e.uniforms.u_time,e.time),o.uniform1f(e.uniforms.u_intensity,f),o.uniform1f(e.uniforms.u_beatIntensity,r),o.uniform1f(e.uniforms.u_bass,u),o.uniform2f(e.uniforms.u_resolution,a.width,a.height),o.uniform2f(e.uniforms.u_mouse,e.mouseDown?e.mouseX:0,e.mouseDown?e.mouseY:0),o.enable(o.BLEND),o.blendFunc(o.SRC_ALPHA,o.ONE_MINUS_SRC_ALPHA),b(e.program),x(i,t,a)}function w(){e.program=null,e.uniforms={}}export{w as cleanup,C as default};
+`,e={program:null,uniforms:{},time:0,mouseX:0,mouseY:0,mouseDown:!1,mouseSetup:!1};function R(t){if(e.mouseSetup)return;e.mouseSetup=!0;const a=r=>{e.mouseDown&&(e.mouseX=r.clientX,e.mouseY=t.height-r.clientY)},n=r=>{e.mouseDown=!0,e.mouseX=r.clientX,e.mouseY=t.height-r.clientY},s=()=>{e.mouseDown=!1};t.addEventListener("mousemove",a),t.addEventListener("mousedown",n),t.addEventListener("mouseup",s),t.addEventListener("mouseleave",s)}function A({ctx:t,canvas:a,data:n,performanceMode:s=!1,beatIntensity:r=0,bass:u=0}){if(!c(a.width,a.height))return;const i=d(),o=b();if(!o)return;if(R(a),!e.program){if(e.program=h(o,y,_),!e.program)return;e.uniforms=p(o,e.program)}if(g(),!e.program)return;e.time+=s?.012:.016;const f=n.reduce((m,l)=>m+l,0)/n.length;o.viewport(0,0,o.drawingBufferWidth,o.drawingBufferHeight),o.clearColor(0,0,0,0),o.clear(o.COLOR_BUFFER_BIT),o.useProgram(e.program),o.uniform1f(e.uniforms.u_time,e.time),o.uniform1f(e.uniforms.u_intensity,f),o.uniform1f(e.uniforms.u_beatIntensity,r),o.uniform1f(e.uniforms.u_bass,u),o.uniform2f(e.uniforms.u_resolution,a.width,a.height),o.uniform2f(e.uniforms.u_mouse,e.mouseDown?e.mouseX:0,e.mouseDown?e.mouseY:0),o.enable(o.BLEND),o.blendFunc(o.SRC_ALPHA,o.ONE_MINUS_SRC_ALPHA),v(e.program),x(i,t,a)}function w(){e.program=null,e.uniforms={}}export{w as cleanup,A as default};
