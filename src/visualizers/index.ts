@@ -24,7 +24,7 @@ const RenderMode: Record<
   "💍 Rings": () => import("./simple/Rings"),
   "📈 Waveform3D": () => import("./simple/Waveform3D"),
   "⭐ Starfield": () => import("./simple/Starfield"),
-  "🌀 Plasma": () => import("./simple/Plasma"),
+  "⚛️ Plasma": () => import("./simple/Plasma"),
   "⚡ Lightning": () => import("./simple/Lightning"),
   "🐝 Hexagons": () => import("./simple/Hexagons"),
   "🌿 Fractal": () => import("./simple/Fractal"),
@@ -50,8 +50,17 @@ const RenderMode: Record<
   "🪐 Orbital (WebGL)": () => import("./shader/WebGL_Orbital"),
   "🎨 Palettes (WebGL)": () => import("./shader/WebGL_Palettes"),
   "🍩 Torus (WebGL)": () => import("./shader/WebGL_Torus"),
+  "🐳 Aqua (WebGL)": () => import("./shader/WebGL_Aqua"),
   "🔺 Fractal (WebGL)": () => import("./shader/WebGL_FractalPyramid"),
   "🧊 4D (WebGL)": () => import("./shader/WebGL_4D"),
+  "🔮 Sphere (WebGL)": () => import("./shader/WebGL_Sphere"),
+  "💚 Matrix (WebGL)": () => import("./shader/WebGL_Matrix"),
+  "🌈 Spectrum (WebGL)": () => import("./shader/WebGL_Spectrum"),
+  "🔥 Flame (WebGL)": () => import("./shader/WebGL_Flame"),
+  "🌀 Portal (WebGL)": () => import("./shader/WebGL_Portal"),
+  "⚛️ Plasma (WebGL)": () => import("./shader/WebGL_Plasma"),
+  "🚗 Drive (WebGL)": () => import("./shader/WebGL_Drive"),
+  "🌈 Rainbow (WebGL)": () => import("./shader/WebGL_Rainbow"),
 };
 export type VisualizerMode = keyof typeof RenderMode;
 export const MODES = Object.keys(RenderMode) as VisualizerMode[];

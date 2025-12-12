@@ -575,7 +575,7 @@ export default function Visualizer({
     <div
       className="absolute top-10 left-0 right-0 z-20 p-3 mx-2 rounded-lg"
       style={{
-        background: "rgba(15, 15, 30, 0.45)",
+        background: "rgba(15, 15, 30, 0.7)",
         border: "1px solid rgba(168, 85, 247, 0.3)",
         maxHeight: size.height - 50,
         overflowY: "auto",
@@ -813,7 +813,7 @@ export default function Visualizer({
     <div
       className="absolute top-10 left-0 right-0 z-20 p-3 mx-2 rounded-lg"
       style={{
-        background: "rgba(15, 15, 30, 0.45)",
+        background: "rgba(15, 15, 30, 0.9)",
         border: "1px solid rgba(168, 85, 247, 0.3)",
         maxHeight: size.height - 50,
         overflowY: "auto",

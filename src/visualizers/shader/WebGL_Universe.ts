@@ -90,8 +90,8 @@ export default /*glsl*/ `
     float d7 = length(st - p7);
     float d8 = length(st - p8);
 
-    // Audio-reactive sparkle calculation for each point
-    float sparkleIntensity = 1.0 + audioMod * 2.0;
+    // Audio-reactive sparkle calculation for each point - glow brighter on beat
+    float sparkleIntensity = 1.0 + audioMod * 4.0;
 
     float s0 = (0.005 / (d0 * d0)) * sparkleIntensity * S(1., 0.7, d0);
     float s1 = (0.005 / (d1 * d1)) * sparkleIntensity * S(1., 0.7, d1);
@@ -135,11 +135,11 @@ export default /*glsl*/ `
     vec2 uv = (v_uv - 0.5) * vec2(u_resolution.x / u_resolution.y, 1.0);
 
     // Auto-animate mouse drift
-    float mx = u_time * 0.02;
-    float my = 0.5 + sin(u_time * 0.05) * 0.1;
+    float mx = u_time * 0.03;
+    float my = 0.5 + sin(u_time * 0.03) * 0.15;
     vec2 M = vec2(mx, my) * 0.5;
 
-    float t = u_time * 0.1;
+    float t = u_time * 0.05;  // Moderate rotation
 
     float s = sin(t);
     float c = cos(t);
@@ -152,11 +152,11 @@ export default /*glsl*/ `
 
     float m = 0.;
     for(float i = 0.; i < 1.; i += 1. / NUM_LAYERS) {
-      float z = fract(t + i);
+      float z = fract(t * 0.5 + i);  // Layer movement
       float size = mix(15., 1., z);
       float fade = S(0., 0.6, z) * S(1., 0.8, z);
 
-      m += fade * NetLayer(st * size - M * z, i, u_time, audioMod);
+      m += fade * NetLayer(st * size - M * z, i, u_time * 0.5, audioMod);
     }
 
     // Audio-reactive glow from bottom
@@ -174,8 +174,8 @@ export default /*glsl*/ `
     // Vignette effect
     col *= 1. - dot(uv, uv);
 
-    // Overall intensity boost from audio
-    col *= 1.0 + u_intensity * 0.5;
+    // Glow brighter on beat
+    col *= 1.0 + u_bass * 1.5;
 
     // Calculate alpha based on brightness
     float alpha = clamp(length(col) * 1.5, 0.0, 1.0);
