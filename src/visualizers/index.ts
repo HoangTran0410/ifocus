@@ -45,6 +45,9 @@ const RenderMode = {
   "💎 Fragment (WebGL)": () => import("./WebGL_Fragment"),
   "🪐 Orbital (WebGL)": () => import("./WebGL_Orbital"),
   "🎨 Palettes (WebGL)": () => import("./WebGL_Palettes"),
+  "🍩 Torus (WebGL)": () => import("./WebGL_Torus"),
+  "🔺 Fractal (WebGL)": () => import("./WebGL_FractalPyramid"),
+  "🧊 4D (WebGL)": () => import("./WebGL_4D"),
 };
 export type VisualizerMode = keyof typeof RenderMode;
 export const MODES = Object.keys(RenderMode) as VisualizerMode[];

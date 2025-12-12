@@ -798,7 +798,7 @@ export default function Visualizer({
       }`}
       title={m}
     >
-      {m}
+      {m.replace(" (WebGL)", "")}
     </button>
   );
 
@@ -832,6 +832,11 @@ export default function Visualizer({
       {/* Canvas Effects Section */}
       {canvasModes.length > 0 && (
         <>
+          <div className="flex items-center gap-2 mt-3 mb-2">
+            <div className="h-px flex-1 bg-white/20"></div>
+            <span className="text-xs text-white/50 font-medium">Simple</span>
+            <div className="h-px flex-1 bg-white/20"></div>
+          </div>
           <div className="grid grid-cols-3 gap-1.5">
             {canvasModes.map(renderModeButton)}
           </div>
