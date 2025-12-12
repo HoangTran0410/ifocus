@@ -224,23 +224,29 @@ const beatState = {
 
 /**
  * Get the current bass energy from low frequencies (best for beat detection)
- * Bass frequencies are typically in the 20-150Hz range, which corresponds to
- * the first few bins of the FFT output
+ * Bass frequencies are typically in the 20-250Hz range
  */
 export function getBassEnergy(): number {
-  if (!analyser || !dataArray) return 0;
+  if (!analyser || !dataArray || !audioContext) return 0;
 
   // @ts-ignore - TypeScript buffer type strictness
   analyser.getByteFrequencyData(dataArray);
 
-  // Use first 4-8 bins for bass (low frequencies)
-  const bassEndIndex = 8;
+  const sampleRate = audioContext.sampleRate;
+  const fftSize = analyser.fftSize;
+  const binCount = dataArray.length;
+
+  // Calculate bin indices for bass range (20-250Hz)
+  const bassStart = Math.max(1, Math.round((20 * fftSize) / sampleRate));
+  const bassEnd = Math.min(binCount, Math.round((250 * fftSize) / sampleRate));
+  const bassCount = Math.max(1, bassEnd - bassStart);
+
   let sum = 0;
-  for (let i = 0; i < bassEndIndex && i < dataArray.length; i++) {
+  for (let i = bassStart; i < bassEnd && i < binCount; i++) {
     sum += dataArray[i];
   }
 
-  return sum / (bassEndIndex * 255); // Normalize to 0-1
+  return sum / (bassCount * 255); // Normalize to 0-1
 }
 
 /**
@@ -248,20 +254,26 @@ export function getBassEnergy(): number {
  * Mid frequencies are typically in the 250-2000Hz range
  */
 export function getMidEnergy(): number {
-  if (!analyser || !dataArray) return 0;
+  if (!analyser || !dataArray || !audioContext) return 0;
 
   // @ts-ignore - TypeScript buffer type strictness
   analyser.getByteFrequencyData(dataArray);
 
-  // Use bins 16-64 for mids (approximately 250-2000Hz at 44.1kHz with 8192 FFT)
-  const midStartIndex = 16;
-  const midEndIndex = 64;
+  const sampleRate = audioContext.sampleRate;
+  const fftSize = analyser.fftSize;
+  const binCount = dataArray.length;
+
+  // Calculate bin indices for mid range (250-2000Hz)
+  const midStart = Math.min(binCount, Math.round((250 * fftSize) / sampleRate));
+  const midEnd = Math.min(binCount, Math.round((2000 * fftSize) / sampleRate));
+  const midCount = Math.max(1, midEnd - midStart);
+
   let sum = 0;
-  for (let i = midStartIndex; i < midEndIndex && i < dataArray.length; i++) {
+  for (let i = midStart; i < midEnd && i < binCount; i++) {
     sum += dataArray[i];
   }
 
-  return sum / ((midEndIndex - midStartIndex) * 255); // Normalize to 0-1
+  return sum / (midCount * 255); // Normalize to 0-1
 }
 
 /**
@@ -269,65 +281,115 @@ export function getMidEnergy(): number {
  * High frequencies are typically in the 2000-16000Hz range
  */
 export function getHighEnergy(): number {
-  if (!analyser || !dataArray) return 0;
+  if (!analyser || !dataArray || !audioContext) return 0;
 
   // @ts-ignore - TypeScript buffer type strictness
   analyser.getByteFrequencyData(dataArray);
 
-  // Use bins 64-256 for highs (approximately 2000-16000Hz at 44.1kHz with 8192 FFT)
-  const highStartIndex = 64;
-  const highEndIndex = 256;
+  const sampleRate = audioContext.sampleRate;
+  const fftSize = analyser.fftSize;
+  const binCount = dataArray.length;
+
+  // Calculate bin indices for high range (2000-16000Hz)
+  const highStart = Math.min(
+    binCount,
+    Math.round((2000 * fftSize) / sampleRate)
+  );
+  const highEnd = Math.min(
+    binCount,
+    Math.round((16000 * fftSize) / sampleRate)
+  );
+  const highCount = Math.max(1, highEnd - highStart);
+
   let sum = 0;
-  for (let i = highStartIndex; i < highEndIndex && i < dataArray.length; i++) {
+  for (let i = highStart; i < highEnd && i < binCount; i++) {
     sum += dataArray[i];
   }
 
-  return sum / ((highEndIndex - highStartIndex) * 255); // Normalize to 0-1
+  return sum / (highCount * 255); // Normalize to 0-1
+}
+
+/**
+ * Convert a frequency (Hz) to the corresponding FFT bin index
+ * binIndex = frequency * fftSize / sampleRate
+ */
+function frequencyToBin(
+  frequency: number,
+  fftSize: number,
+  sampleRate: number
+): number {
+  return Math.round((frequency * fftSize) / sampleRate);
 }
 
 /**
  * Get all frequency band energies at once
  * More efficient than calling each function separately
+ *
+ * Frequency ranges are dynamically calculated based on current fftSize:
+ * - Bass: 20-250Hz (kick drums, bass lines)
+ * - Mid: 250-2000Hz (vocals, guitars, synths)
+ * - High: 2000-16000Hz (hi-hats, cymbals, brightness)
  */
 export function getFrequencyBands(): {
   bass: number;
   mid: number;
   high: number;
 } {
-  if (!analyser || !dataArray) {
+  if (!analyser || !dataArray || !audioContext) {
     return { bass: 0, mid: 0, high: 0 };
   }
 
   // @ts-ignore - TypeScript buffer type strictness
   analyser.getByteFrequencyData(dataArray);
 
-  // Bass: bins 0-8 (~20-250Hz)
+  const sampleRate = audioContext.sampleRate; // Typically 44100 or 48000
+  const fftSize = analyser.fftSize;
+  const binCount = dataArray.length; // = fftSize / 2
+
+  // Calculate bin indices for frequency ranges
+  // Bass: 20-250Hz
+  const bassStart = Math.max(1, frequencyToBin(20, fftSize, sampleRate));
+  const bassEnd = Math.min(binCount, frequencyToBin(250, fftSize, sampleRate));
+
+  // Mid: 250-2000Hz
+  const midStart = Math.min(binCount, frequencyToBin(250, fftSize, sampleRate));
+  const midEnd = Math.min(binCount, frequencyToBin(2000, fftSize, sampleRate));
+
+  // High: 2000-16000Hz
+  const highStart = Math.min(
+    binCount,
+    frequencyToBin(2000, fftSize, sampleRate)
+  );
+  const highEnd = Math.min(
+    binCount,
+    frequencyToBin(16000, fftSize, sampleRate)
+  );
+
+  // Calculate bass energy
   let bassSum = 0;
-  const bassEnd = 8;
-  for (let i = 0; i < bassEnd && i < dataArray.length; i++) {
+  const bassCount = Math.max(1, bassEnd - bassStart);
+  for (let i = bassStart; i < bassEnd && i < binCount; i++) {
     bassSum += dataArray[i];
   }
 
-  // Mid: bins 16-64 (~250-2000Hz)
+  // Calculate mid energy
   let midSum = 0;
-  const midStart = 16;
-  const midEnd = 64;
-  for (let i = midStart; i < midEnd && i < dataArray.length; i++) {
+  const midCount = Math.max(1, midEnd - midStart);
+  for (let i = midStart; i < midEnd && i < binCount; i++) {
     midSum += dataArray[i];
   }
 
-  // High: bins 64-256 (~2000-16000Hz)
+  // Calculate high energy
   let highSum = 0;
-  const highStart = 64;
-  const highEnd = 256;
-  for (let i = highStart; i < highEnd && i < dataArray.length; i++) {
+  const highCount = Math.max(1, highEnd - highStart);
+  for (let i = highStart; i < highEnd && i < binCount; i++) {
     highSum += dataArray[i];
   }
 
   return {
-    bass: bassSum / (bassEnd * 255),
-    mid: midSum / ((midEnd - midStart) * 255),
-    high: highSum / ((highEnd - highStart) * 255),
+    bass: bassSum / (bassCount * 255),
+    mid: midSum / (midCount * 255),
+    high: highSum / (highCount * 255),
   };
 }
 

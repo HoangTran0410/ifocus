@@ -7,6 +7,7 @@ import {
   setupFullscreenQuad,
   drawFullscreenQuad,
   copyToCanvas2D,
+  releaseWebGLContext,
 } from "./shader/utils";
 
 // WebGL Black Hole - GPU-accelerated with gravitational lensing and accretion disk
@@ -304,4 +305,17 @@ export default function renderWebGLBlackHole({
 
   // Copy to 2D canvas
   copyToCanvas2D(state.glCanvas, ctx, canvas);
+}
+
+/**
+ * Cleanup function to release WebGL resources
+ */
+export function cleanup(): void {
+  if (state.glCanvas) {
+    releaseWebGLContext(state.glCanvas);
+    state.glCanvas = null;
+    state.program = null;
+    state.initialized = false;
+    state.lastCanvas = null;
+  }
 }

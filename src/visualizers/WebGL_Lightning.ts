@@ -7,6 +7,7 @@ import {
   setupFullscreenQuad,
   drawFullscreenQuad,
   copyToCanvas2D,
+  releaseWebGLContext,
 } from "./shader/utils";
 
 // WebGL Lightning - GPU-accelerated electric storm with fractal bolts
@@ -359,4 +360,17 @@ export default function renderWebGLLightning({
 
   // Copy to 2D canvas
   copyToCanvas2D(state.glCanvas, ctx, canvas);
+}
+
+/**
+ * Cleanup function to release WebGL resources
+ */
+export function cleanup(): void {
+  if (state.glCanvas) {
+    releaseWebGLContext(state.glCanvas);
+    state.glCanvas = null;
+    state.program = null;
+    state.initialized = false;
+    state.lastCanvas = null;
+  }
 }

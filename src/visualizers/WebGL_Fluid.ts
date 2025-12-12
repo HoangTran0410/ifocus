@@ -224,3 +224,15 @@ function HSVtoRGB(h: number, s: number, v: number) {
 
   return { r, g, b };
 }
+
+/**
+ * Cleanup function to release WebGL resources
+ */
+export function cleanup(): void {
+  if (fluidState.simulation) {
+    fluidState.simulation.destroy();
+    fluidState.simulation = null;
+    fluidState.lastCanvas = null;
+    fluidState.lastSize = { width: 0, height: 0 };
+  }
+}

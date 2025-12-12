@@ -5,6 +5,11 @@
 
 // WebGL context cache per canvas
 const glContextCache = new WeakMap<HTMLCanvasElement, WebGLRenderingContext>();
+// Track all active contexts for cleanup
+const activeContexts = new Set<{
+  canvas: HTMLCanvasElement;
+  gl: WebGLRenderingContext;
+}>();
 
 /**
  * Get or create a WebGL context for a canvas
@@ -29,10 +34,42 @@ export function getWebGLContext(
 
   if (gl) {
     glContextCache.set(canvas, gl);
+    activeContexts.add({ canvas, gl });
     gl.clearColor(0.0, 0.0, 0.0, 0.0);
   }
 
   return gl;
+}
+
+/**
+ * Release a WebGL context to free up resources
+ * This helps prevent "Too many active WebGL contexts" warnings
+ */
+export function releaseWebGLContext(canvas: HTMLCanvasElement): void {
+  const gl = glContextCache.get(canvas);
+  if (gl) {
+    // Use WEBGL_lose_context extension to explicitly release the context
+    const loseContext = gl.getExtension("WEBGL_lose_context");
+    if (loseContext) {
+      loseContext.loseContext();
+    }
+    glContextCache.delete(canvas);
+
+    // Remove from active contexts set
+    for (const entry of activeContexts) {
+      if (entry.canvas === canvas) {
+        activeContexts.delete(entry);
+        break;
+      }
+    }
+  }
+}
+
+/**
+ * Get the number of active WebGL contexts
+ */
+export function getActiveContextCount(): number {
+  return activeContexts.size;
 }
 
 /**

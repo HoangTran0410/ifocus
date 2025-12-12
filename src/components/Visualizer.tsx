@@ -24,7 +24,7 @@ import {
   Trash2,
   Zap,
   Search,
-  Grid3X3,
+  Sparkle,
 } from "lucide-react";
 import {
   useVisualizerMode as useVisualizerDisplayMode,
@@ -129,6 +129,12 @@ export default function Visualizer({
   useEffect(() => {
     performanceModeRef.current = performanceMode;
   }, [performanceMode]);
+
+  useEffect(() => {
+    if (!showModePanel) {
+      setModeSearch("");
+    }
+  }, [showModePanel]);
 
   // FPS tracking refs
   const fpsRef = useRef(0);
@@ -238,6 +244,7 @@ export default function Visualizer({
   const handleSettingsClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
     setShowSettings((prev) => !prev);
+    setShowModePanel(false);
   }, []);
 
   // Reset config to defaults
@@ -491,9 +498,9 @@ export default function Visualizer({
       const frequencyBands = isAudioCaptureActive()
         ? getFrequencyBands()
         : {
-            bass: Math.sin(timeRef.current * 2) * 0.3 + 0.4,
-            mid: Math.sin(timeRef.current * 3) * 0.25 + 0.35,
-            high: Math.sin(timeRef.current * 5) * 0.2 + 0.3,
+            bass: Math.sin(timeRef.current * 1.25) * 0.3 + 0.4,
+            mid: Math.sin(timeRef.current * 1.3) * 0.25 + 0.35,
+            high: Math.sin(timeRef.current * 1.4) * 0.2 + 0.3,
           };
 
       let _ctx = ctx,
@@ -539,7 +546,7 @@ export default function Visualizer({
         frameCountRef.current++;
         const now = performance.now();
         const elapsed = now - lastFpsUpdateRef.current;
-        if (elapsed >= 1000) {
+        if (elapsed >= 500) {
           fpsRef.current = Math.round((frameCountRef.current * 1000) / elapsed);
           frameCountRef.current = 0;
           lastFpsUpdateRef.current = now;
@@ -772,11 +779,34 @@ export default function Visualizer({
     m.toLowerCase().includes(modeSearch.toLowerCase())
   );
 
+  // Split modes into Canvas and WebGL categories
+  const canvasModes = filteredModes.filter((m) => !m.includes("(WebGL)"));
+  const webglModes = filteredModes.filter((m) => m.includes("(WebGL)"));
+
+  const renderModeButton = (m: (typeof MODES)[number]) => (
+    <button
+      key={m}
+      onClick={() => {
+        setMode(m);
+        // setShowModePanel(false);
+        // setModeSearch("");
+      }}
+      className={`px-2 py-2 text-xs font-medium rounded-md transition-all cursor-pointer truncate ${
+        mode === m
+          ? "text-purple-400 bg-purple-500/30 border border-purple-500/50"
+          : "text-white/80 bg-white/10 hover:bg-white/20 border border-transparent"
+      }`}
+      title={m}
+    >
+      {m}
+    </button>
+  );
+
   const renderModePanel = () => (
     <div
       className="absolute top-10 left-0 right-0 z-20 p-3 mx-2 rounded-lg"
       style={{
-        background: "rgba(15, 15, 30, 0.95)",
+        background: "rgba(15, 15, 30, 0.45)",
         border: "1px solid rgba(168, 85, 247, 0.3)",
         maxHeight: size.height - 50,
         overflowY: "auto",
@@ -799,27 +829,28 @@ export default function Visualizer({
         />
       </div>
 
-      {/* Mode Grid */}
-      <div className="grid grid-cols-3 gap-1.5">
-        {filteredModes.map((m) => (
-          <button
-            key={m}
-            onClick={() => {
-              setMode(m);
-              setShowModePanel(false);
-              setModeSearch("");
-            }}
-            className={`px-2 py-2 text-xs font-medium rounded-md transition-all cursor-pointer truncate ${
-              mode === m
-                ? "text-purple-400 bg-purple-500/30 border border-purple-500/50"
-                : "text-white/80 bg-white/10 hover:bg-white/20 border border-transparent"
-            }`}
-            title={m}
-          >
-            {m}
-          </button>
-        ))}
-      </div>
+      {/* Canvas Effects Section */}
+      {canvasModes.length > 0 && (
+        <>
+          <div className="grid grid-cols-3 gap-1.5">
+            {canvasModes.map(renderModeButton)}
+          </div>
+        </>
+      )}
+
+      {/* WebGL Effects Section */}
+      {webglModes.length > 0 && (
+        <>
+          <div className="flex items-center gap-2 mt-3 mb-2">
+            <div className="h-px flex-1 bg-white/20"></div>
+            <span className="text-xs text-white/50 font-medium">WebGL</span>
+            <div className="h-px flex-1 bg-white/20"></div>
+          </div>
+          <div className="grid grid-cols-3 gap-1.5">
+            {webglModes.map(renderModeButton)}
+          </div>
+        </>
+      )}
 
       {filteredModes.length === 0 && (
         <div className="text-center text-white/50 text-xs py-4">
@@ -937,7 +968,7 @@ export default function Visualizer({
             <button
               onClick={() => {
                 setShowModePanel(!showModePanel);
-                if (showSettings) setShowSettings(false);
+                setShowSettings(false);
               }}
               onMouseDown={(e) => e.stopPropagation()}
               className={`px-2 py-1 text-xs font-medium rounded-md transition-colors cursor-pointer flex items-center gap-1.5 ${
@@ -947,7 +978,7 @@ export default function Visualizer({
               }`}
               title="Select visualizer mode"
             >
-              <Grid3X3 size={12} />
+              <Sparkle size={12} />
               <span className="max-w-[80px] truncate">{mode}</span>
             </button>
             {/* Display Mode Toggle Button */}
