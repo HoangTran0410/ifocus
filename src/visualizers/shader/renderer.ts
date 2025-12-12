@@ -149,7 +149,7 @@ export function cleanup(mode?: string | number): void {
     if (!state) return;
     state.program = null;
     state.uniforms = {};
-    state.time = 0;
-    stateCached.delete(mode);
+    // state.time = 0;
+    // stateCached.delete(mode);
   }
 }
