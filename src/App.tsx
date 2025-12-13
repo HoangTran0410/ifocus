@@ -77,6 +77,8 @@ function App() {
 
   // Local UI state (not persisted)
   const [activePanel, setActivePanel] = useState<PanelType>("none");
+  const lastActivePanelRef = useRef<PanelType>("none");
+
   const [visitedPanels, setVisitedPanels] = useState<Set<PanelType>>(new Set());
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isPiPWebsite, setIsPiPWebsite] = useState(false);
@@ -84,8 +86,11 @@ function App() {
 
   // Lazy load panels
   useEffect(() => {
-    if (activePanel !== "none" && !visitedPanels.has(activePanel)) {
-      setVisitedPanels((prev) => new Set([...prev, activePanel]));
+    if (activePanel !== "none") {
+      lastActivePanelRef.current = activePanel;
+
+      if (!visitedPanels.has(activePanel))
+        setVisitedPanels((prev) => new Set([...prev, activePanel]));
     }
   }, [activePanel, visitedPanels]);
 
@@ -245,7 +250,11 @@ function App() {
             {/* Hamburger menu for mobile */}
             <button
               onClick={() =>
-                setActivePanel(activePanel === "none" ? "scenes" : "none")
+                setActivePanel(
+                  activePanel === "none"
+                    ? lastActivePanelRef.current || "scenes"
+                    : "none"
+                )
               }
               className={`p-3 transition-colors rounded-full hover:bg-white/10 sm:hidden ${
                 activePanel !== "none"
