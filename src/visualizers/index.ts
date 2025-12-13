@@ -65,6 +65,9 @@ const RenderMode: Record<
   "💓 Beat (WebGL)": () => import("./shader/WebGL_Beat"),
   "👁️ Eye (WebGL)": () => import("./shader/WebGL_Eye"),
   "🌌 Lensing (WebGL)": () => import("./shader/WebGL_Lensing"),
+  "🌀 Julia (WebGL)": () => import("./shader/WebGL_Julia"),
+  "🔄 Inversion (WebGL)": () => import("./shader/WebGL_Inversion"),
+  "🌊 Liquid (WebGL)": () => import("./shader/WebGL_Liquid"),
 };
 export type VisualizerMode = keyof typeof RenderMode;
 export const MODES = Object.keys(RenderMode) as VisualizerMode[];
