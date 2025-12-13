@@ -77,7 +77,7 @@ function App() {
 
   // Local UI state (not persisted)
   const [activePanel, setActivePanel] = useState<PanelType>("none");
-  const lastActivePanelRef = useRef<PanelType>("none");
+  const lastActivePanelRef = useRef<PanelType>("scenes");
 
   const [visitedPanels, setVisitedPanels] = useState<Set<PanelType>>(new Set());
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -251,9 +251,7 @@ function App() {
             <button
               onClick={() =>
                 setActivePanel(
-                  activePanel === "none"
-                    ? lastActivePanelRef.current || "scenes"
-                    : "none"
+                  activePanel === "none" ? lastActivePanelRef.current : "none"
                 )
               }
               className={`p-3 transition-colors rounded-full hover:bg-white/10 sm:hidden ${
