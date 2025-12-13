@@ -1,11 +1,20 @@
-// Audio capture and analysis using getDisplayMedia
+// Audio capture and analysis using getDisplayMedia, getUserMedia, or file input
+
+// Audio source types
+export type AudioSourceType = "none" | "tab" | "mic" | "file";
 
 // Global AudioContext and Analyser singleton
 let audioContext: AudioContext | null = null;
 let analyser: AnalyserNode | null = null;
 let dataArray: Uint8Array | null = null;
 let mediaStream: MediaStream | null = null;
+let audioElement: HTMLAudioElement | null = null;
+let sourceNode:
+  | MediaStreamAudioSourceNode
+  | MediaElementAudioSourceNode
+  | null = null;
 let isCapturing = false;
+let currentSourceType: AudioSourceType = "none";
 
 // Config for analyzer - optimized settings from music-visualizer
 export interface AudioAnalyzerConfig {
@@ -65,11 +74,34 @@ export function updateAnalyzerConfig(
   }
 }
 
-// Request permission to capture system/tab audio
-export async function startAudioCapture(): Promise<boolean> {
-  if (isCapturing && analyser) {
+// Get current audio source type
+export function getAudioSourceType(): AudioSourceType {
+  return currentSourceType;
+}
+
+// Initialize audio context and analyser
+function initAudioContext(): void {
+  if (!audioContext) {
+    audioContext = new AudioContext();
+  }
+  if (!analyser) {
+    analyser = audioContext.createAnalyser();
+    analyser.fftSize = CONFIG.fftSize;
+    analyser.smoothingTimeConstant = CONFIG.smoothingTimeConstant;
+    analyser.minDecibels = CONFIG.minDecibels;
+    analyser.maxDecibels = CONFIG.maxDecibels;
+    dataArray = new Uint8Array(analyser.frequencyBinCount);
+  }
+}
+
+// Request permission to capture system/tab audio (Desktop only)
+export async function startTabCapture(): Promise<boolean> {
+  if (isCapturing && currentSourceType === "tab") {
     return true;
   }
+
+  // Stop any existing capture first
+  stopAudioCapture();
 
   try {
     // Request display media with audio
@@ -81,7 +113,6 @@ export async function startAudioCapture(): Promise<boolean> {
         suppressLocalAudioPlayback: false,
       },
       // @ts-ignore - These are valid options but not in TypeScript defs yet
-      // preferCurrentTab: true,
       selfBrowserSurface: "include",
       systemAudio: "include",
       surfaceSwitching: "include",
@@ -96,18 +127,12 @@ export async function startAudioCapture(): Promise<boolean> {
       return false;
     }
 
-    // Create audio context and analyser
-    audioContext = new AudioContext();
-    analyser = audioContext.createAnalyser();
-    analyser.fftSize = CONFIG.fftSize;
-    analyser.smoothingTimeConstant = CONFIG.smoothingTimeConstant;
-    analyser.minDecibels = CONFIG.minDecibels;
-    analyser.maxDecibels = CONFIG.maxDecibels;
-    dataArray = new Uint8Array(analyser.frequencyBinCount);
+    // Initialize audio context and analyser
+    initAudioContext();
 
     // Connect the stream to the analyser
-    const source = audioContext.createMediaStreamSource(mediaStream);
-    source.connect(analyser);
+    sourceNode = audioContext!.createMediaStreamSource(mediaStream);
+    sourceNode.connect(analyser!);
     // Note: We don't connect to destination to avoid audio feedback
 
     // Listen for track ending (user stops sharing)
@@ -116,12 +141,119 @@ export async function startAudioCapture(): Promise<boolean> {
     });
 
     isCapturing = true;
+    currentSourceType = "tab";
     return true;
   } catch (error) {
-    console.error("Failed to start audio capture:", error);
+    console.error("Failed to start tab audio capture:", error);
     stopAudioCapture();
     return false;
   }
+}
+
+// Capture audio from microphone (Works on mobile)
+export async function startMicCapture(): Promise<boolean> {
+  if (isCapturing && currentSourceType === "mic") {
+    return true;
+  }
+
+  // Stop any existing capture first
+  stopAudioCapture();
+
+  // Check if mediaDevices is available (requires HTTPS)
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    const msg =
+      "Microphone access requires HTTPS. Please access the site via HTTPS.";
+    console.error(msg);
+    alert(msg);
+    return false;
+  }
+
+  try {
+    // Request microphone access
+    mediaStream = await navigator.mediaDevices.getUserMedia({
+      audio: {
+        echoCancellation: false,
+        noiseSuppression: false,
+        autoGainControl: false,
+      },
+    });
+
+    // Initialize audio context and analyser
+    initAudioContext();
+
+    // Connect the stream to the analyser
+    sourceNode = audioContext!.createMediaStreamSource(mediaStream);
+    sourceNode.connect(analyser!);
+
+    // Listen for track ending
+    mediaStream.getAudioTracks()[0].addEventListener("ended", () => {
+      stopAudioCapture();
+    });
+
+    isCapturing = true;
+    currentSourceType = "mic";
+    return true;
+  } catch (error) {
+    console.error("Failed to start microphone capture:", error);
+    alert(`Mic capture error: ${(error as Error).message || error}`);
+    stopAudioCapture();
+    return false;
+  }
+}
+
+// Capture audio from uploaded file (Works on mobile)
+export async function startFileCapture(file: File): Promise<boolean> {
+  // Stop any existing capture first
+  stopAudioCapture();
+
+  try {
+    // Create audio element
+    audioElement = new Audio();
+    audioElement.src = URL.createObjectURL(file);
+    audioElement.loop = true;
+    audioElement.crossOrigin = "anonymous";
+
+    // Wait for audio to be ready
+    await new Promise<void>((resolve, reject) => {
+      audioElement!.oncanplaythrough = () => resolve();
+      audioElement!.onerror = () =>
+        reject(new Error("Failed to load audio file"));
+    });
+
+    // Initialize audio context and analyser
+    initAudioContext();
+
+    // Resume audio context if suspended (required for user interaction)
+    if (audioContext!.state === "suspended") {
+      await audioContext!.resume();
+    }
+
+    // Connect audio element to analyser
+    sourceNode = audioContext!.createMediaElementSource(audioElement);
+    sourceNode.connect(analyser!);
+    sourceNode.connect(audioContext!.destination); // Play the audio
+
+    // Start playing
+    await audioElement.play();
+
+    // Listen for audio ending
+    audioElement.onended = () => {
+      // Audio will loop, so this won't fire unless loop is false
+    };
+
+    isCapturing = true;
+    currentSourceType = "file";
+    return true;
+  } catch (error) {
+    console.error("Failed to start file audio capture:", error);
+    stopAudioCapture();
+    return false;
+  }
+}
+
+// Legacy function name for backward compatibility
+export async function startAudioCapture(): Promise<boolean> {
+  return startTabCapture();
 }
 
 // Stop audio capture and clean up
@@ -130,6 +262,33 @@ export function stopAudioCapture(): void {
     mediaStream.getTracks().forEach((track) => track.stop());
     mediaStream = null;
   }
+  if (audioElement) {
+    // Pause and stop playback
+    audioElement.pause();
+    audioElement.currentTime = 0;
+
+    // Revoke blob URL before clearing (must do before clearing src)
+    const currentSrc = audioElement.src;
+    if (currentSrc && currentSrc.startsWith("blob:")) {
+      URL.revokeObjectURL(currentSrc);
+    }
+
+    // Clear event listeners and src
+    audioElement.onended = null;
+    audioElement.oncanplaythrough = null;
+    audioElement.onerror = null;
+    audioElement.src = "";
+    audioElement.load(); // Reset the element
+    audioElement = null;
+  }
+  if (sourceNode) {
+    try {
+      sourceNode.disconnect();
+    } catch (e) {
+      // Already disconnected
+    }
+    sourceNode = null;
+  }
   if (audioContext) {
     audioContext.close();
     audioContext = null;
@@ -137,6 +296,7 @@ export function stopAudioCapture(): void {
   analyser = null;
   dataArray = null;
   isCapturing = false;
+  currentSourceType = "none";
 }
 
 // Get frequency data from the analyser

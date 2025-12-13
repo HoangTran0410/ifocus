@@ -4,11 +4,16 @@ import {
   getNormalizedFrequencyData,
   isAudioCaptureActive,
   startAudioCapture,
+  startTabCapture,
+  startMicCapture,
+  startFileCapture,
   stopAudioCapture,
   getAnalyzerConfig,
   getDefaultAnalyzerConfig,
   updateAnalyzerConfig,
+  getAudioSourceType,
   AudioAnalyzerConfig,
+  AudioSourceType,
   detectBeat,
   getFrequencyBands,
 } from "../utils/audioAnalyzer";
@@ -25,6 +30,9 @@ import {
   Zap,
   Search,
   Sparkle,
+  Monitor,
+  FileAudio,
+  StopCircle,
 } from "lucide-react";
 import {
   useVisualizerMode as useVisualizerDisplayMode,
@@ -38,7 +46,7 @@ import {
   VisualizerMode,
 } from "../visualizers";
 import { clearGradientCache } from "../visualizers/utils";
-import type { VisualizeFnProps } from "../visualizers/types";
+import { useMobile } from "../hooks/useMobile";
 
 interface Position {
   x: number;
@@ -62,6 +70,8 @@ interface VisualizerProps {
   stop?: boolean;
 }
 
+type VisualizerPanel = "none" | "settings" | "mode" | "audio";
+
 export default function Visualizer({
   onClose,
   isInPiP = false,
@@ -71,6 +81,9 @@ export default function Visualizer({
   // Get visualizer display mode from Zustand
   const visualizerMode = useVisualizerDisplayMode();
   const setVisualizerMode = useSetVisualizerDisplayMode();
+
+  // Detect mobile device
+  const isMobile = useMobile();
 
   // Derive isCenterMode from store
   const isCenterMode = forceCenter || visualizerMode === "center";
@@ -114,10 +127,11 @@ export default function Visualizer({
   const pipWindowRef = useRef<Window | null>(null);
   const pipCanvasRef = useRef<HTMLCanvasElement | null>(null);
 
-  // Settings panel state
-  const [showSettings, setShowSettings] = useState(false);
-  // Mode panel state
-  const [showModePanel, setShowModePanel] = useState(false);
+  // Panel state - only one panel can be open at a time
+  const [activePanel, setActivePanel] = useState<VisualizerPanel>("none");
+  const [visitedPanels, setVisitedPanels] = useState<Set<VisualizerPanel>>(
+    new Set()
+  );
   const [modeSearch, setModeSearch] = useState("");
   const [config, setConfig] = useLocalStorage<AudioAnalyzerConfig>(
     "zen_visualizer_config",
@@ -138,10 +152,14 @@ export default function Visualizer({
   }, [performanceMode]);
 
   useEffect(() => {
-    if (!showModePanel) {
+    if (activePanel !== "mode") {
       setModeSearch("");
     }
-  }, [showModePanel]);
+    // Track visited panels for lazy mounting
+    if (activePanel !== "none") {
+      setVisitedPanels((prev) => new Set(prev).add(activePanel));
+    }
+  }, [activePanel]);
 
   // FPS tracking refs
   const fpsRef = useRef(0);
@@ -219,24 +237,59 @@ export default function Visualizer({
     [onClose]
   );
 
-  // Audio capture state - initialize with current capture status (persists across mode switches)
+  // Audio capture state
   const [isCapturing, setIsCapturing] = useState(() => isAudioCaptureActive());
+  const [audioSourceType, setAudioSourceType] = useState<AudioSourceType>(() =>
+    getAudioSourceType()
+  );
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Handle audio capture toggle
-  const handleCaptureClick = useCallback(
-    async (e: React.MouseEvent) => {
-      e.stopPropagation();
+  // Handle tab audio capture (desktop only)
+  const handleTabCapture = useCallback(async () => {
+    const success = await startTabCapture();
+    setIsCapturing(success);
+    setAudioSourceType(success ? "tab" : "none");
+    if (success) setActivePanel("none");
+  }, []);
 
-      if (isCapturing) {
-        stopAudioCapture();
-        setIsCapturing(false);
-      } else {
-        const success = await startAudioCapture();
+  // Handle microphone capture
+  const handleMicCapture = useCallback(async () => {
+    const success = await startMicCapture();
+    setIsCapturing(success);
+    setAudioSourceType(success ? "mic" : "none");
+    if (success) setActivePanel("none");
+  }, []);
+
+  // Handle file upload
+  const handleFileUpload = useCallback(
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (file) {
+        const success = await startFileCapture(file);
         setIsCapturing(success);
+        setAudioSourceType(success ? "file" : "none");
+        if (success) setActivePanel("none");
+      }
+      // Reset input so same file can be selected again
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
       }
     },
-    [isCapturing]
+    []
   );
+
+  // Handle stop capture
+  const handleStopCapture = useCallback(() => {
+    stopAudioCapture();
+    setIsCapturing(false);
+    setAudioSourceType("none");
+  }, []);
+
+  // Toggle audio panel
+  const handleAudioPanelToggle = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    setActivePanel((prev) => (prev === "audio" ? "none" : "audio"));
+  }, []);
 
   // Handle config changes
   const handleConfigChange = useCallback(
@@ -251,8 +304,7 @@ export default function Visualizer({
   // Toggle settings panel
   const handleSettingsClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
-    setShowSettings((prev) => !prev);
-    setShowModePanel(false);
+    setActivePanel((prev) => (prev === "settings" ? "none" : "settings"));
   }, []);
 
   // Reset config to defaults
@@ -396,7 +448,7 @@ export default function Visualizer({
     (e: React.TouchEvent) => {
       if ((e.target as HTMLElement).classList.contains("resize-handle")) return;
       // Don't allow touch drag when panels are open
-      if (showSettings || showModePanel) return;
+      if (activePanel !== "none") return;
       // Only handle single touch for dragging
       if (e.touches.length === 1) {
         const touch = e.touches[0];
@@ -429,7 +481,7 @@ export default function Visualizer({
         };
       }
     },
-    [position, size, showSettings, showModePanel]
+    [position, size, activePanel]
   );
 
   const handleMouseMove = useCallback(
@@ -998,7 +1050,7 @@ export default function Visualizer({
           value={modeSearch}
           onChange={(e) => setModeSearch(e.target.value)}
           className="w-full pl-7 pr-3 py-1.5 text-xs bg-white/10 text-white/90 rounded-md border border-white/20 focus:outline-none focus:border-purple-500 placeholder:text-white/40"
-          autoFocus
+          autoFocus={!isMobile}
         />
       </div>
 
@@ -1070,21 +1122,21 @@ export default function Visualizer({
       {/* Main visualizer container */}
       <div
         className={`relative w-full h-full rounded-2xl overflow-hidden transition-all duration-300 ${
-          isCenterMode && !isHovered && !showSettings && !showModePanel
+          isCenterMode && !isHovered && activePanel === "none"
             ? ""
             : "backdrop-blur-md"
         }`}
         style={{
           background:
-            isCenterMode && !isHovered && !showSettings && !showModePanel
+            isCenterMode && !isHovered && activePanel === "none"
               ? "transparent"
               : "linear-gradient(135deg, rgba(15, 15, 30, 0.85), rgba(30, 20, 50, 0.85))",
           border:
-            isCenterMode && !isHovered && !showSettings && !showModePanel
+            isCenterMode && !isHovered && activePanel === "none"
               ? "1px solid transparent"
               : "1px solid rgba(168, 85, 247, 0.3)",
           boxShadow:
-            isCenterMode && !isHovered && !showSettings && !showModePanel
+            isCenterMode && !isHovered && activePanel === "none"
               ? "none"
               : "0 8px 32px rgba(0, 0, 0, 0.4), 0 0 60px rgba(168, 85, 247, 0.1)",
         }}
@@ -1092,33 +1144,42 @@ export default function Visualizer({
         {/* Header - in center mode, hide toolbar buttons unless hovered */}
         <div
           className={`absolute top-0 left-0 right-0 flex items-center justify-between px-3 py-2 z-10 transition-opacity duration-300 ${
-            isCenterMode && !isHovered && !showSettings && !showModePanel
+            isCenterMode && !isHovered && activePanel === "none"
               ? "opacity-0"
               : ""
           }`}
           style={{
             background: "linear-gradient(180deg, rgba(0,0,0,0.4), transparent)",
-            opacity: isHovered || showSettings || showModePanel ? 1 : 0,
+            opacity: isHovered || activePanel !== "none" ? 1 : 0,
           }}
         >
           <span className="text-xs font-medium text-white/60 uppercase tracking-wider">
             Visualizer
           </span>
           <div className="flex items-center gap-1">
-            {/* Audio Capture Button */}
+            {/* Audio Source Button */}
             <button
-              onClick={handleCaptureClick}
-              className={`p-1.5 text-xs font-medium rounded-md transition-colors cursor-pointer ${
+              onClick={handleAudioPanelToggle}
+              className={`p-1.5 text-xs font-medium rounded-md transition-colors cursor-pointer flex items-center gap-1 ${
                 isCapturing
                   ? "text-green-400 bg-green-500/20 hover:bg-green-500/30"
+                  : activePanel === "audio"
+                  ? "text-cyan-400 bg-cyan-500/20 hover:bg-cyan-500/30"
                   : "text-white/80 bg-white/10 hover:bg-white/20"
               }`}
-              title={isCapturing ? "Stop audio capture" : "Capture tab audio"}
+              title={
+                isCapturing
+                  ? `Audio: ${audioSourceType}`
+                  : "Select audio source"
+              }
             >
-              <Mic size={14} />
+              {audioSourceType === "mic" && <Mic size={14} />}
+              {audioSourceType === "tab" && <Monitor size={14} />}
+              {audioSourceType === "file" && <FileAudio size={14} />}
+              {audioSourceType === "none" && <Mic size={14} />}
             </button>
-            {/* PiP Button */}
-            {!isInPiP && (
+            {/* PiP Button - hidden on mobile as Document PiP is not supported */}
+            {!isInPiP && !isMobile && (
               <button
                 onClick={handlePiPClick}
                 className={`p-1.5 text-xs font-medium rounded-md transition-colors cursor-pointer ${
@@ -1134,9 +1195,10 @@ export default function Visualizer({
             {/* Settings Button */}
             <button
               onClick={handleSettingsClick}
+              onMouseDown={(e) => e.stopPropagation()}
               className={`p-1.5 text-xs font-medium rounded-md transition-colors cursor-pointer ${
-                showSettings
-                  ? "text-amber-400 bg-amber-500/20 hover:bg-amber-500/30"
+                activePanel === "settings"
+                  ? "text-blue-400 bg-blue-500/20 hover:bg-blue-500/30"
                   : "text-white/80 bg-white/10 hover:bg-white/20"
               }`}
               title="Audio analyzer settings"
@@ -1146,12 +1208,11 @@ export default function Visualizer({
             {/* Mode Panel Button */}
             <button
               onClick={() => {
-                setShowModePanel(!showModePanel);
-                setShowSettings(false);
+                setActivePanel((prev) => (prev === "mode" ? "none" : "mode"));
               }}
               onMouseDown={(e) => e.stopPropagation()}
               className={`px-2 py-1 text-xs font-medium rounded-md transition-colors cursor-pointer flex items-center gap-1.5 ${
-                showModePanel
+                activePanel === "mode"
                   ? "text-purple-400 bg-purple-500/20 hover:bg-purple-500/30"
                   : "text-white/80 bg-white/10 hover:bg-white/20"
               }`}
@@ -1204,11 +1265,100 @@ export default function Visualizer({
           </div>
         </div>
 
-        {/* Settings Panel */}
-        {showSettings && renderSettings()}
+        {/* Settings Panel - stay mounted once visited */}
+        <div className={activePanel === "settings" ? "" : "hidden"}>
+          {visitedPanels.has("settings") && renderSettings()}
+        </div>
 
-        {/* Mode Panel */}
-        {showModePanel && renderModePanel()}
+        {/* Audio Source Panel */}
+        {activePanel === "audio" && (
+          <div
+            className="absolute top-10 left-0 right-0 z-20 p-3 mx-2 rounded-lg"
+            style={{
+              background: "rgba(15, 15, 30, 0.9)",
+              border: "1px solid rgba(168, 85, 247, 0.3)",
+            }}
+            onMouseDown={(e) => e.stopPropagation()}
+          >
+            <div className="space-y-2">
+              <div className="text-xs text-white/60 font-medium mb-2">
+                Select Audio Source
+              </div>
+
+              {/* Current Source Status */}
+              {isCapturing && (
+                <div className="flex items-center justify-between p-2 rounded-md bg-green-500/20 border border-green-500/30">
+                  <span className="text-xs text-green-400 flex items-center gap-2">
+                    {audioSourceType === "mic" && <Mic size={14} />}
+                    {audioSourceType === "tab" && <Monitor size={14} />}
+                    {audioSourceType === "file" && <FileAudio size={14} />}
+                    {audioSourceType === "tab" && "Tab Audio"}
+                    {audioSourceType === "mic" && "Microphone"}
+                    {audioSourceType === "file" && "Audio File"}
+                  </span>
+                  <button
+                    onClick={handleStopCapture}
+                    className="px-2 py-1 text-xs text-red-400 bg-red-500/20 hover:bg-red-500/30 rounded-md transition-colors flex items-center gap-1"
+                  >
+                    <StopCircle size={12} />
+                    Stop
+                  </button>
+                </div>
+              )}
+
+              {/* Tab Audio Option - Desktop only */}
+              {!isMobile && !isCapturing && (
+                <button
+                  onClick={handleTabCapture}
+                  className="w-full px-3 py-2 text-xs font-medium text-white/80 bg-white/10 hover:bg-white/20 rounded-md transition-colors flex items-center gap-2"
+                >
+                  <Monitor size={14} />
+                  Capture Tab Audio
+                </button>
+              )}
+
+              {/* Microphone Option */}
+              {!isCapturing && (
+                <button
+                  onClick={handleMicCapture}
+                  className="w-full px-3 py-2 text-xs font-medium text-white/80 bg-white/10 hover:bg-white/20 rounded-md transition-colors flex items-center gap-2"
+                >
+                  <Mic size={14} />
+                  Use Microphone
+                </button>
+              )}
+
+              {/* File Upload Option */}
+              {!isCapturing && (
+                <label className="w-full px-3 py-2 text-xs font-medium text-white/80 bg-white/10 hover:bg-white/20 rounded-md transition-colors flex items-center gap-2 cursor-pointer">
+                  <FileAudio size={14} />
+                  Upload Audio/Video File
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="audio/*,video/*"
+                    onChange={handleFileUpload}
+                    className="hidden"
+                  />
+                </label>
+              )}
+
+              {/* Info text */}
+              {!isCapturing && (
+                <p className="text-xs text-white/40 mt-2">
+                  {isMobile
+                    ? "Tab audio capture is not available on mobile devices."
+                    : "Choose how you want to provide audio for the visualizer."}
+                </p>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Mode Panel - stay mounted once visited */}
+        <div className={activePanel === "mode" ? "" : "hidden"}>
+          {visitedPanels.has("mode") && renderModePanel()}
+        </div>
 
         {/* Canvas */}
         <canvas

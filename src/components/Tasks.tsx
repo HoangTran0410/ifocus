@@ -39,9 +39,9 @@ export default function Tasks() {
 
   return (
     <div className="flex flex-col h-full text-white">
-      <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+      {/* <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
         <CheckCircle size={20} /> Tasks
-      </h3>
+      </h3> */}
 
       <form onSubmit={addTask} className="mb-6">
         <input

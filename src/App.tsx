@@ -11,6 +11,7 @@ import {
   Minimize2,
   Sparkles,
   PictureInPicture2,
+  Menu,
 } from "lucide-react";
 import {
   useShowVisualizer,
@@ -222,21 +223,38 @@ function App() {
           </div>
 
           <div className="flex items-center gap-2">
+            {/* PiP button - desktop only */}
             <button
               onClick={togglePiP}
-              className={`p-3 transition-colors rounded-full hover:bg-white/10 ${
+              className={`p-3 transition-colors rounded-full hover:bg-white/10 hidden sm:block ${
                 isPiPWebsite ? "text-white" : "text-white/70 hover:text-white"
               }`}
               title="Picture-in-Picture"
             >
               <PictureInPicture2 size={20} />
             </button>
+            {/* Fullscreen button */}
             <button
               onClick={toggleFullscreen}
               className="p-3 text-white/70 hover:text-white transition-colors rounded-full hover:bg-white/10"
               title="Fullscreen"
             >
               {isFullscreen ? <Minimize2 size={20} /> : <Maximize2 size={20} />}
+            </button>
+
+            {/* Hamburger menu for mobile */}
+            <button
+              onClick={() =>
+                setActivePanel(activePanel === "none" ? "scenes" : "none")
+              }
+              className={`p-3 transition-colors rounded-full hover:bg-white/10 sm:hidden ${
+                activePanel !== "none"
+                  ? "text-white bg-white/10"
+                  : "text-white/70 hover:text-white"
+              }`}
+              title="Menu"
+            >
+              <Menu size={20} />
             </button>
           </div>
         </div>
@@ -251,7 +269,7 @@ function App() {
         </div>
 
         {/* Bottom Dock / Navigation */}
-        <div className="flex justify-center pb-6 pointer-events-auto">
+        <div className="flex justify-center pb-6 pointer-events-auto hidden sm:flex">
           {/* We apply the same transition logic here to keep it centered relative to the timer */}
           <div className={`transition-all duration-500`}>
             <div className="flex gap-0 sm:gap-2 p-2 bg-black/40 opacity-50 hover:opacity-100 hover:backdrop-blur transition-all rounded-2xl border border-white/10 shadow-2xl">
@@ -310,17 +328,81 @@ function App() {
           zIndex: activePanel !== "none" ? 50 : -1,
         }}
       >
-        <div className="h-full flex flex-col p-6">
-          <div className="flex justify-between items-center mb-6">
-            <span className="text-white/50 text-xs font-bold uppercase tracking-widest">
-              {activePanel}
-            </span>
+        <div className="h-full flex flex-col p-4 sm:p-6">
+          {/* Header with navigation tabs */}
+          <div className="flex items-center justify-between mb-4">
+            {/* Tab Navigation */}
+            <div className="flex gap-1">
+              <button
+                onClick={() => setActivePanel("scenes")}
+                className={`p-2 rounded-lg transition-all ${
+                  activePanel === "scenes"
+                    ? "bg-white/20 text-white"
+                    : "text-white/50 hover:text-white hover:bg-white/10"
+                }`}
+                title="Scenes"
+              >
+                <ImageIcon size={18} />
+              </button>
+              <button
+                onClick={() => setActivePanel("effects")}
+                className={`p-2 rounded-lg transition-all ${
+                  activePanel === "effects"
+                    ? "bg-white/20 text-white"
+                    : "text-white/50 hover:text-white hover:bg-white/10"
+                }`}
+                title="Effects"
+              >
+                <Sparkles size={18} />
+              </button>
+              <button
+                onClick={() => setActivePanel("audio")}
+                className={`p-2 rounded-lg transition-all ${
+                  activePanel === "audio"
+                    ? "bg-white/20 text-white"
+                    : "text-white/50 hover:text-white hover:bg-white/10"
+                }`}
+                title="Sounds"
+              >
+                <Music size={18} />
+              </button>
+              <div className="w-px h-6 bg-white/20 mx-1 self-center" />
+              <button
+                onClick={() => setActivePanel("tasks")}
+                className={`p-2 rounded-lg transition-all ${
+                  activePanel === "tasks"
+                    ? "bg-white/20 text-white"
+                    : "text-white/50 hover:text-white hover:bg-white/10"
+                }`}
+                title="Tasks"
+              >
+                <CheckSquare size={18} />
+              </button>
+              <button
+                onClick={() => setActivePanel("notes")}
+                className={`p-2 rounded-lg transition-all ${
+                  activePanel === "notes"
+                    ? "bg-white/20 text-white"
+                    : "text-white/50 hover:text-white hover:bg-white/10"
+                }`}
+                title="Notes"
+              >
+                <Edit3 size={18} />
+              </button>
+            </div>
+            {/* Close button */}
             <button
               onClick={() => setActivePanel("none")}
               className="p-2 text-white/50 hover:text-white hover:bg-white/10 rounded-lg transition-all"
             >
               <X size={20} />
             </button>
+          </div>
+
+          <div className="flex justify-between items-center mb-2">
+            <span className="text-white/50 text-xs font-bold uppercase tracking-widest">
+              {activePanel}
+            </span>
           </div>
 
           {/* All panels stay mounted, just hidden - now use Zustand internally */}
