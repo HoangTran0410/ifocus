@@ -339,6 +339,21 @@ export default function Visualizer({
   // Drag state (not persisted)
   const [isDragging, setIsDragging] = useState(false);
   const [isResizing, setIsResizing] = useState<string | null>(null);
+  // Pinch-to-resize state for mobile
+  const [isPinching, setIsPinching] = useState(false);
+  const pinchStartRef = useRef<{
+    distance: number;
+    width: number;
+    height: number;
+    centerX: number;
+    centerY: number;
+  }>({
+    distance: 0,
+    width: DEFAULT_WIDTH,
+    height: DEFAULT_HEIGHT,
+    centerX: 0,
+    centerY: 0,
+  });
   const dragStartRef = useRef<{
     x: number;
     y: number;
@@ -374,6 +389,47 @@ export default function Visualizer({
       };
     },
     [position]
+  );
+
+  // Touch drag start handler
+  const handleTouchDragStart = useCallback(
+    (e: React.TouchEvent) => {
+      if ((e.target as HTMLElement).classList.contains("resize-handle")) return;
+      // Don't allow touch drag when panels are open
+      if (showSettings || showModePanel) return;
+      // Only handle single touch for dragging
+      if (e.touches.length === 1) {
+        const touch = e.touches[0];
+        setIsDragging(true);
+        dragStartRef.current = {
+          x: touch.clientX,
+          y: touch.clientY,
+          posX: position.x,
+          posY: position.y,
+        };
+      } else if (e.touches.length === 2) {
+        // Pinch-to-resize: start tracking
+        e.preventDefault();
+        const touch1 = e.touches[0];
+        const touch2 = e.touches[1];
+        const distance = Math.hypot(
+          touch2.clientX - touch1.clientX,
+          touch2.clientY - touch1.clientY
+        );
+        const centerX = (touch1.clientX + touch2.clientX) / 2;
+        const centerY = (touch1.clientY + touch2.clientY) / 2;
+        setIsPinching(true);
+        setIsDragging(false);
+        pinchStartRef.current = {
+          distance,
+          width: size.width,
+          height: size.height,
+          centerX,
+          centerY,
+        };
+      }
+    },
+    [position, size, showSettings, showModePanel]
   );
 
   const handleMouseMove = useCallback(
@@ -422,9 +478,84 @@ export default function Visualizer({
     [isDragging, isResizing, size.width, size.height]
   );
 
+  // Touch move handler for drag and pinch-to-resize
+  const handleTouchMove = useCallback(
+    (e: TouchEvent) => {
+      if (isDragging && e.touches.length === 1) {
+        const touch = e.touches[0];
+        const dx = touch.clientX - dragStartRef.current.x;
+        const dy = touch.clientY - dragStartRef.current.y;
+        setPosition({
+          x: dragStartRef.current.posX + dx,
+          y: dragStartRef.current.posY + dy,
+        });
+      } else if (isPinching && e.touches.length === 2) {
+        e.preventDefault();
+        const touch1 = e.touches[0];
+        const touch2 = e.touches[1];
+        const currentDistance = Math.hypot(
+          touch2.clientX - touch1.clientX,
+          touch2.clientY - touch1.clientY
+        );
+        const scale = currentDistance / pinchStartRef.current.distance;
+        const newWidth = Math.max(
+          MIN_WIDTH,
+          Math.round(pinchStartRef.current.width * scale)
+        );
+        const newHeight = Math.max(
+          MIN_HEIGHT,
+          Math.round(pinchStartRef.current.height * scale)
+        );
+        setSize({ width: newWidth, height: newHeight });
+      } else if (isResizing && e.touches.length === 1) {
+        // Handle touch resize with edge/corner handles
+        const touch = e.touches[0];
+        const dx = touch.clientX - resizeStartRef.current.x;
+        const dy = touch.clientY - resizeStartRef.current.y;
+
+        let newWidth = resizeStartRef.current.width;
+        let newHeight = resizeStartRef.current.height;
+        let newX = resizeStartRef.current.posX;
+        let newY = resizeStartRef.current.posY;
+
+        if (isResizing.includes("e")) {
+          newWidth = Math.max(MIN_WIDTH, resizeStartRef.current.width + dx);
+        }
+        if (isResizing.includes("w")) {
+          const potentialWidth = resizeStartRef.current.width - dx;
+          if (potentialWidth >= MIN_WIDTH) {
+            newWidth = potentialWidth;
+            newX = resizeStartRef.current.posX + dx;
+          }
+        }
+        if (isResizing.includes("s")) {
+          newHeight = Math.max(MIN_HEIGHT, resizeStartRef.current.height + dy);
+        }
+        if (isResizing.includes("n")) {
+          const potentialHeight = resizeStartRef.current.height - dy;
+          if (potentialHeight >= MIN_HEIGHT) {
+            newHeight = potentialHeight;
+            newY = resizeStartRef.current.posY + dy;
+          }
+        }
+
+        setSize({ width: newWidth, height: newHeight });
+        setPosition({ x: newX, y: newY });
+      }
+    },
+    [isDragging, isPinching, isResizing]
+  );
+
   const handleMouseUp = useCallback(() => {
     setIsDragging(false);
     setIsResizing(null);
+  }, []);
+
+  // Touch end handler
+  const handleTouchEnd = useCallback(() => {
+    setIsDragging(false);
+    setIsResizing(null);
+    setIsPinching(false);
   }, []);
 
   const handleResizeStart = useCallback(
@@ -444,16 +575,51 @@ export default function Visualizer({
     [size, position]
   );
 
+  // Touch resize start handler
+  const handleTouchResizeStart = useCallback(
+    (e: React.TouchEvent, direction: string) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (e.touches.length === 1) {
+        const touch = e.touches[0];
+        setIsResizing(direction);
+        resizeStartRef.current = {
+          x: touch.clientX,
+          y: touch.clientY,
+          width: size.width,
+          height: size.height,
+          posX: position.x,
+          posY: position.y,
+        };
+      }
+    },
+    [size, position]
+  );
+
   useEffect(() => {
-    if (isDragging || isResizing) {
+    if (isDragging || isResizing || isPinching) {
       window.addEventListener("mousemove", handleMouseMove);
       window.addEventListener("mouseup", handleMouseUp);
+      window.addEventListener("touchmove", handleTouchMove, { passive: false });
+      window.addEventListener("touchend", handleTouchEnd);
+      window.addEventListener("touchcancel", handleTouchEnd);
       return () => {
         window.removeEventListener("mousemove", handleMouseMove);
         window.removeEventListener("mouseup", handleMouseUp);
+        window.removeEventListener("touchmove", handleTouchMove);
+        window.removeEventListener("touchend", handleTouchEnd);
+        window.removeEventListener("touchcancel", handleTouchEnd);
       };
     }
-  }, [isDragging, isResizing, handleMouseMove, handleMouseUp]);
+  }, [
+    isDragging,
+    isResizing,
+    isPinching,
+    handleMouseMove,
+    handleMouseUp,
+    handleTouchMove,
+    handleTouchEnd,
+  ]);
   // #endregion
 
   // #region Animation loop with real or simulated audio data
@@ -897,6 +1063,7 @@ export default function Visualizer({
             }
       }
       onMouseDown={isCenterMode ? undefined : handleDragStart}
+      onTouchStart={isCenterMode ? undefined : handleTouchDragStart}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
@@ -1057,35 +1224,43 @@ export default function Visualizer({
           <div
             className="resize-handle absolute top-0 left-0 w-4 h-4 cursor-nw-resize"
             onMouseDown={(e) => handleResizeStart(e, "nw")}
+            onTouchStart={(e) => handleTouchResizeStart(e, "nw")}
           />
           <div
             className="resize-handle absolute top-0 right-0 w-4 h-4 cursor-ne-resize"
             onMouseDown={(e) => handleResizeStart(e, "ne")}
+            onTouchStart={(e) => handleTouchResizeStart(e, "ne")}
           />
           <div
             className="resize-handle absolute bottom-0 left-0 w-4 h-4 cursor-sw-resize"
             onMouseDown={(e) => handleResizeStart(e, "sw")}
+            onTouchStart={(e) => handleTouchResizeStart(e, "sw")}
           />
           <div
             className="resize-handle absolute bottom-0 right-0 w-4 h-4 cursor-se-resize"
             onMouseDown={(e) => handleResizeStart(e, "se")}
+            onTouchStart={(e) => handleTouchResizeStart(e, "se")}
           />
           {/* Edges */}
           <div
             className="resize-handle absolute top-0 left-4 right-4 h-2 cursor-n-resize"
             onMouseDown={(e) => handleResizeStart(e, "n")}
+            onTouchStart={(e) => handleTouchResizeStart(e, "n")}
           />
           <div
             className="resize-handle absolute bottom-0 left-4 right-4 h-2 cursor-s-resize"
             onMouseDown={(e) => handleResizeStart(e, "s")}
+            onTouchStart={(e) => handleTouchResizeStart(e, "s")}
           />
           <div
             className="resize-handle absolute left-0 top-4 bottom-4 w-2 cursor-w-resize"
             onMouseDown={(e) => handleResizeStart(e, "w")}
+            onTouchStart={(e) => handleTouchResizeStart(e, "w")}
           />
           <div
             className="resize-handle absolute right-0 top-4 bottom-4 w-2 cursor-e-resize"
             onMouseDown={(e) => handleResizeStart(e, "e")}
+            onTouchStart={(e) => handleTouchResizeStart(e, "e")}
           />
         </>
       </div>
