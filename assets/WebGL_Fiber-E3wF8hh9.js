@@ -1,4 +1,4 @@
-import{e as h,f as E,i as _}from"./comp-visualizer-Dpx3030T.js";import"./vendor-COPaNxkS.js";import"./comp-audiocontroller-Cl3Cj2Ve.js";import"./comp-background-B54EcfXi.js";const n=`
+import{e as h,f as E,i as _}from"./comp-visualizer-DEbmw2UW.js";import"./vendor-7n6RyNsU.js";import"./comp-audiocontroller-C9_egn6F.js";import"./comp-background-2KjCJFop.js";const n=`
   attribute vec2 a_position;
   varying vec2 v_uv;
   void main() {
