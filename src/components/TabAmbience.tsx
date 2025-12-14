@@ -549,49 +549,51 @@ export default function AmbienceTab() {
       )}
 
       {/* Category Sections */}
-      {Object.keys(filteredGroupedSounds).length === 0 ? (
-        <div className="text-center py-8 text-white/40">
-          <Search size={32} className="mx-auto mb-2 opacity-50" />
-          <p className="text-sm">No sounds found for "{searchQuery}"</p>
-        </div>
-      ) : (
-        Object.entries(filteredGroupedSounds).map(([category, sounds]) => {
-          const isCollapsed =
-            collapsedCategories.includes(category) && !searchQuery;
-          const isExpanded = !isCollapsed;
+      <div>
+        {Object.keys(filteredGroupedSounds).length === 0 ? (
+          <div className="text-center py-8 text-white/40">
+            <Search size={32} className="mx-auto mb-2 opacity-50" />
+            <p className="text-sm">No sounds found for "{searchQuery}"</p>
+          </div>
+        ) : (
+          Object.entries(filteredGroupedSounds).map(([category, sounds]) => {
+            const isCollapsed =
+              collapsedCategories.includes(category) && !searchQuery;
+            const isExpanded = !isCollapsed;
 
-          return (
-            <div key={category} className="space-y-2">
-              <button
-                onClick={() => toggleCategory(category)}
-                className="w-full flex items-center justify-between py-2 px-1 text-left hover:bg-white/5 rounded-lg transition-colors"
-              >
-                <div className="flex items-center gap-2">
-                  {isExpanded ? (
-                    <ChevronDown size={16} className="text-white/50" />
-                  ) : (
-                    <ChevronRight size={16} className="text-white/50" />
-                  )}
-                  <span className="text-sm font-semibold">{category}</span>
-                  <span className="text-xs text-white/40">
-                    ({sounds.length})
-                  </span>
+            return (
+              <div key={category}>
+                <button
+                  onClick={() => toggleCategory(category)}
+                  className="w-full flex items-center justify-between py-2 px-1 text-left hover:bg-white/5 rounded-lg transition-colors"
+                >
+                  <div className="flex items-center gap-2">
+                    {isExpanded ? (
+                      <ChevronDown size={16} className="text-white/50" />
+                    ) : (
+                      <ChevronRight size={16} className="text-white/50" />
+                    )}
+                    <span className="text-sm font-semibold">{category}</span>
+                    <span className="text-xs text-white/40">
+                      ({sounds.length})
+                    </span>
+                  </div>
+                </button>
+
+                <div
+                  className={`grid grid-cols-2 p-1 gap-3 overflow-hidden transition-all duration-300 ${
+                    isExpanded
+                      ? "max-h-[2000px] opacity-100"
+                      : "max-h-0 opacity-0"
+                  }`}
+                >
+                  {isExpanded && sounds.map((sound) => renderSoundCard(sound))}
                 </div>
-              </button>
-
-              <div
-                className={`grid grid-cols-2 p-1 gap-3 overflow-hidden transition-all duration-300 ${
-                  isExpanded
-                    ? "max-h-[2000px] opacity-100"
-                    : "max-h-0 opacity-0"
-                }`}
-              >
-                {sounds.map((sound) => renderSoundCard(sound))}
               </div>
-            </div>
-          );
-        })
-      )}
+            );
+          })
+        )}
+      </div>
     </div>
   );
 }

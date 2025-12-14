@@ -92,3 +92,11 @@ export interface AppState {
     history: string[];
   };
 }
+
+export interface YtMusic {
+  id: string;
+  videoId: string;
+  title: string;
+  thumbnailUrl: string;
+  category: string;
+}

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from "react";
-import { EffectType } from "../types";
+import type { EffectType } from "../types";
 
 interface Particle {
   x: number;

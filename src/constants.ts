@@ -5,6 +5,7 @@ import type {
   EffectType,
   BgFilters,
   SyncVisualizerConfig,
+  YtMusic,
 } from "./types";
 
 export const TIMER_SETTINGS: Record<TimerMode, number> = {
@@ -977,5 +978,106 @@ export const DEFAULT_SOUNDS: SoundTrack[] = [
     name: "Temple",
     url: () => import("./assets/sounds/indian-temple.mp3"),
     category: "Special",
+  },
+];
+
+export const DEFAULT_MUSIC: YtMusic[] = [
+  {
+    id: "rec-001",
+    videoId: "DSWYAclv2I8",
+    title: "Golden Horizon",
+    thumbnailUrl: "https://i.ytimg.com/vi/DSWYAclv2I8/hqdefault.jpg",
+    category: "ambient",
+  },
+  {
+    id: "rec-002",
+    videoId: "rKi3oL2UDew",
+    title: "Evening Hues",
+    thumbnailUrl: "https://i.ytimg.com/vi/rKi3oL2UDew/hqdefault.jpg",
+    category: "ambient",
+  },
+  {
+    id: "rec-003",
+    videoId: "zde7oFYW4Zg",
+    title: "City Dreamscape",
+    thumbnailUrl: "https://i.ytimg.com/vi/zde7oFYW4Zg/hqdefault.jpg",
+    category: "lofi",
+  },
+  {
+    id: "rec-004",
+    videoId: "w4oLP7fa9Vk",
+    title: "Soft Breeze",
+    thumbnailUrl: "https://i.ytimg.com/vi/w4oLP7fa9Vk/hqdefault.jpg",
+    category: "ambient",
+  },
+  {
+    id: "rec-005",
+    videoId: "BWNx0VQJjMY",
+    title: "Moonlit Echoes",
+    thumbnailUrl: "https://i.ytimg.com/vi/BWNx0VQJjMY/hqdefault.jpg",
+    category: "ambient",
+  },
+  {
+    id: "rec-006",
+    videoId: "1t1Rp9Nx--M",
+    title: "Midnight Streets",
+    thumbnailUrl: "https://i.ytimg.com/vi/1t1Rp9Nx--M/hqdefault.jpg",
+    category: "ambient",
+  },
+  {
+    id: "rec-007",
+    videoId: "hCtwi8XkB4o",
+    title: "Gentle Rainfall",
+    thumbnailUrl: "https://i.ytimg.com/vi/hCtwi8XkB4o/hqdefault.jpg",
+    category: "ambient",
+  },
+  {
+    id: "rec-008",
+    videoId: "tzhKxUxsIJs",
+    title: "Quiet Harbor",
+    thumbnailUrl: "https://i.ytimg.com/vi/tzhKxUxsIJs/hqdefault.jpg",
+    category: "ambient",
+  },
+  {
+    id: "rec-009",
+    videoId: "VwiHerRkCvk",
+    title: "Twilight Fireside",
+    thumbnailUrl: "https://i.ytimg.com/vi/VwiHerRkCvk/hqdefault.jpg",
+    category: "ambient",
+  },
+  {
+    id: "rec-010",
+    videoId: "Abc-M-X3jmQ",
+    title: "Aurora Trails",
+    thumbnailUrl: "https://i.ytimg.com/vi/Abc-M-X3jmQ/hqdefault.jpg",
+    category: "ambient",
+  },
+  {
+    id: "rec-011",
+    videoId: "4yiEbIeCOA4",
+    title: "Morning Skyline",
+    thumbnailUrl: "https://i.ytimg.com/vi/4yiEbIeCOA4/hqdefault.jpg",
+    category: "ambient",
+  },
+  {
+    id: "rec-012",
+    videoId: "F44Va0ErrFQ",
+    title: "Soft Steps",
+    thumbnailUrl: "https://i.ytimg.com/vi/F44Va0ErrFQ/hqdefault.jpg",
+    category: "ambient",
+  },
+  {
+    id: "rec-013",
+    videoId: "hw4-LDKcDmU",
+    title: "Ocean Lullaby",
+    thumbnailUrl: "https://i.ytimg.com/vi/hw4-LDKcDmU/hqdefault.jpg",
+    category: "ambient",
+  },
+  {
+    id: "rec-014",
+    videoId: "NHXqL4MRpbM",
+    title: "Daybreak Echo",
+    thumbnailUrl: "https://i.ytimg.com/vi/NHXqL4MRpbM/hqdefault.jpg",
+    category: "ambient",
   },
 ];

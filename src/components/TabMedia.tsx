@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from "react";
-import { History, Play, Music as MusicIcon, X } from "lucide-react";
+import { History, Play, Music as MusicIcon, X, Sparkles } from "lucide-react";
 import { useLocalStorage } from "../hooks/useLocalStorage";
+import { DEFAULT_MUSIC } from "../constants";
 
 export default function MediaTab() {
   const [youtubeUrl, setYoutubeUrl] = useLocalStorage<string>("zen_yt_url", "");
@@ -147,6 +148,44 @@ export default function MediaTab() {
       <div className="text-xs text-white/30 leading-relaxed">
         Supports YouTube videos, Spotify tracks/playlists, and Apple Music
         albums. Paste the link and we'll handle the embed.
+      </div>
+
+      {/* Recommend Section */}
+      <div className="border-t border-white/10 pt-4">
+        <h4 className="text-xs font-bold text-white/50 uppercase mb-3 flex items-center gap-2">
+          <Sparkles size={12} /> Recommended - No Copyright Music
+        </h4>
+        <div className="grid grid-cols-2 gap-2 overflow-y-auto pr-1">
+          {DEFAULT_MUSIC.map((music) => (
+            <button
+              key={music.id}
+              onClick={() => {
+                const url = `https://www.youtube.com/watch?v=${music.videoId}`;
+                setYoutubeUrl(url);
+              }}
+              className="group relative rounded-lg overflow-hidden bg-white/5 hover:bg-white/10 transition-all text-left"
+            >
+              <div className="relative aspect-video">
+                <img
+                  src={music.thumbnailUrl}
+                  alt={music.title}
+                  className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
+                    <Play size={14} fill="white" className="ml-0.5" />
+                  </div>
+                </div>
+              </div>
+              <div className="p-2">
+                <span className="text-xs text-white/80 line-clamp-2 group-hover:text-white transition-colors">
+                  {music.title}
+                </span>
+              </div>
+            </button>
+          ))}
+        </div>
       </div>
     </div>
   );
