@@ -52,6 +52,12 @@ export interface SoundState {
   isPlaying: boolean;
 }
 
+export interface SoundPreset {
+  id: string;
+  name: string;
+  sounds: SoundState[];
+}
+
 export interface BgFilters {
   blur: number;
   brightness: number;

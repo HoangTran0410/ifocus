@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
-import loadable from "@loadable/component";
+import loadable, { LoadableComponent } from "@loadable/component";
 import {
   X,
   Music,
@@ -22,29 +22,31 @@ import {
 } from "./stores/useAppStore";
 import { LoadingFallback } from "./utils/loader";
 
-// Lazy load all components with @loadable/component
+// screens
+const EffectsScreen = loadable(() => import("./components/ScreenEffects"), {
+  fallback: LoadingFallback,
+});
+const AudioScreen = loadable(() => import("./components/ScreenAudio"), {
+  fallback: LoadingFallback,
+});
+const TasksScreen = loadable(() => import("./components/ScreenTasks"), {
+  fallback: LoadingFallback,
+});
+const NotesScreen = loadable(() => import("./components/ScreenNotes"), {
+  fallback: LoadingFallback,
+});
+const SceneScreen = loadable(() => import("./components/ScreenScene"), {
+  fallback: LoadingFallback,
+});
+
+// components
 const Background = loadable(() => import("./components/Background"), {
-  fallback: LoadingFallback,
-});
-const Timer = loadable(() => import("./components/Timer"), {
-  fallback: LoadingFallback,
-});
-const AudioController = loadable(() => import("./components/AudioController"), {
-  fallback: LoadingFallback,
-});
-const Tasks = loadable(() => import("./components/Tasks"), {
   fallback: LoadingFallback,
 });
 const PiPContent = loadable(() => import("./components/PiPContent"), {
   fallback: LoadingFallback,
 });
-const Notes = loadable(() => import("./components/Notes"), {
-  fallback: LoadingFallback,
-});
-const SceneSelector = loadable(() => import("./components/SceneSelector"), {
-  fallback: LoadingFallback,
-});
-const EffectsSelector = loadable(() => import("./components/EffectsSelector"), {
+const Timer = loadable(() => import("./components/Timer"), {
   fallback: LoadingFallback,
 });
 const Visualizer = loadable(() => import("./components/Visualizer"), {
@@ -416,38 +418,38 @@ function App() {
           <div className="flex-1 overflow-hidden relative">
             <div
               className={`absolute inset-0 ${
+                activePanel === "scenes" ? "block" : "hidden"
+              }`}
+            >
+              {visitedPanels.has("scenes") && <SceneScreen />}
+            </div>
+            <div
+              className={`absolute inset-0 ${
                 activePanel === "audio" ? "block" : "hidden"
               }`}
             >
-              {visitedPanels.has("audio") && <AudioController />}
+              {visitedPanels.has("audio") && <AudioScreen />}
             </div>
             <div
               className={`absolute inset-0 ${
                 activePanel === "tasks" ? "block" : "hidden"
               }`}
             >
-              {visitedPanels.has("tasks") && <Tasks />}
+              {visitedPanels.has("tasks") && <TasksScreen />}
             </div>
             <div
               className={`absolute inset-0 ${
                 activePanel === "notes" ? "block" : "hidden"
               }`}
             >
-              {visitedPanels.has("notes") && <Notes />}
-            </div>
-            <div
-              className={`absolute inset-0 ${
-                activePanel === "scenes" ? "block" : "hidden"
-              }`}
-            >
-              {visitedPanels.has("scenes") && <SceneSelector />}
+              {visitedPanels.has("notes") && <NotesScreen />}
             </div>
             <div
               className={`absolute inset-0 ${
                 activePanel === "effects" ? "block" : "hidden"
               }`}
             >
-              {visitedPanels.has("effects") && <EffectsSelector />}
+              {visitedPanels.has("effects") && <EffectsScreen />}
             </div>
           </div>
         </div>

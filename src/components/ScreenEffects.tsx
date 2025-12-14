@@ -12,7 +12,7 @@ import {
   useSetVisualizerMode,
 } from "../stores/useAppStore";
 
-export default function EffectsSelector() {
+export default function EffectsScreen() {
   // Get state from Zustand store
   const currentEffect = useCurrentEffect();
   const setEffect = useSetCurrentEffect();

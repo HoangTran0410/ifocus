@@ -3,7 +3,7 @@ import { PenLine, Plus, Trash2, ArrowLeft } from "lucide-react";
 import type { Note } from "../types";
 import { useNotes, useSetNotes } from "../stores/useAppStore";
 
-export default function Notes() {
+export default function NotesScreen() {
   // Get state from Zustand store
   const notes = useNotes();
   const setNotes = useSetNotes();

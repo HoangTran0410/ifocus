@@ -627,10 +627,24 @@ export const DEFAULT_SOUNDS: SoundTrack[] = [
     category: "Nature",
   },
   {
+    id: "thunder",
+    emoji: "⚡️",
+    name: "Thunder",
+    url: () => import("./assets/sounds/thunder.mp3"),
+    category: "Nature",
+  },
+  {
     id: "wind",
     emoji: "🌬️",
     name: "Wind",
     url: () => import("./assets/sounds/winds.mp3"),
+    category: "Nature",
+  },
+  {
+    id: "ocean",
+    emoji: "🌊",
+    name: "Ocean",
+    url: () => import("./assets/sounds/ocean.mp3"),
     category: "Nature",
   },
   {
@@ -642,7 +656,7 @@ export const DEFAULT_SOUNDS: SoundTrack[] = [
   },
   {
     id: "river-flow",
-    emoji: "🌊",
+    emoji: "🐟",
     name: "River",
     url: () => import("./assets/sounds/river-flow.mp3"),
     category: "Nature",
@@ -652,6 +666,27 @@ export const DEFAULT_SOUNDS: SoundTrack[] = [
     emoji: "💧",
     name: "River Soft",
     url: () => import("./assets/sounds/river-soft.mp3"),
+    category: "Nature",
+  },
+  {
+    id: "water",
+    emoji: "💦",
+    name: "water",
+    url: () => import("./assets/sounds/waterflow.mp3"),
+    category: "Nature",
+  },
+  {
+    id: "underwater",
+    emoji: "🌀",
+    name: "Underwater",
+    url: () => import("./assets/sounds/underwater.mp3"),
+    category: "Nature",
+  },
+  {
+    id: "bubble",
+    emoji: "🫧",
+    name: "Bubble",
+    url: () => import("./assets/sounds/bubble.mp3"),
     category: "Nature",
   },
   {
@@ -690,6 +725,13 @@ export const DEFAULT_SOUNDS: SoundTrack[] = [
     category: "Nature",
   },
   {
+    id: "night",
+    emoji: "🌘",
+    name: "Night",
+    url: () => import("./assets/sounds/night.mp3"),
+    category: "Nature",
+  },
+  {
     id: "night-jungle",
     emoji: "🌴",
     name: "Night Jungle",
@@ -718,39 +760,10 @@ export const DEFAULT_SOUNDS: SoundTrack[] = [
     category: "Nature",
   },
   {
-    id: "underwater",
-    emoji: "🌀",
-    name: "Underwater",
-    url: () => import("./assets/sounds/underwater.mp3"),
-    category: "Nature",
-  },
-
-  {
-    id: "bubble",
-    emoji: "🫧",
-    name: "Bubble",
-    url: () => import("./assets/sounds/bubble.mp3"),
-    category: "Nature",
-  },
-  {
     id: "chicken",
     emoji: "🐓",
-    name: "chicken",
+    name: "Chicken",
     url: () => import("./assets/sounds/chicken.mp3"),
-    category: "Nature",
-  },
-  {
-    id: "night",
-    emoji: "🌘",
-    name: "night",
-    url: () => import("./assets/sounds/night.mp3"),
-    category: "Nature",
-  },
-  {
-    id: "thunder",
-    emoji: "⚡️",
-    name: "thunder",
-    url: () => import("./assets/sounds/thunder.mp3"),
     category: "Nature",
   },
   {
@@ -760,21 +773,6 @@ export const DEFAULT_SOUNDS: SoundTrack[] = [
     url: () => import("./assets/sounds/tractor.mp3"),
     category: "Nature",
   },
-  {
-    id: "water",
-    emoji: "💦",
-    name: "water",
-    url: () => import("./assets/sounds/waterflow.mp3"),
-    category: "Nature",
-  },
-  {
-    id: "waves",
-    emoji: "🌊",
-    name: "ocean",
-    url: () => import("./assets/sounds/ocean.mp3"),
-    category: "Nature",
-  },
-
   // ==================== Cozy ====================
   {
     id: "fire",

@@ -3,7 +3,7 @@ import { Trash2, CheckCircle, Circle, Clock } from "lucide-react";
 import type { Task } from "../types";
 import { useTasks, useSetTasks } from "../stores/useAppStore";
 
-export default function Tasks() {
+export default function TasksScreen() {
   // Get state from Zustand store
   const tasks = useTasks();
   const setTasks = useSetTasks();
