@@ -31,6 +31,8 @@ import {
   Monitor,
   FileAudio,
   StopCircle,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import {
   useVisualizerMode as useVisualizerDisplayMode,
@@ -143,6 +145,7 @@ export default function Visualizer({
     "zen_visualizer_show_fps",
     false
   );
+  const [audioConfigExpanded, setAudioConfigExpanded] = useState(false);
 
   const performanceModeRef = useRef(performanceMode);
   useEffect(() => {
@@ -802,200 +805,225 @@ export default function Visualizer({
       onMouseDown={(e) => e.stopPropagation()}
     >
       <div className="space-y-3">
-        {/* FFT Size - must be power of 2 */}
-        <div>
-          <label className="flex justify-between text-xs text-white/70 mb-1">
-            <span>FFT Size</span>
-          </label>
-          <select
-            value={config.fftSize}
-            onChange={(e) =>
-              handleConfigChange("fftSize", parseInt(e.target.value))
-            }
-            className="w-full px-2 py-1 text-xs bg-white/10 text-white/90 rounded-md border border-white/20 cursor-pointer focus:outline-none focus:border-purple-500"
+        {/* Performance Mode Toggle */}
+        <button
+          onClick={() => setPerformanceMode(!performanceMode)}
+          className={`w-full px-3 py-2 text-xs font-medium rounded-md transition-colors cursor-pointer flex items-center justify-center gap-2 ${
+            performanceMode
+              ? "text-green-400 bg-green-500/20 hover:bg-green-500/30"
+              : "text-white/80 bg-white/10 hover:bg-white/20"
+          }`}
+          title="Performance mode reduces visual effects for better framerate on low-end devices"
+        >
+          <Zap size={14} />
+          Performance Mode {performanceMode ? "ON" : "OFF"}
+        </button>
+
+        {/* Show FPS Toggle */}
+        <button
+          onClick={() => setShowFps(!showFps)}
+          className={`w-full px-3 py-1.5 text-xs font-medium rounded-md transition-colors cursor-pointer flex items-center justify-center gap-2 ${
+            showFps
+              ? "text-cyan-400 bg-cyan-500/20 hover:bg-cyan-500/30"
+              : "text-white/80 bg-white/10 hover:bg-white/20"
+          }`}
+          title="Show FPS counter on the visualizer"
+        >
+          Show FPS {showFps ? "ON" : "OFF"}
+        </button>
+
+        {/* Audio Config Collapsible Section */}
+        <div className="border-t border-white/10 pt-2">
+          <button
+            onClick={() => setAudioConfigExpanded(!audioConfigExpanded)}
+            className="w-full px-3 py-2 text-xs font-medium text-white/80 bg-white/10 hover:bg-white/20 rounded-md transition-colors cursor-pointer flex items-center justify-between"
           >
-            {[32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768].map(
-              (val) => (
-                <option key={val} value={val} className="bg-gray-900">
-                  {val}
-                </option>
-              )
-            )}
-          </select>
-        </div>
-
-        {/* Smoothing Time */}
-        <div>
-          <label className="flex justify-between text-xs text-white/70 mb-1">
-            <span>Smoothing</span>
-            <span className="text-purple-400">
-              {config.smoothingTimeConstant.toFixed(2)}
+            <span className="flex items-center gap-2">
+              <Settings size={14} />
+              Audio Config
             </span>
-          </label>
-          <input
-            type="range"
-            min="0"
-            max="0.99"
-            step="0.01"
-            value={config.smoothingTimeConstant}
-            onChange={(e) =>
-              handleConfigChange(
-                "smoothingTimeConstant",
-                parseFloat(e.target.value)
-              )
-            }
-            className="w-full h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer accent-purple-500"
-          />
-        </div>
+            {audioConfigExpanded ? (
+              <ChevronUp size={14} />
+            ) : (
+              <ChevronDown size={14} />
+            )}
+          </button>
 
-        {/* Min Decibels */}
-        <div>
-          <label className="flex justify-between text-xs text-white/70 mb-1">
-            <span>Min dB</span>
-            <span className="text-purple-400">{config.minDecibels}</span>
-          </label>
-          <input
-            type="range"
-            min="-100"
-            max="-30"
-            step="1"
-            value={config.minDecibels}
-            onChange={(e) =>
-              handleConfigChange("minDecibels", parseInt(e.target.value))
-            }
-            className="w-full h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer accent-purple-500"
-          />
-        </div>
-
-        {/* Max Decibels */}
-        <div>
-          <label className="flex justify-between text-xs text-white/70 mb-1">
-            <span>Max dB</span>
-            <span className="text-purple-400">{config.maxDecibels}</span>
-          </label>
-          <input
-            type="range"
-            min="-50"
-            max="0"
-            step="1"
-            value={config.maxDecibels}
-            onChange={(e) =>
-              handleConfigChange("maxDecibels", parseInt(e.target.value))
-            }
-            className="w-full h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer accent-purple-500"
-          />
-        </div>
-
-        {/* Freq Start Index */}
-        <div>
-          <label className="flex justify-between text-xs text-white/70 mb-1">
-            <span>Freq Start</span>
-            <span className="text-purple-400">{config.freqStartIndex}</span>
-          </label>
-          <input
-            type="range"
-            min="0"
-            max="1024"
-            step="1"
-            value={config.freqStartIndex}
-            onChange={(e) =>
-              handleConfigChange("freqStartIndex", parseInt(e.target.value))
-            }
-            className="w-full h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer accent-purple-500"
-          />
-        </div>
-
-        {/* Freq Length */}
-        <div>
-          <label className="flex justify-between text-xs text-white/70 mb-1">
-            <span>Freq Count</span>
-            <span className="text-purple-400">{config.freqLength}</span>
-          </label>
-          <input
-            type="range"
-            min="5"
-            max="1024"
-            step="1"
-            value={config.freqLength}
-            onChange={(e) =>
-              handleConfigChange("freqLength", parseInt(e.target.value))
-            }
-            className="w-full h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer accent-purple-500"
-          />
-        </div>
-
-        {/* Logo Upload for Trap Nation */}
-        <div className="pt-2 border-t border-white/10">
-          <label className="flex justify-between text-xs text-white/70 mb-2">
-            <span>Center Logo (Trap Nation)</span>
-          </label>
-          {logoDataUrl ? (
-            <div className="flex items-center gap-2">
-              <img
-                src={logoDataUrl}
-                alt="Logo preview"
-                className="w-12 h-12 object-contain rounded bg-white/10"
-              />
+          {audioConfigExpanded && (
+            <div className="mt-2 space-y-3 p-2 bg-white/5 rounded-md">
+              {/* Reset Button */}
               <button
-                onClick={handleLogoRemove}
-                className="flex-1 px-3 py-1.5 text-xs font-medium text-red-400 bg-red-500/10 hover:bg-red-500/20 rounded-md transition-colors cursor-pointer flex items-center justify-center gap-2"
+                onClick={handleResetConfig}
+                className="w-full px-3 py-1.5 text-xs font-medium text-white/80 bg-white/10 hover:bg-white/20 rounded-md transition-colors cursor-pointer flex items-center justify-center gap-2"
+                title="Reset to defaults"
               >
-                <Trash2 size={14} />
-                Remove
+                <RotateCcw size={14} />
+                Reset to Defaults
               </button>
+
+              {/* FFT Size - must be power of 2 */}
+              <div>
+                <label className="flex justify-between text-xs text-white/70 mb-1">
+                  <span>FFT Size</span>
+                </label>
+                <select
+                  value={config.fftSize}
+                  onChange={(e) =>
+                    handleConfigChange("fftSize", parseInt(e.target.value))
+                  }
+                  className="w-full px-2 py-1 text-xs bg-white/10 text-white/90 rounded-md border border-white/20 cursor-pointer focus:outline-none focus:border-purple-500"
+                >
+                  {[
+                    32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768,
+                  ].map((val) => (
+                    <option key={val} value={val} className="bg-gray-900">
+                      {val}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Smoothing Time */}
+              <div>
+                <label className="flex justify-between text-xs text-white/70 mb-1">
+                  <span>Smoothing</span>
+                  <span className="text-purple-400">
+                    {config.smoothingTimeConstant.toFixed(2)}
+                  </span>
+                </label>
+                <input
+                  type="range"
+                  min="0"
+                  max="0.99"
+                  step="0.01"
+                  value={config.smoothingTimeConstant}
+                  onChange={(e) =>
+                    handleConfigChange(
+                      "smoothingTimeConstant",
+                      parseFloat(e.target.value)
+                    )
+                  }
+                  className="w-full h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer accent-purple-500"
+                />
+              </div>
+
+              {/* Min Decibels */}
+              <div>
+                <label className="flex justify-between text-xs text-white/70 mb-1">
+                  <span>Min dB</span>
+                  <span className="text-purple-400">{config.minDecibels}</span>
+                </label>
+                <input
+                  type="range"
+                  min="-100"
+                  max="-30"
+                  step="1"
+                  value={config.minDecibels}
+                  onChange={(e) =>
+                    handleConfigChange("minDecibels", parseInt(e.target.value))
+                  }
+                  className="w-full h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer accent-purple-500"
+                />
+              </div>
+
+              {/* Max Decibels */}
+              <div>
+                <label className="flex justify-between text-xs text-white/70 mb-1">
+                  <span>Max dB</span>
+                  <span className="text-purple-400">{config.maxDecibels}</span>
+                </label>
+                <input
+                  type="range"
+                  min="-50"
+                  max="0"
+                  step="1"
+                  value={config.maxDecibels}
+                  onChange={(e) =>
+                    handleConfigChange("maxDecibels", parseInt(e.target.value))
+                  }
+                  className="w-full h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer accent-purple-500"
+                />
+              </div>
+
+              {/* Freq Start Index */}
+              <div>
+                <label className="flex justify-between text-xs text-white/70 mb-1">
+                  <span>Freq Start</span>
+                  <span className="text-purple-400">
+                    {config.freqStartIndex}
+                  </span>
+                </label>
+                <input
+                  type="range"
+                  min="0"
+                  max="1024"
+                  step="1"
+                  value={config.freqStartIndex}
+                  onChange={(e) =>
+                    handleConfigChange(
+                      "freqStartIndex",
+                      parseInt(e.target.value)
+                    )
+                  }
+                  className="w-full h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer accent-purple-500"
+                />
+              </div>
+
+              {/* Freq Length */}
+              <div>
+                <label className="flex justify-between text-xs text-white/70 mb-1">
+                  <span>Freq Count</span>
+                  <span className="text-purple-400">{config.freqLength}</span>
+                </label>
+                <input
+                  type="range"
+                  min="5"
+                  max="1024"
+                  step="1"
+                  value={config.freqLength}
+                  onChange={(e) =>
+                    handleConfigChange("freqLength", parseInt(e.target.value))
+                  }
+                  className="w-full h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer accent-purple-500"
+                />
+              </div>
+
+              {/* Logo Upload for Trap Nation */}
+              <div className="pt-2 border-t border-white/10">
+                <label className="flex justify-between text-xs text-white/70 mb-2">
+                  <span>Center Logo (Trap Nation)</span>
+                </label>
+                {logoDataUrl ? (
+                  <div className="flex items-center gap-2">
+                    <img
+                      src={logoDataUrl}
+                      alt="Logo preview"
+                      className="w-12 h-12 object-contain rounded bg-white/10"
+                    />
+                    <button
+                      onClick={handleLogoRemove}
+                      className="flex-1 px-3 py-1.5 text-xs font-medium text-red-400 bg-red-500/10 hover:bg-red-500/20 rounded-md transition-colors cursor-pointer flex items-center justify-center gap-2"
+                    >
+                      <Trash2 size={14} />
+                      Remove
+                    </button>
+                  </div>
+                ) : (
+                  <label className="w-full px-3 py-2 text-xs font-medium text-white/80 bg-white/10 hover:bg-white/20 rounded-md transition-colors cursor-pointer flex items-center justify-center gap-2">
+                    <Upload size={14} />
+                    Upload Image
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleLogoUpload}
+                      className="hidden"
+                    />
+                  </label>
+                )}
+              </div>
             </div>
-          ) : (
-            <label className="w-full px-3 py-2 text-xs font-medium text-white/80 bg-white/10 hover:bg-white/20 rounded-md transition-colors cursor-pointer flex items-center justify-center gap-2">
-              <Upload size={14} />
-              Upload Image
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleLogoUpload}
-                className="hidden"
-              />
-            </label>
           )}
         </div>
-
-        {/* Performance Mode Toggle */}
-        <div className="pt-2 border-t border-white/10">
-          <button
-            onClick={() => setPerformanceMode(!performanceMode)}
-            className={`w-full px-3 py-2 text-xs font-medium rounded-md transition-colors cursor-pointer flex items-center justify-center gap-2 ${
-              performanceMode
-                ? "text-green-400 bg-green-500/20 hover:bg-green-500/30"
-                : "text-white/80 bg-white/10 hover:bg-white/20"
-            }`}
-            title="Performance mode reduces visual effects for better framerate on low-end devices"
-          >
-            <Zap size={14} />
-            Performance Mode {performanceMode ? "ON" : "OFF"}
-          </button>
-
-          {/* Show FPS Toggle */}
-          <button
-            onClick={() => setShowFps(!showFps)}
-            className={`w-full mt-2 px-3 py-1.5 text-xs font-medium rounded-md transition-colors cursor-pointer flex items-center justify-center gap-2 ${
-              showFps
-                ? "text-cyan-400 bg-cyan-500/20 hover:bg-cyan-500/30"
-                : "text-white/80 bg-white/10 hover:bg-white/20"
-            }`}
-            title="Show FPS counter on the visualizer"
-          >
-            Show FPS {showFps ? "ON" : "OFF"}
-          </button>
-        </div>
-
-        {/* Reset Button */}
-        <button
-          onClick={handleResetConfig}
-          className="w-full mt-2 px-3 py-1.5 text-xs font-medium text-white/80 bg-white/10 hover:bg-white/20 rounded-md transition-colors cursor-pointer flex items-center justify-center gap-2"
-          title="Reset to defaults"
-        >
-          <RotateCcw size={14} />
-          Reset to Defaults
-        </button>
       </div>
     </div>
   );
@@ -1155,9 +1183,27 @@ export default function Visualizer({
           }}
         >
           <span className="text-xs font-medium text-white/60 uppercase tracking-wider">
-            Visualizer
+            {/* Visualizer */}
           </span>
+
           <div className="flex items-center gap-1">
+            {/* Mode Panel Button */}
+            <button
+              onClick={() => {
+                setActivePanel((prev) => (prev === "mode" ? "none" : "mode"));
+              }}
+              onMouseDown={(e) => e.stopPropagation()}
+              className={`px-2 py-1 text-xs font-medium rounded-md transition-colors cursor-pointer flex items-center gap-1.5 ${
+                activePanel === "mode"
+                  ? "text-purple-400 bg-purple-500/20 hover:bg-purple-500/30"
+                  : "text-white/80 bg-white/10 hover:bg-white/20"
+              }`}
+              title="Select visualizer mode"
+            >
+              <Sparkle size={12} />
+              <span className="max-w-[80px] truncate">{mode}</span>
+            </button>
+
             {/* Audio Source Button */}
             <button
               onClick={handleAudioPanelToggle}
@@ -1179,6 +1225,19 @@ export default function Visualizer({
               {audioSourceType === "file" && <FileAudio size={14} />}
               {audioSourceType === "none" && <Mic size={14} />}
             </button>
+            {/* Settings Button */}
+            <button
+              onClick={handleSettingsClick}
+              onMouseDown={(e) => e.stopPropagation()}
+              className={`p-1.5 text-xs font-medium rounded-md transition-colors cursor-pointer ${
+                activePanel === "settings"
+                  ? "text-blue-400 bg-blue-500/20 hover:bg-blue-500/30"
+                  : "text-white/80 bg-white/10 hover:bg-white/20"
+              }`}
+              title="Audio analyzer settings"
+            >
+              <Settings size={14} />
+            </button>
             {/* PiP Button - hidden on mobile as Document PiP is not supported */}
             {!isInPiP && !isMobile && (
               <button
@@ -1193,35 +1252,6 @@ export default function Visualizer({
                 <PictureInPicture2 size={14} />
               </button>
             )}
-            {/* Settings Button */}
-            <button
-              onClick={handleSettingsClick}
-              onMouseDown={(e) => e.stopPropagation()}
-              className={`p-1.5 text-xs font-medium rounded-md transition-colors cursor-pointer ${
-                activePanel === "settings"
-                  ? "text-blue-400 bg-blue-500/20 hover:bg-blue-500/30"
-                  : "text-white/80 bg-white/10 hover:bg-white/20"
-              }`}
-              title="Audio analyzer settings"
-            >
-              <Settings size={14} />
-            </button>
-            {/* Mode Panel Button */}
-            <button
-              onClick={() => {
-                setActivePanel((prev) => (prev === "mode" ? "none" : "mode"));
-              }}
-              onMouseDown={(e) => e.stopPropagation()}
-              className={`px-2 py-1 text-xs font-medium rounded-md transition-colors cursor-pointer flex items-center gap-1.5 ${
-                activePanel === "mode"
-                  ? "text-purple-400 bg-purple-500/20 hover:bg-purple-500/30"
-                  : "text-white/80 bg-white/10 hover:bg-white/20"
-              }`}
-              title="Select visualizer mode"
-            >
-              <Sparkle size={12} />
-              <span className="max-w-[80px] truncate">{mode}</span>
-            </button>
             {/* Display Mode Toggle Button */}
             {setVisualizerMode && !forceCenter && (
               <button

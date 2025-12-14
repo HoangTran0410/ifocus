@@ -4,7 +4,6 @@ import { VisualizeFnProps } from "../types";
 const terrain3DState = {
   history: [] as number[][],
   maxHistory: 25,
-  offset: 0,
 };
 
 export default function renderWaveform3D({
@@ -24,16 +23,18 @@ export default function renderWaveform3D({
 
   const avgIntensity = data.reduce((a, b) => a + b, 0) / data.length;
 
-  // NO background fill - keep transparent
-
-  // 3D perspective parameters
+  // 3D perspective parameters - pre-calculate constants
   const horizonY = canvas.height * 0.35;
   const groundY = canvas.height * 0.95;
-  const vanishX = canvas.width / 2;
-  const fov = 0.7; // Field of view factor
+  const vanishX = canvas.width * 0.5;
+  const groundToHorizon = groundY - horizonY;
+  const fov = 0.7;
 
   const rows = terrain3DState.history.length;
   const cols = performanceMode ? 24 : 40;
+  const colsMinusOne = cols - 1;
+  const heightScaleBase = canvas.height * 0.25;
+  const dataLengthMinusOne = data.length - 1;
 
   // Draw terrain from back to front (far to near)
   for (let z = 0; z < rows - 1; z++) {
@@ -48,31 +49,37 @@ export default function renderWaveform3D({
     // Y position with perspective (exponential for better depth)
     const perspZ = Math.pow(zDepth, fov);
     const nextPerspZ = Math.pow(nextZDepth, fov);
-    const y = horizonY + (groundY - horizonY) * perspZ;
-    const nextY = horizonY + (groundY - horizonY) * nextPerspZ;
+    const y = horizonY + groundToHorizon * perspZ;
+    const nextY = horizonY + groundToHorizon * nextPerspZ;
 
     // Width gets wider as it gets closer
     const rowWidth = canvas.width * (0.15 + perspZ * 0.85);
     const nextRowWidth = canvas.width * (0.15 + nextPerspZ * 0.85);
-    const rowStartX = vanishX - rowWidth / 2;
-    const nextRowStartX = vanishX - nextRowWidth / 2;
+    const rowStartX = vanishX - rowWidth * 0.5;
+    const nextRowStartX = vanishX - nextRowWidth * 0.5;
+
+    // Height based on perspective - pre-calculate per row
+    const heightScale = heightScaleBase * (0.3 + perspZ * 0.7);
+    const nextHeightScale = heightScaleBase * (0.3 + nextPerspZ * 0.7);
+
+    // Pre-calculate base alpha for this row
+    const baseAlpha = 0.4 + zDepth * 0.5;
+    const baseLightness = 35 + zDepth * 25;
+    const drawWireframe = !performanceMode || z % 2 === 0;
+    const lineWidth = 0.5 + zDepth;
 
     // Draw quads between rows
-    for (let x = 0; x < cols - 1; x++) {
-      const xRatio = x / (cols - 1);
-      const nextXRatio = (x + 1) / (cols - 1);
+    for (let x = 0; x < colsMinusOne; x++) {
+      const xRatio = x / colsMinusOne;
+      const nextXRatio = (x + 1) / colsMinusOne;
 
       // Sample data points
-      const dataIdx = Math.floor(xRatio * (rowData.length - 1));
-      const nextDataIdx = Math.floor(nextXRatio * (rowData.length - 1));
+      const dataIdx = (xRatio * dataLengthMinusOne) | 0;
+      const nextDataIdx = (nextXRatio * dataLengthMinusOne) | 0;
       const intensity1 = rowData[dataIdx] || 0;
       const intensity2 = rowData[nextDataIdx] || 0;
       const intensity3 = nextRowData[nextDataIdx] || 0;
       const intensity4 = nextRowData[dataIdx] || 0;
-
-      // Height based on audio intensity and perspective
-      const heightScale = canvas.height * 0.25 * (0.3 + perspZ * 0.7);
-      const nextHeightScale = canvas.height * 0.25 * (0.3 + nextPerspZ * 0.7);
 
       // Calculate 4 corners of the quad
       const x1 = rowStartX + xRatio * rowWidth;
@@ -86,11 +93,10 @@ export default function renderWaveform3D({
 
       // Color based on depth and intensity
       const avgQuadIntensity =
-        (intensity1 + intensity2 + intensity3 + intensity4) / 4;
-      const hue = 260 + avgQuadIntensity * 60; // Purple to pink
-      const saturation = 70 + avgQuadIntensity * 30;
-      const lightness = 35 + zDepth * 25 + avgQuadIntensity * 20;
-      const alpha = 0.4 + zDepth * 0.5;
+        (intensity1 + intensity2 + intensity3 + intensity4) * 0.25;
+      const hue = (260 + avgQuadIntensity * 60) | 0;
+      const saturation = (70 + avgQuadIntensity * 30) | 0;
+      const lightness = (baseLightness + avgQuadIntensity * 20) | 0;
 
       // Draw filled quad
       ctx.beginPath();
@@ -100,15 +106,15 @@ export default function renderWaveform3D({
       ctx.lineTo(x4, y4);
       ctx.closePath();
 
-      ctx.fillStyle = `hsla(${hue}, ${saturation}%, ${lightness}%, ${alpha})`;
+      ctx.fillStyle = `hsla(${hue},${saturation}%,${lightness}%,${baseAlpha})`;
       ctx.fill();
 
       // Draw wireframe edges for 3D effect
-      if (!performanceMode || z % 2 === 0) {
-        ctx.strokeStyle = `hsla(${hue + 30}, 90%, ${lightness + 20}%, ${
-          alpha * 0.8
+      if (drawWireframe) {
+        ctx.strokeStyle = `hsla(${hue + 30},90%,${lightness + 20}%,${
+          baseAlpha * 0.8
         })`;
-        ctx.lineWidth = 0.5 + zDepth;
+        ctx.lineWidth = lineWidth;
         ctx.stroke();
       }
     }
@@ -119,17 +125,16 @@ export default function renderWaveform3D({
     const frontData = terrain3DState.history[terrain3DState.history.length - 1];
     const frontY = groundY;
     const frontWidth = canvas.width * 0.97;
-    const frontStartX = vanishX - frontWidth / 2;
+    const frontStartX = vanishX - frontWidth * 0.5;
+    const frontDataLen = frontData.length - 1;
 
     ctx.beginPath();
-    ctx.moveTo(frontStartX, frontY);
-
     for (let x = 0; x < cols; x++) {
-      const xRatio = x / (cols - 1);
-      const dataIdx = Math.floor(xRatio * (frontData.length - 1));
+      const xRatio = x / colsMinusOne;
+      const dataIdx = (xRatio * frontDataLen) | 0;
       const intensity = frontData[dataIdx] || 0;
       const px = frontStartX + xRatio * frontWidth;
-      const py = frontY - intensity * canvas.height * 0.25;
+      const py = frontY - intensity * heightScaleBase;
 
       if (x === 0) ctx.moveTo(px, py);
       else ctx.lineTo(px, py);

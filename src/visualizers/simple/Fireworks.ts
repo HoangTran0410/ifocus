@@ -24,9 +24,19 @@ interface Rocket {
   isBeatRocket?: boolean;
 }
 
+interface Shockwave {
+  x: number;
+  y: number;
+  radius: number;
+  life: number;
+  color: string;
+}
+
 const fireworksState = {
   particles: [] as Particle[],
   rockets: [] as Rocket[],
+  // launchParticles: [] as LaunchParticle[],
+  shockwaves: [] as Shockwave[],
   lastBeatTime: 0,
   lastAmbientTime: 0,
   beatFlash: 0,
@@ -56,8 +66,9 @@ export default function renderFireworks({
   data,
   performanceMode = false,
   bass = 0,
+  mid = 0,
 }: VisualizeFnProps) {
-  const avgIntensity = data.reduce((a, b) => a + b, 0) / data.length;
+  // const avgIntensity = data.reduce((a, b) => a + b, 0) / data.length;
   const maxParticles = performanceMode ? 150 : 400;
   const now = Date.now();
 
@@ -84,35 +95,32 @@ export default function renderFireworks({
   }
 
   // Launch rockets when bass (kick drum) is detected
-  if (bass > 0.25 && now - fireworksState.lastBeatTime > 200) {
+  if (bass > 0.4 && now - fireworksState.lastBeatTime > 200) {
     fireworksState.lastBeatTime = now;
     fireworksState.beatFlash = bass;
 
-    const rocketCount = Math.ceil(2 + bass * 4);
-    for (let i = 0; i < rocketCount; i++) {
-      fireworksState.rockets.push({
-        x: canvas.width * (0.1 + Math.random() * 0.8),
-        y: canvas.height,
-        vy: -(ROCKET_SPEED + bass * 5 + Math.random() * 3),
-        targetY: canvas.height * (0.15 + Math.random() * 0.35),
-        color: randomColor(),
-        trail: [],
-        isBeatRocket: true,
-      });
-    }
-  }
+    // const rocketCount = Math.ceil(1 + bass * 2);
 
-  // Continuous ambient rockets
-  if (avgIntensity > 0.2 && now - fireworksState.lastAmbientTime > 400) {
-    fireworksState.lastAmbientTime = now;
+    const launchX = canvas.width * (0.1 + Math.random() * 0.8);
+    const launchColor = randomColor();
+
     fireworksState.rockets.push({
-      x: canvas.width * (0.15 + Math.random() * 0.7),
+      x: launchX,
       y: canvas.height,
-      vy: -(ROCKET_SPEED * 0.7 + Math.random() * 2),
-      targetY: canvas.height * (0.25 + Math.random() * 0.35),
-      color: randomColor(),
+      vy: -(ROCKET_SPEED + bass * 5 + Math.random() * 3),
+      targetY: canvas.height * (0.15 + Math.random() * 0.35),
+      color: launchColor,
       trail: [],
-      isBeatRocket: false,
+      isBeatRocket: true,
+    });
+
+    // Create expanding shockwave at launch point
+    fireworksState.shockwaves.push({
+      x: launchX,
+      y: canvas.height,
+      radius: 5,
+      life: bass * 2.5,
+      color: launchColor,
     });
   }
 
@@ -185,11 +193,17 @@ export default function renderFireworks({
       const particleCount = rocket.isBeatRocket ? baseCount * 1.5 : baseCount;
       const explosionSpeed = rocket.isBeatRocket ? 1.3 : 1;
 
-      for (
-        let j = 0;
-        j < particleCount && fireworksState.particles.length < maxParticles;
-        j++
+      // Make room for particles if at limit (remove oldest particles)
+      const neededSpace = Math.min(particleCount, maxParticles);
+      while (
+        fireworksState.particles.length + neededSpace > maxParticles &&
+        fireworksState.particles.length > 0
       ) {
+        fireworksState.particles.shift();
+      }
+
+      for (let j = 0; j < particleCount; j++) {
+        if (fireworksState.particles.length >= maxParticles) break;
         const angle = (Math.PI * 2 * j) / particleCount + Math.random() * 0.3;
         const speed = (PARTICLE_SPEED + Math.random() * 3) * explosionSpeed;
         fireworksState.particles.push({
@@ -279,6 +293,29 @@ export default function renderFireworks({
     }
     ctx.fill();
     ctx.shadowBlur = 0;
+    ctx.globalAlpha = 1;
+  }
+
+  // Update and draw shockwaves (expanding rings)
+  for (let i = fireworksState.shockwaves.length - 1; i >= 0; i--) {
+    const sw = fireworksState.shockwaves[i];
+
+    // Expand radius
+    sw.radius += 4;
+    sw.life -= 0.04;
+
+    if (sw.life <= 0) {
+      fireworksState.shockwaves.splice(i, 1);
+      continue;
+    }
+
+    // Draw expanding ring
+    ctx.beginPath();
+    ctx.arc(sw.x, sw.y, sw.radius, Math.PI, 0); // Only draw top half (semicircle)
+    ctx.strokeStyle = sw.color;
+    ctx.lineWidth = 3 + sw.life * 4;
+    ctx.globalAlpha = sw.life * 0.3;
+    ctx.stroke();
     ctx.globalAlpha = 1;
   }
 }

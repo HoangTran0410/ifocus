@@ -107,8 +107,6 @@ export async function render(props: VisualizeFnProps) {
         ? createShaderRenderFn(module.default)
         : module.default;
 
-    console.log(renderFnCache);
-
     renderFnCache.set(mode, cachedRenderFn);
   }
 
