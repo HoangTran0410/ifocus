@@ -50,6 +50,24 @@ export default function AmbienceTab() {
   );
   const [isPaused, setIsPaused] = useState(false);
 
+  // Refs to track latest values (for reading in effects without adding dependencies)
+  const isPausedRef = useRef(isPaused);
+  const globalVolumeRef = useRef(globalVolume);
+  const soundStatesRef = useRef(soundStates);
+
+  // Keep refs in sync with state
+  useEffect(() => {
+    isPausedRef.current = isPaused;
+  }, [isPaused]);
+
+  useEffect(() => {
+    globalVolumeRef.current = globalVolume;
+  }, [globalVolume]);
+
+  useEffect(() => {
+    soundStatesRef.current = soundStates;
+  }, [soundStates]);
+
   // UI state
   const [searchQuery, setSearchQuery] = useState("");
   const [collapsedCategories, setCollapsedCategories] = useLocalStorage<
@@ -65,13 +83,44 @@ export default function AmbienceTab() {
   // Audio refs
   const audioRefs = useRef<{ [key: string]: HTMLAudioElement }>({});
 
-  // Audio sync effect
+  // Effect 1: Handle pause/resume all audio
   useEffect(() => {
+    Object.entries(audioRefs.current).forEach(([id, audio]) => {
+      if (isPaused) {
+        audio.pause();
+      } else {
+        // Only play if the sound is supposed to be playing
+        const soundState = soundStatesRef.current.find((s) => s.id === id);
+        if (soundState?.isPlaying) {
+          audio.play().catch(() => {});
+        }
+      }
+    });
+  }, [isPaused]);
+
+  // Effect 2: Update volume for all playing audio
+  useEffect(() => {
+    Object.entries(audioRefs.current).forEach(([id, audio]) => {
+      const soundState = soundStatesRef.current.find((s) => s.id === id);
+      if (soundState) {
+        audio.volume = soundState.volume * globalVolume;
+      }
+    });
+  }, [globalVolume]);
+
+  // Effect 3: Handle loading and playing individual sounds
+  useEffect(() => {
+    // Skip if paused (read from ref for latest value)
+    if (isPausedRef.current) return;
+
+    let cancelled = false;
+
     DEFAULT_SOUNDS.forEach(async (sound) => {
       const soundState = soundStates.find((s) => s.id === sound.id);
       if (!soundState) return;
 
       if (soundState.isPlaying) {
+        // Load audio if not already loaded
         if (!audioRefs.current[sound.id]) {
           setLoadingSounds((prev) => new Set([...prev, sound.id]));
 
@@ -89,7 +138,11 @@ export default function AmbienceTab() {
                 return;
               }
             }
+
+            if (cancelled) return;
+
             const audio = new Audio(url);
+            audio.autoplay = false;
             audio.loop = true;
             audio.crossOrigin = "anonymous";
 
@@ -101,6 +154,8 @@ export default function AmbienceTab() {
               audio.load();
             });
 
+            if (cancelled) return;
+
             audioRefs.current[sound.id] = audio;
           } finally {
             setLoadingSounds((prev) => {
@@ -111,27 +166,38 @@ export default function AmbienceTab() {
           }
         }
 
+        // Check if paused before playing (read from ref for latest value)
+        if (cancelled || isPausedRef.current) return;
+
         const audio = audioRefs.current[sound.id];
         if (!audio) return;
 
-        audio.volume = soundState.volume * globalVolume;
-
-        if (audio.paused && !isPaused) {
+        // Set volume and play (read globalVolume from ref for latest value)
+        audio.volume = soundState.volume * globalVolumeRef.current;
+        if (audio.paused) {
           audio
             .play()
             .catch((error) => console.log("Audio play prevented:", error));
         }
       } else if (audioRefs.current[sound.id]) {
+        // Stop this sound
         audioRefs.current[sound.id].pause();
       }
     });
 
     return () => {
-      Object.values(audioRefs.current).forEach((audio: HTMLAudioElement) => {
+      cancelled = true;
+    };
+  }, [soundStates]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      Object.values(audioRefs.current).forEach((audio) => {
         audio.pause();
       });
     };
-  }, [soundStates, globalVolume, isPaused]);
+  }, []);
 
   const toggleSound = (id: string) => {
     const newStates = soundStates.map((s) =>
