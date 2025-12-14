@@ -200,9 +200,10 @@ const getEmbedInfo = (url: string) => {
     /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/
   );
   if (ytMatch && ytMatch[2].length === 11) {
+    const videoId = ytMatch[2];
     return {
       type: "youtube",
-      src: `https://www.youtube.com/embed/${ytMatch[2]}?enablejsapi=1&origin=${window.location.origin}`,
+      src: `https://www.youtube.com/embed/${videoId}?enablejsapi=1&origin=${window.location.origin}&loop=1&playlist=${videoId}`,
     };
   }
 
