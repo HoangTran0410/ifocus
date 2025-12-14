@@ -43,7 +43,7 @@ export interface SoundTrack {
   name: string;
   emoji: string;
   url: string | (() => Promise<any>);
-  category?: string;
+  category?: string | string[];
 }
 
 export interface SoundState {

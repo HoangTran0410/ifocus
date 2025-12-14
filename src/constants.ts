@@ -604,24 +604,131 @@ export const EFFECTS: { id: EffectType; name: string; icon: string }[] = [
 ];
 
 export const DEFAULT_SOUNDS: SoundTrack[] = [
+  // ==================== Nature ====================
   {
     id: "rain",
     emoji: "🌧️",
-    name: "rain",
+    name: "Rain",
     url: () => import("./assets/sounds/rain.mp3"),
+    category: "Nature",
+  },
+  {
+    id: "heavy-rain",
+    emoji: "🌧️",
+    name: "Heavy Rain",
+    url: () => import("./assets/sounds/heavy-rain.mp3"),
+    category: "Nature",
+  },
+  {
+    id: "storm",
+    emoji: "⛈️",
+    name: "Storm",
+    url: () => import("./assets/sounds/storm.mp3"),
+    category: "Nature",
+  },
+  {
+    id: "wind",
+    emoji: "🌬️",
+    name: "Wind",
+    url: () => import("./assets/sounds/winds.mp3"),
+    category: "Nature",
+  },
+  {
+    id: "ocean-wave",
+    emoji: "🌊",
+    name: "Ocean Wave",
+    url: () => import("./assets/sounds/ocean-waves.mp3"),
+    category: "Nature",
+  },
+  {
+    id: "river-flow",
+    emoji: "🌊",
+    name: "River",
+    url: () => import("./assets/sounds/river-flow.mp3"),
+    category: "Nature",
+  },
+  {
+    id: "river-soft",
+    emoji: "💧",
+    name: "River Soft",
+    url: () => import("./assets/sounds/river-soft.mp3"),
     category: "Nature",
   },
   {
     id: "bird",
     emoji: "🐦",
-    name: "birds",
+    name: "Birds",
     url: () => import("./assets/sounds/bird.mp3"),
     category: "Nature",
   },
   {
+    id: "morning-bird",
+    emoji: "☀️",
+    name: "Morning Birds",
+    url: () => import("./assets/sounds/morning-bird.mp3"),
+    category: "Nature",
+  },
+  {
+    id: "cricket",
+    emoji: "🦗",
+    name: "Night Crickets",
+    url: () => import("./assets/sounds/cricket.mp3"),
+    category: "Nature",
+  },
+  {
+    id: "frog",
+    emoji: "🐸",
+    name: "Frogs Pond",
+    url: () => import("./assets/sounds/frog.mp3"),
+    category: "Nature",
+  },
+  {
+    id: "countryside",
+    emoji: "🌾",
+    name: "Countryside",
+    url: () => import("./assets/sounds/countryside.mp3"),
+    category: "Nature",
+  },
+  {
+    id: "night-jungle",
+    emoji: "🌴",
+    name: "Night Jungle",
+    url: () => import("./assets/sounds/night-jungle.mp3"),
+    category: "Nature",
+  },
+  {
+    id: "owl",
+    emoji: "🦉",
+    name: "Owl Hooting",
+    url: () => import("./assets/sounds/owl.mp3"),
+    category: "Nature",
+  },
+  {
+    id: "owl2",
+    emoji: "🦉",
+    name: "Owl Calls",
+    url: () => import("./assets/sounds/owl-2.mp3"),
+    category: "Nature",
+  },
+  {
+    id: "whale",
+    emoji: "🐋",
+    name: "Whale",
+    url: () => import("./assets/sounds/whale.mp3"),
+    category: "Nature",
+  },
+  {
+    id: "underwater",
+    emoji: "🌀",
+    name: "Underwater",
+    url: () => import("./assets/sounds/underwater.mp3"),
+    category: "Nature",
+  },
+
+  {
     id: "bubble",
     emoji: "🫧",
-    name: "bubble",
+    name: "Bubble",
     url: () => import("./assets/sounds/bubble.mp3"),
     category: "Nature",
   },
@@ -630,13 +737,6 @@ export const DEFAULT_SOUNDS: SoundTrack[] = [
     emoji: "🐓",
     name: "chicken",
     url: () => import("./assets/sounds/chicken.mp3"),
-    category: "Nature",
-  },
-  {
-    id: "fire",
-    emoji: "🔥",
-    name: "fire",
-    url: () => import("./assets/sounds/fire.mp3"),
     category: "Nature",
   },
   {
@@ -674,6 +774,31 @@ export const DEFAULT_SOUNDS: SoundTrack[] = [
     url: () => import("./assets/sounds/ocean.mp3"),
     category: "Nature",
   },
+
+  // ==================== Cozy ====================
+  {
+    id: "fire",
+    emoji: "🔥",
+    name: "fire",
+    url: () => import("./assets/sounds/fire.mp3"),
+    category: "Cozy",
+  },
+  {
+    id: "campfire",
+    emoji: "🏕️",
+    name: "Campfire",
+    url: () => import("./assets/sounds/campfire.mp3"),
+    category: "Cozy",
+  },
+  {
+    id: "wind-chime",
+    emoji: "🎐",
+    name: "Wind Chimes",
+    url: () => import("./assets/sounds/wind-chime.mp3"),
+    category: "Cozy",
+  },
+
+  // ==================== Noise ====================
   {
     id: "brown-noise",
     emoji: "🤎",
@@ -695,6 +820,8 @@ export const DEFAULT_SOUNDS: SoundTrack[] = [
     url: () => import("./assets/sounds/white-noise.mp3"),
     category: "Noise",
   },
+
+  // ==================== Office ====================
   {
     id: "chalk",
     emoji: "✏️",
@@ -712,8 +839,29 @@ export const DEFAULT_SOUNDS: SoundTrack[] = [
   {
     id: "keyboard",
     emoji: "⌨️",
-    name: "keyboard",
+    name: "Keyboard",
     url: () => import("./assets/sounds/typing.mp3"),
+    category: "Office",
+  },
+  {
+    id: "keyboard-soft",
+    emoji: "⌨️",
+    name: "Soft Keyboard",
+    url: () => import("./assets/sounds/keyboard-soft.mp3"),
+    category: "Office",
+  },
+  {
+    id: "macbook-typing",
+    emoji: "💻",
+    name: "Macbook Typing",
+    url: () => import("./assets/sounds/macbook-typing.mp3"),
+    category: "Office",
+  },
+  {
+    id: "book-page-turn",
+    emoji: "📖",
+    name: "Page Turns",
+    url: () => import("./assets/sounds/book-page-turn.mp3"),
     category: "Office",
   },
   {
@@ -723,6 +871,36 @@ export const DEFAULT_SOUNDS: SoundTrack[] = [
     url: () => import("./assets/sounds/writing.mp3"),
     category: "Office",
   },
+  {
+    id: "pencil-drawing",
+    emoji: "✏️",
+    name: "Pencil Drawing",
+    url: () => import("./assets/sounds/pencil-drawing.mp3"),
+    category: "Office",
+  },
+  {
+    id: "highlighter",
+    emoji: "🖍️",
+    name: "Highlighter Notes",
+    url: () => import("./assets/sounds/highligher-drawing.mp3"),
+    category: "Office",
+  },
+  {
+    id: "old-clock",
+    emoji: "🕰️",
+    name: "clock",
+    url: () => import("./assets/sounds/old-clock.mp3"),
+    category: "Office",
+  },
+  {
+    id: "stopwatch",
+    emoji: "⏱️",
+    name: "Stopwatch",
+    url: () => import("./assets/sounds/stopwatch.mp3"),
+    category: "Office",
+  },
+
+  // ==================== Urban ====================
   {
     id: "airplane",
     emoji: "✈️",
@@ -738,10 +916,31 @@ export const DEFAULT_SOUNDS: SoundTrack[] = [
     category: "Urban",
   },
   {
+    id: "city-traffic",
+    emoji: "🚗",
+    name: "City Traffic",
+    url: () => import("./assets/sounds/city-traffic.mp3"),
+    category: "Urban",
+  },
+  {
     id: "cafe",
     emoji: "☕",
     name: "cafe",
     url: () => import("./assets/sounds/coffee.mp3"),
+    category: "Urban",
+  },
+  {
+    id: "restaurant",
+    emoji: "🍳",
+    name: "Kitchen",
+    url: () => import("./assets/sounds/kitchen.mp3"),
+    category: "Urban",
+  },
+  {
+    id: "kitchen",
+    emoji: "🍽️",
+    name: "Restaurant",
+    url: () => import("./assets/sounds/restaurant.mp3"),
     category: "Urban",
   },
   {
@@ -758,11 +957,27 @@ export const DEFAULT_SOUNDS: SoundTrack[] = [
     url: () => import("./assets/sounds/ceiling-fan.mp3"),
     category: "Urban",
   },
+
+  // ==================== Special ====================
   {
-    id: "old-clock",
-    emoji: "🕰️",
-    name: "clock",
-    url: () => import("./assets/sounds/old-clock.mp3"),
-    category: "Urban",
+    id: "firework",
+    emoji: "🎆",
+    name: "Firework",
+    url: () => import("./assets/sounds/firework.mp3"),
+    category: "Special",
+  },
+  {
+    id: "battlefield",
+    emoji: "⚔️",
+    name: "Battlefield",
+    url: () => import("./assets/sounds/battlefield.mp3"),
+    category: "Special",
+  },
+  {
+    id: "indian-temple",
+    emoji: "🛕",
+    name: "Temple",
+    url: () => import("./assets/sounds/indian-temple.mp3"),
+    category: "Special",
   },
 ];

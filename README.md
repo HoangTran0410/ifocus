@@ -15,24 +15,70 @@ A beautiful, feature-rich **Pomodoro Timer** with stunning **Music Visualizer** 
 - Persistent state across sessions
 
 ### 🎨 Music Visualizer
-17+ stunning audio-reactive visualizations:
-- **Bars** - Classic frequency bars
-- **Wave** - Flowing waveform
-- **Circular** - Radial frequency display
-- **Trap Nation** - Popular music video style
-- **Aurora** - Northern lights effect
-- **Black Hole** - Cosmic vortex
-- **Fireworks** - Explosive particles
-- **Galaxy** - Rotating star systems
-- **Matrix** - Digital rain
-- **Starfield** - 3D space travel
-- **DNA Helix** - Spiraling structure
-- **Rings** - Concentric circles
-- **Particles** - Floating particles
-- **Oscilloscope** - Classic waveform
-- **Spectrum** - Audio spectrum
-- **Radial Lines** - Radiating lines
-- **Waveform 3D** - Three-dimensional waves
+**59 stunning audio-reactive visualizations** organized in two categories:
+
+#### Canvas-based (21 visualizers)
+- 📊 **Bars** - Classic frequency bars
+- 🌊 **Wave** - Flowing waveform
+- 🟣 **Circular** - Radial frequency display
+- 🔊 **TrapNation** - Popular music video style
+- 🌈 **Spectrum** - Audio spectrum
+- ✨ **Particles** - Floating particles
+- 🧬 **DnaHelix** - Spiraling structure
+- 〰️ **Oscilloscope** - Classic waveform
+- 🔆 **RadialLines** - Radiating lines
+- 🌌 **Galaxy** - Rotating star systems
+- ⚫ **BlackHole** - Cosmic vortex
+- 💻 **Matrix** - Digital rain
+- 🎆 **Fireworks** - Explosive particles
+- 🌠 **Aurora** - Northern lights effect
+- 💍 **Rings** - Concentric circles
+- 📈 **Waveform3D** - Three-dimensional waves
+- ⭐ **Starfield** - 3D space travel
+- ⚛️ **Plasma** - Plasma effect
+- ⚡ **Lightning** - Electric bolts
+- 🐝 **Hexagons** - Honeycomb grid
+- 🌿 **Fractal** - Fractal patterns
+
+#### WebGL-based (38 visualizers)
+- 💧 **Fluid** - Fluid simulation
+- 🕳️ **BlackHole** - Gravitational lensing
+- 🌀 **Accretion** - Accretion disk
+- ⚡ **Lightning** - Electric storm
+- 🌅 **Sunset** - Scenic sunset
+- 🎲 **HoloDice** - Holographic dice
+- 📦 **Cube** - 3D cube
+- ☁️ **Clouds** - Volumetric clouds
+- 🌌 **Universe** - Cosmic universe
+- ✨ **Kuko** - Abstract art
+- 🧵 **Fiber** - Fiber optics
+- ⚡ **Zippy** - Fast motion
+- 🎨 **Art** - Generative art
+- 🌟 **StarNest** - Star formation
+- 🏞️ **Landscape** - Procedural terrain
+- 🔥 **Fire** - Realistic flames
+- 💎 **Fragment** - Fragment shader
+- 🪐 **Orbital** - Orbital mechanics
+- 🎨 **Palettes** - Color palettes
+- 🍩 **Torus** - 3D torus
+- 🐳 **Aqua** - Underwater effect
+- 🔺 **Fractal** - Fractal pyramid
+- 🧊 **4D** - Four-dimensional
+- 🔮 **Sphere** - 3D sphere
+- 💚 **Matrix** - Digital rain
+- 🌈 **Spectrum** - Spectrum
+- 🔥 **Flame** - Flame effect
+- 🌀 **Portal** - Dimensional portal
+- ⚛️ **Plasma** - Plasma
+- 🚗 **Drive** - Driving simulation
+- 🌈 **Rainbow** - Rainbow colors
+- ✡️ **Octagram** - Geometric octagram
+- 💓 **Beat** - Beat reactive
+- 👁️ **Eye** - Eye effect
+- 🌌 **Lensing** - Gravitational lensing
+- 🌀 **Julia** - Julia set fractal
+- 🔄 **Inversion** - Inversion effect
+- 🌊 **Liquid** - Liquid effect
 
 ### 🖼️ Dynamic Backgrounds
 - **Image backgrounds** - Static images or AI-generated
@@ -107,33 +153,44 @@ bun run build
 ```
 ifocus/
 ├── src/
-│   ├── components/        # React components
-│   │   ├── AudioController.tsx
-│   │   ├── Background.tsx
-│   │   ├── EffectsLayer.tsx
-│   │   ├── EffectsSelector.tsx
-│   │   ├── Notes.tsx
-│   │   ├── PiPContent.tsx
-│   │   ├── SceneSelector.tsx
-│   │   ├── Tasks.tsx
-│   │   ├── Timer.tsx
-│   │   └── Visualizer.tsx
-│   ├── visualizers/       # Visualizer effects
-│   │   ├── Aurora.ts
-│   │   ├── Bars.ts
-│   │   ├── BlackHole.ts
-│   │   └── ... (17+ visualizers)
-│   ├── hooks/             # Custom React hooks
-│   ├── stores/            # Zustand stores
-│   ├── utils/             # Utility functions
-│   ├── App.tsx            # Main application
-│   ├── constants.ts       # App constants
-│   └── types.ts           # TypeScript types
+│   ├── components/           # React components
+│   │   ├── AudioController.tsx   # Audio playback & YouTube integration
+│   │   ├── Background.tsx        # Dynamic backgrounds
+│   │   ├── EffectsLayer.tsx      # Visual effects overlay
+│   │   ├── EffectsSelector.tsx   # Effects configuration UI
+│   │   ├── Notes.tsx             # Note-taking component
+│   │   ├── PiPContent.tsx        # Picture-in-Picture content
+│   │   ├── SceneSelector.tsx     # Background & scene settings
+│   │   ├── Tasks.tsx             # Task management
+│   │   ├── Timer.tsx             # Pomodoro timer & clock
+│   │   └── Visualizer.tsx        # Audio visualizer controller
+│   ├── visualizers/          # 59 visualizer effects
+│   │   ├── simple/               # Canvas-based (21 visualizers)
+│   │   ├── shader/               # WebGL-based (38 visualizers)
+│   │   ├── utils/                # Shared visualizer utilities
+│   │   ├── index.ts              # Visualizer registry & loader
+│   │   └── types.ts              # Visualizer type definitions
+│   ├── hooks/                # Custom React hooks
+│   │   ├── useDebounce.ts        # Debounce utility hook
+│   │   ├── useLocalStorage.ts    # LocalStorage persistence
+│   │   └── useMobile.ts          # Mobile device detection
+│   ├── stores/               # Zustand stores
+│   │   └── useAppStore.ts        # Global application state
+│   ├── utils/                # Utility functions
+│   │   ├── audioAnalyzer.ts      # Web Audio API analysis
+│   │   └── loader.tsx            # Lazy loading utilities
+│   ├── assets/               # Static assets (images, icons)
+│   ├── App.tsx               # Main application
+│   ├── constants.ts          # App constants & defaults
+│   ├── types.ts              # TypeScript type definitions
+│   └── index.tsx             # Application entry point
 ├── public/
-│   ├── images/            # Static images
-│   ├── sounds/            # Audio files
-│   └── videos/            # Video backgrounds
-└── index.html
+│   ├── assets/               # Public static assets
+│   ├── components/           # Pre-built component bundles
+│   └── visualizers/          # Pre-built visualizer bundles
+├── index.html                # HTML entry point
+├── vite.config.ts            # Vite configuration
+└── tsconfig.json             # TypeScript configuration
 ```
 
 ## 🎮 Usage
