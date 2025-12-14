@@ -9,7 +9,6 @@ export default /*glsl*/ `
 
   uniform float u_time;
   uniform float u_intensity;
-  uniform float u_beatIntensity;
   uniform float u_bass;
   uniform float u_mid;
   uniform float u_high;
@@ -94,14 +93,14 @@ export default /*glsl*/ `
     float ac = 0.0;
 
     // Subtle beat glow (reduced intensity)
-    float glowMultiplier = 23.0 - u_beatIntensity * 3.0 - u_bass * 2.0;
+    float glowMultiplier = 23.0 - u_bass * 3.0 - u_mid * 2.0;
 
     for (int i = 0; i < 99; i++) {
       vec3 pos = ro + ray * t;
       pos = mod(pos - 2.0, 4.0) - 2.0;
 
       // Subtle box scale on beat (reduced)
-      pos *= 1.0 - u_beatIntensity * 0.08 - u_bass * 0.04;
+      pos *= 1.0 - u_bass * 0.08 - u_mid * 0.04;
 
       gTime = animTime - float(i) * 0.01;
 
@@ -113,7 +112,7 @@ export default /*glsl*/ `
     }
 
     // Reduced base glow multiplier
-    col = vec3(ac * (0.015 + u_beatIntensity * 0.01));
+    col = vec3(ac * (0.015 + u_bass * 0.01));
 
     // Subtle audio-reactive colors
     col += vec3(
@@ -123,7 +122,7 @@ export default /*glsl*/ `
     );
 
     // Reduced brightness boost on beats
-    col *= 1.0 + u_beatIntensity * 0.3;
+    col *= 1.0 + u_bass * 0.3;
 
     float alpha = 1.0 - t * (0.02 + 0.02 * sin(animTime));
     alpha = clamp(alpha, 0.0, 1.0);

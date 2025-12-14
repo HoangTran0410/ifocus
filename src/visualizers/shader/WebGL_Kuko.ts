@@ -11,7 +11,6 @@ export default /*glsl*/ `
 
   uniform float u_time;
   uniform float u_intensity;
-  uniform float u_beatIntensity;
   uniform float u_bass;
   uniform float u_mid;
   uniform float u_high;

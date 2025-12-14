@@ -1,3 +1,4 @@
+import { BriefcaseBusinessIcon } from "lucide-react";
 import { VisualizeFnProps } from "../types";
 
 // DNA Helix - 3D double helix with depth effect
@@ -10,7 +11,6 @@ export default function renderDnaHelix({
   canvas,
   data,
   performanceMode = false,
-  beatIntensity = 0,
   bass = 0,
 }: VisualizeFnProps) {
   const centerX = canvas.width / 2;
@@ -48,7 +48,7 @@ export default function renderDnaHelix({
     // Strand 1
     const z1 = Math.cos(phase);
     const y1 = centerY + Math.sin(phase) * dynamicAmplitude;
-    const size1 = 4 + intensity * 5 + beatIntensity * 3;
+    const size1 = 4 + intensity * 5 + bass * 3;
 
     allPoints.push({
       x,
@@ -62,7 +62,7 @@ export default function renderDnaHelix({
     // Strand 2 (opposite phase)
     const z2 = Math.cos(phase + Math.PI);
     const y2 = centerY + Math.sin(phase + Math.PI) * dynamicAmplitude;
-    const size2 = 4 + intensity * 5 + beatIntensity * 3;
+    const size2 = 4 + intensity * 5 + bass * 3;
 
     allPoints.push({
       x,

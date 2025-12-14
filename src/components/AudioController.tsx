@@ -1,18 +1,36 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useMemo } from "react";
 import { History, Play, Music as MusicIcon, X } from "lucide-react";
 import type { SoundState } from "../types";
 import { DEFAULT_SOUNDS } from "../constants";
 import { useLocalStorage } from "../hooks/useLocalStorage";
 
 export default function AudioController() {
-  const [soundStates, setSoundStates] = useLocalStorage<SoundState[]>(
+  // Only store the user's sound preferences (volume, isPlaying) in localStorage
+  const [savedSoundStates, setSavedSoundStates] = useLocalStorage<SoundState[]>(
     "zen_sound_states",
-    DEFAULT_SOUNDS.map((sound) => ({
-      id: sound.id,
-      volume: 0.5,
-      isPlaying: false,
-    }))
+    []
   );
+
+  // Always derive soundStates from DEFAULT_SOUNDS, merging with saved preferences
+  const soundStates = useMemo(() => {
+    return DEFAULT_SOUNDS.map((sound) => {
+      const saved = savedSoundStates.find((s) => s.id === sound.id);
+      return {
+        id: sound.id,
+        volume: saved?.volume ?? 0.5,
+        isPlaying: saved?.isPlaying ?? false,
+      };
+    });
+  }, [savedSoundStates]);
+
+  // Update saved states when user changes something
+  const setSoundStates = (newStates: SoundState[]) => {
+    // Only save states that differ from default (playing or non-default volume)
+    const statesToSave = newStates.filter(
+      (s) => s.isPlaying || s.volume !== 0.5
+    );
+    setSavedSoundStates(statesToSave);
+  };
   const [youtubeUrl, setYoutubeUrl] = useLocalStorage<string>("zen_yt_url", "");
   const [youtubeHistory, setYoutubeHistory] = useLocalStorage<string[]>(
     "zen_yt_history",
@@ -27,14 +45,20 @@ export default function AudioController() {
 
   useEffect(() => {
     // Sync audio elements with state
-    DEFAULT_SOUNDS.forEach((sound) => {
+    DEFAULT_SOUNDS.forEach(async (sound) => {
       const soundState = soundStates.find((s) => s.id === sound.id);
       if (!soundState) return;
 
       // Only create audio element if user wants to play it
       if (soundState.isPlaying) {
         if (!audioRefs.current[sound.id]) {
-          audioRefs.current[sound.id] = new Audio(sound.url);
+          let url = sound.url;
+          if (typeof url === "function") {
+            url = (await url()) as string;
+            url = url?.["default"] || url;
+            if (typeof url != "string") return;
+          }
+          audioRefs.current[sound.id] = new Audio(url);
           audioRefs.current[sound.id].loop = true;
           // Enable CORS for audio analysis
           audioRefs.current[sound.id].crossOrigin = "anonymous";

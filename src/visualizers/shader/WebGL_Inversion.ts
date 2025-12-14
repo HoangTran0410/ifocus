@@ -8,7 +8,6 @@ export default /*glsl*/ `
 
   uniform float u_time;
   uniform float u_intensity;
-  uniform float u_beatIntensity;
   uniform float u_bass;
   uniform float u_mid;
   uniform float u_high;
@@ -119,7 +118,7 @@ export default /*glsl*/ `
     float col = raymarch(from, dir, fragCoord);
 
     // Glow on beat - stronger effect
-    float glow = 1.0 + u_bass * 1.5 + u_beatIntensity * 1.0;
+    float glow = 1.0 + u_bass * 1.5 + u_mid * 1.0;
     col = pow(col, 1.25) * glow;
 
     // Dark background (no transparency)

@@ -31,7 +31,6 @@ export function renderShaderCode(props: VisualizeFnProps, shaderCode: string) {
     canvas,
     data,
     performanceMode = false,
-    beatIntensity = 0,
     bass = 0,
     mid = 0,
     high = 0,
@@ -46,7 +45,7 @@ export function renderShaderCode(props: VisualizeFnProps, shaderCode: string) {
   // Initialize program if needed
   const mode = props.mode || "default";
   let state = stateCached.get(mode);
-  if (!state) {
+  if (!state || !state.program) {
     state = {
       program: null,
       uniforms: {},
@@ -121,7 +120,6 @@ export function renderShaderCode(props: VisualizeFnProps, shaderCode: string) {
   gl.useProgram(state.program);
   gl.uniform1f(state.uniforms.u_time, state.time);
   gl.uniform1f(state.uniforms.u_intensity, avgIntensity);
-  gl.uniform1f(state.uniforms.u_beatIntensity, beatIntensity);
   gl.uniform1f(state.uniforms.u_bass, bass);
   gl.uniform1f(state.uniforms.u_mid, mid);
   gl.uniform1f(state.uniforms.u_high, high);
@@ -143,6 +141,14 @@ export function renderShaderCode(props: VisualizeFnProps, shaderCode: string) {
 
 export function cleanup(mode?: string | number): void {
   if (mode === 0) {
+    // stop and clear all state
+    stateCached.forEach((state) => {
+      state.program = null;
+      state.uniforms = {};
+      // state.time = 0;
+      state.audioTexture = null;
+      state.audioData = null;
+    });
     stateCached.clear();
   } else if (typeof mode === "string") {
     const state = stateCached.get(mode);
@@ -150,6 +156,8 @@ export function cleanup(mode?: string | number): void {
     state.program = null;
     state.uniforms = {};
     // state.time = 0;
-    // stateCached.delete(mode);
+    state.audioTexture = null;
+    state.audioData = null;
+    stateCached.delete(mode);
   }
 }

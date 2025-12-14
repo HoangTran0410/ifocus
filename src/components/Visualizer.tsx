@@ -3,7 +3,6 @@ import { useLocalStorage } from "../hooks/useLocalStorage";
 import {
   getNormalizedFrequencyData,
   isAudioCaptureActive,
-  startAudioCapture,
   startTabCapture,
   startMicCapture,
   startFileCapture,
@@ -14,7 +13,6 @@ import {
   getAudioSourceType,
   AudioAnalyzerConfig,
   AudioSourceType,
-  detectBeat,
   getFrequencyBands,
 } from "../utils/audioAnalyzer";
 import {
@@ -188,6 +186,12 @@ export default function Visualizer({
     updateAnalyzerConfig(config);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  useEffect(() => {
+    return () => {
+      cleanupAllVisualizers();
+    };
+  }, []);
+
   // Cleanup PiP window on unmount (don't stop audio capture - it's a singleton that should persist)
   useEffect(() => {
     return () => {
@@ -218,21 +222,11 @@ export default function Visualizer({
     setLogoDataUrl(null);
   }, [setLogoDataUrl]);
 
-  // Handle mode change from selector
-  const handleModeChange = useCallback(
-    (e: React.ChangeEvent<HTMLSelectElement>) => {
-      e.stopPropagation();
-      setMode(e.target.value as VisualizerMode);
-    },
-    [setMode]
-  );
-
   // Handle close button click
   const handleCloseClick = useCallback(
     (e: React.MouseEvent) => {
       e.stopPropagation();
       onClose?.();
-      cleanupAllVisualizers();
     },
     [onClose]
   );
@@ -686,8 +680,13 @@ export default function Visualizer({
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
+    // Flag to track if animation should continue running
+    // This is critical for async animate functions - cancelAnimationFrame alone
+    // won't stop frames scheduled after an await completes
+    let isRunning = true;
+
     const animate = async () => {
-      if (stop) return;
+      if (stop || !isRunning) return;
 
       timeRef.current += 0.02;
 
@@ -715,12 +714,8 @@ export default function Visualizer({
 
       const barCount = data.length;
 
-      // Get beat intensity for enhanced effects
-      const beatIntensity = isAudioCaptureActive()
-        ? detectBeat()
-        : Math.sin(timeRef.current * 4) * 0.3 + 0.3;
-
       // Get frequency band energies for precise audio-reactive effects
+      // Each band value includes beat detection and is enhanced when beats occur
       const frequencyBands = isAudioCaptureActive()
         ? getFrequencyBands()
         : {
@@ -750,12 +745,15 @@ export default function Visualizer({
         barCount,
         performanceMode: performanceModeRef.current,
         logoImage: logoImageRef.current,
-        beatIntensity,
         bass: frequencyBands.bass,
         mid: frequencyBands.mid,
         high: frequencyBands.high,
         mode,
       });
+
+      // Check if we should stop after the async render completes
+      // This prevents orphaned animation loops when cleanup runs during render
+      if (!isRunning) return;
 
       // Draw FPS counter on main canvas
       if (showFpsRef.current) {
@@ -784,6 +782,9 @@ export default function Visualizer({
     animate();
 
     return () => {
+      // Set flag to stop the animation loop
+      // This ensures any in-flight async animate() calls will exit
+      isRunning = false;
       cancelAnimationFrame(animationRef.current);
     };
   }, [mode, stop]);

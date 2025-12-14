@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "rm -rf assets && vite build",
+    "build": "rm -rf public && vite build",
     "preview": "vite preview"
   },
   "dependencies": {

@@ -67,7 +67,6 @@ export default function renderLightning({
   canvas,
   data,
   performanceMode = false,
-  beatIntensity = 0,
   bass = 0,
 }: VisualizeFnProps) {
   const width = canvas.width;
@@ -76,15 +75,15 @@ export default function renderLightning({
 
   // Spawn bolts on bass (kick drums)
   if (bass > 0.35 && Date.now() - lightningState.lastBeat > 120) {
-    const numBolts = performanceMode ? 1 : Math.floor(1 + beatIntensity * 2);
+    const numBolts = performanceMode ? 1 : Math.floor(1 + bass * 2);
     for (let i = 0; i < numBolts; i++) {
       const startX = width * 0.2 + Math.random() * width * 0.6;
       const endY = height * (0.5 + Math.random() * 0.5);
-      lightningState.bolts.push(createGrowingBolt(startX, endY, beatIntensity));
+      lightningState.bolts.push(createGrowingBolt(startX, endY, bass));
     }
 
     // Electric particles on beat
-    const particleCount = Math.floor(beatIntensity * 12);
+    const particleCount = Math.floor(bass * 12);
     for (let i = 0; i < particleCount; i++) {
       lightningState.electricField.push({
         x: Math.random() * width,
@@ -157,7 +156,7 @@ export default function renderLightning({
     // Glow effect
     if (!performanceMode) {
       ctx.shadowColor = `hsla(${bolt.hue}, 100%, 70%, ${bolt.alpha})`;
-      ctx.shadowBlur = 20 + beatIntensity * 15;
+      ctx.shadowBlur = 20 + bass * 15;
     }
 
     ctx.strokeStyle = `hsla(${bolt.hue}, 100%, 75%, ${bolt.alpha})`;
@@ -198,7 +197,7 @@ export default function renderLightning({
         0,
         tipX,
         tipY,
-        15 + beatIntensity * 10
+        15 + bass * 10
       );
       tipGlow.addColorStop(0, `hsla(${bolt.hue}, 100%, 90%, ${bolt.alpha})`);
       tipGlow.addColorStop(
@@ -208,7 +207,7 @@ export default function renderLightning({
       tipGlow.addColorStop(1, "transparent");
 
       ctx.beginPath();
-      ctx.arc(tipX, tipY, 15 + beatIntensity * 10, 0, Math.PI * 2);
+      ctx.arc(tipX, tipY, 15 + bass * 10, 0, Math.PI * 2);
       ctx.fillStyle = tipGlow;
       ctx.fill();
     }
@@ -234,8 +233,8 @@ export default function renderLightning({
   }
 
   // Subtle flash on strong beats
-  if (beatIntensity > 0.7) {
-    const flashAlpha = (beatIntensity - 0.7) * 0.25;
+  if (bass > 0.7) {
+    const flashAlpha = (bass - 0.7) * 0.25;
     ctx.fillStyle = `rgba(180, 220, 255, ${flashAlpha})`;
     ctx.fillRect(0, 0, width, height);
   }

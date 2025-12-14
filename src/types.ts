@@ -42,7 +42,7 @@ export interface SoundTrack {
   id: string;
   name: string;
   emoji: string;
-  url: string;
+  url: string | (() => Promise<any>);
   category?: string;
 }
 

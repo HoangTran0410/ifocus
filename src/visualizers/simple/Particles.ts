@@ -30,7 +30,6 @@ export default function renderParticles({
   canvas,
   data,
   performanceMode = false,
-  beatIntensity = 0,
   bass = 0,
   high = 0,
 }: VisualizeFnProps) {
@@ -195,7 +194,7 @@ export default function renderParticles({
   }
 
   // Center core
-  const coreRadius = 20 + avgIntensity * 30 + beatIntensity * 20;
+  const coreRadius = 20 + avgIntensity * 30 + bass * 20;
 
   const coreGlow = ctx.createRadialGradient(
     centerX,
@@ -221,7 +220,7 @@ export default function renderParticles({
   // Inner core
   ctx.beginPath();
   ctx.arc(centerX, centerY, coreRadius * 0.4, 0, Math.PI * 2);
-  ctx.fillStyle = `rgba(255, 255, 255, ${0.6 + beatIntensity * 0.4})`;
+  ctx.fillStyle = `rgba(255, 255, 255, ${0.6 + bass * 0.4})`;
   ctx.fill();
 
   // Orbiting rings

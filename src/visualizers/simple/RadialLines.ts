@@ -13,7 +13,6 @@ export default function renderRadialLines({
   data,
   barCount,
   performanceMode = false,
-  beatIntensity = 0,
   bass = 0,
 }: VisualizeFnProps) {
   const centerX = canvas.width / 2;
@@ -105,7 +104,7 @@ export default function renderRadialLines({
 
     // End particles on high intensity
     if (intensity > 0.5) {
-      const particleSize = 2 + intensity * 4 + beatIntensity * 3;
+      const particleSize = 2 + intensity * 4 + bass * 3;
       ctx.beginPath();
       ctx.arc(x2, y2, particleSize, 0, Math.PI * 2);
       ctx.fillStyle = `hsla(${hue + 20}, 100%, 75%, ${intensity})`;
@@ -122,11 +121,11 @@ export default function renderRadialLines({
   }
 
   // Outer burst lines on beats
-  if (beatIntensity > 0.4) {
+  if (bass > 0.4) {
     const burstCount = performanceMode ? 12 : 24;
     for (let i = 0; i < burstCount; i++) {
       const angle = (i / burstCount) * Math.PI * 2 + radialState.rotation * 2;
-      const burstLength = maxRadius * (0.85 + beatIntensity * 0.15);
+      const burstLength = maxRadius * (0.85 + bass * 0.15);
       const burstStart = maxRadius * 0.7;
 
       const x1 = centerX + Math.cos(angle) * burstStart;
@@ -137,16 +136,15 @@ export default function renderRadialLines({
       ctx.beginPath();
       ctx.moveTo(x1, y1);
       ctx.lineTo(x2, y2);
-      ctx.strokeStyle = `rgba(255, 200, 255, ${beatIntensity * 0.6})`;
-      ctx.lineWidth = 1 + beatIntensity * 2;
+      ctx.strokeStyle = `rgba(255, 200, 255, ${bass * 0.6})`;
+      ctx.lineWidth = 1 + bass * 2;
       ctx.lineCap = "round";
       ctx.stroke();
     }
   }
 
   // Animated center core
-  const coreRadius =
-    minRadius * (0.8 + avgIntensity * 0.3 + beatIntensity * 0.2);
+  const coreRadius = minRadius * (0.8 + avgIntensity * 0.3 + bass * 0.2);
 
   // Core glow
   const coreGlow = ctx.createRadialGradient(
@@ -195,7 +193,7 @@ export default function renderRadialLines({
   // Core ring
   ctx.beginPath();
   ctx.arc(centerX, centerY, coreRadius, 0, Math.PI * 2);
-  ctx.strokeStyle = `rgba(255, 255, 255, ${0.5 + beatIntensity * 0.5})`;
+  ctx.strokeStyle = `rgba(255, 255, 255, ${0.5 + bass * 0.5})`;
   ctx.lineWidth = 2;
   ctx.stroke();
 }

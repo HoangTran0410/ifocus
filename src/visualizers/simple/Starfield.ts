@@ -30,7 +30,6 @@ export default function renderStarfield({
   canvas,
   data,
   performanceMode = false,
-  beatIntensity = 0,
   bass = 0,
 }: VisualizeFnProps) {
   const centerX = canvas.width / 2;
@@ -74,7 +73,7 @@ export default function renderStarfield({
   const speed = 1 + bassIntensity * 4 + bass * 8; // Faster speed on bass
 
   // Color shift on beat - stars turn golden/warm (higher threshold)
-  const beatColorShift = beatIntensity > 0.5;
+  const beatColorShift = bass > 0.5;
 
   // Update and draw stars
   starfieldState.stars.forEach((star, i) => {
@@ -107,7 +106,7 @@ export default function renderStarfield({
       0.5,
       ((canvas.width - star.z) / canvas.width) * 3
     );
-    const size = baseSize * (1 + beatIntensity * 0.5);
+    const size = baseSize * (1 + bass * 0.5);
 
     // Brightness based on distance and audio
     const brightness = 0.5 + (canvas.width - star.z) / canvas.width;
@@ -121,15 +120,15 @@ export default function renderStarfield({
     }
 
     // Draw trail - longer on beats
-    const trailThreshold = beatIntensity > 0.3 ? 0.1 : 0.3;
+    const trailThreshold = bass > 0.3 ? 0.1 : 0.3;
     if (!performanceMode && brightness > trailThreshold) {
       ctx.beginPath();
       ctx.moveTo(star.prevX, star.prevY);
       ctx.lineTo(x, y);
       ctx.strokeStyle = `hsla(${hue}, 80%, ${60 + intensity * 30}%, ${
-        brightness * (0.5 + beatIntensity * 0.3)
+        brightness * (0.5 + bass * 0.3)
       })`;
-      ctx.lineWidth = size * (0.5 + beatIntensity * 0.5);
+      ctx.lineWidth = size * (0.5 + bass * 0.5);
       ctx.stroke();
     }
 
@@ -138,13 +137,13 @@ export default function renderStarfield({
     ctx.arc(x, y, size, 0, Math.PI * 2);
 
     // Create gradient for star glow - enhanced on beats
-    if (!performanceMode && (brightness > 0.5 || beatIntensity > 0.4)) {
-      const glowSize = size * (2 + beatIntensity * 2);
+    if (!performanceMode && (brightness > 0.5 || bass > 0.4)) {
+      const glowSize = size * (2 + bass * 2);
       const starGradient = ctx.createRadialGradient(x, y, 0, x, y, glowSize);
       starGradient.addColorStop(0, `hsla(${hue}, 90%, 95%, 1)`);
       starGradient.addColorStop(
         0.3,
-        `hsla(${hue}, 80%, 80%, ${brightness + beatIntensity * 0.3})`
+        `hsla(${hue}, 80%, 80%, ${brightness + bass * 0.3})`
       );
       starGradient.addColorStop(1, "transparent");
       ctx.fillStyle = starGradient;
@@ -184,8 +183,8 @@ export default function renderStarfield({
   }
 
   // Center flash on beat (subtle)
-  if (!performanceMode && beatIntensity > 0.5) {
-    const flashSize = 30 + beatIntensity * 80;
+  if (!performanceMode && bass > 0.5) {
+    const flashSize = 30 + bass * 80;
     const flashGradient = ctx.createRadialGradient(
       centerX,
       centerY,
@@ -194,14 +193,8 @@ export default function renderStarfield({
       centerY,
       flashSize
     );
-    flashGradient.addColorStop(
-      0,
-      `rgba(255, 255, 255, ${beatIntensity * 0.3})`
-    );
-    flashGradient.addColorStop(
-      0.3,
-      `rgba(255, 200, 100, ${beatIntensity * 0.15})`
-    );
+    flashGradient.addColorStop(0, `rgba(255, 255, 255, ${bass * 0.3})`);
+    flashGradient.addColorStop(0.3, `rgba(255, 200, 100, ${bass * 0.15})`);
     flashGradient.addColorStop(1, "transparent");
     ctx.fillStyle = flashGradient;
     ctx.beginPath();
@@ -218,11 +211,11 @@ export default function renderStarfield({
 
   // Base size of the red giant - pulses with audio
   const redGiantBaseSize = 25 + avgIntensity * 15;
-  const redGiantSize = redGiantBaseSize + beatIntensity * 15;
+  const redGiantSize = redGiantBaseSize + bass * 15;
 
   // Trigger new corona explosion on beat
   if (
-    beatIntensity > 0.5 &&
+    bass > 0.5 &&
     (!starfieldState.coronaExplosion ||
       starfieldState.coronaExplosion.alpha < 0.3)
   ) {
@@ -401,14 +394,14 @@ export default function renderStarfield({
   }
 
   // Speed lines at edges during beats - more dramatic
-  //   if (!performanceMode && beatIntensity > 0.3) {
-  //     const lineCount = Math.floor(10 + beatIntensity * 15);
+  //   if (!performanceMode && bass > 0.3) {
+  //     const lineCount = Math.floor(10 + bass * 15);
   //     for (let i = 0; i < lineCount; i++) {
   //       const angle = (i / lineCount) * Math.PI * 2 + Math.random() * 0.3;
   //       const startRadius =
-  //         Math.min(canvas.width, canvas.height) * (0.3 + beatIntensity * 0.1);
+  //         Math.min(canvas.width, canvas.height) * (0.3 + bass * 0.1);
   //       const endRadius =
-  //         Math.min(canvas.width, canvas.height) * (0.5 + beatIntensity * 0.15);
+  //         Math.min(canvas.width, canvas.height) * (0.5 + bass * 0.15);
 
   //       const startX = centerX + Math.cos(angle) * startRadius;
   //       const startY = centerY + Math.sin(angle) * startRadius;
@@ -422,9 +415,9 @@ export default function renderStarfield({
   //         ? 40 + Math.random() * 30
   //         : 200 + Math.random() * 60;
   //       ctx.strokeStyle = `hsla(${lineHue}, 70%, 70%, ${
-  //         0.2 + beatIntensity * 0.4
+  //         0.2 + bass * 0.4
   //       })`;
-  //       ctx.lineWidth = 1 + beatIntensity * 2;
+  //       ctx.lineWidth = 1 + bass * 2;
   //       ctx.stroke();
   //     }
   //   }

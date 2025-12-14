@@ -8,7 +8,6 @@ export default /*glsl*/ `
 
   uniform float u_time;
   uniform float u_intensity;
-  uniform float u_beatIntensity;
   uniform float u_bass;
   uniform float u_mid;
   uniform float u_high;
@@ -57,7 +56,7 @@ export default /*glsl*/ `
     vec3 c = color(fractal(position, vec2(0.5 + sin(timeSpeed) / 2.0, 0.2 + pulse * 0.7)));
 
     // Glow effect on beat
-    float glow = 1.0 + u_beatIntensity * 0.8;
+    float glow = 1.0 + u_bass * 0.8;
     c *= glow;
 
     // Calculate alpha based on color intensity for transparent background

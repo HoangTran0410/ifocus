@@ -40,6 +40,34 @@ const DEFAULT_CONFIG: AudioAnalyzerConfig = {
 // Current config (mutable)
 const CONFIG: AudioAnalyzerConfig = { ...DEFAULT_CONFIG };
 
+// ============================================
+// Frame-based frequency data caching
+// Prevents multiple getByteFrequencyData calls per draw loop
+// ============================================
+let cachedFrameId = -1;
+let cachedDataArray: Uint8Array | null = null;
+
+/**
+ * Get cached frequency data for the current frame.
+ * Uses requestAnimationFrame's implied frame ID to cache data.
+ * Multiple calls within the same frame will return cached data.
+ */
+function getCachedFrequencyData(): Uint8Array | null {
+  if (!analyser || !dataArray) return null;
+
+  // Use performance.now() floored to ~16ms (60fps) as frame identifier
+  const currentFrame = Math.floor(performance.now() / 16);
+
+  if (currentFrame !== cachedFrameId) {
+    // @ts-ignore
+    analyser.getByteFrequencyData(dataArray);
+    cachedFrameId = currentFrame;
+    cachedDataArray = dataArray;
+  }
+
+  return cachedDataArray;
+}
+
 // Get default config for reset functionality
 export function getDefaultAnalyzerConfig(): AudioAnalyzerConfig {
   return { ...DEFAULT_CONFIG };
@@ -61,6 +89,8 @@ export function updateAnalyzerConfig(
     if (newConfig.fftSize !== undefined) {
       analyser.fftSize = newConfig.fftSize;
       dataArray = new Uint8Array(analyser.frequencyBinCount);
+      cachedDataArray = null;
+      cachedFrameId = -1;
     }
     if (newConfig.smoothingTimeConstant !== undefined) {
       analyser.smoothingTimeConstant = newConfig.smoothingTimeConstant;
@@ -251,11 +281,6 @@ export async function startFileCapture(file: File): Promise<boolean> {
   }
 }
 
-// Legacy function name for backward compatibility
-export async function startAudioCapture(): Promise<boolean> {
-  return startTabCapture();
-}
-
 // Stop audio capture and clean up
 export function stopAudioCapture(): void {
   if (mediaStream) {
@@ -295,27 +320,15 @@ export function stopAudioCapture(): void {
   }
   analyser = null;
   dataArray = null;
+  cachedDataArray = null;
+  cachedFrameId = -1;
   isCapturing = false;
   currentSourceType = "none";
-}
-
-// Get frequency data from the analyser
-export function getFrequencyData(): Uint8Array {
-  if (!analyser || !dataArray) {
-    return new Uint8Array(64).fill(0);
-  }
-  // @ts-ignore
-  analyser.getByteFrequencyData(dataArray);
-  return dataArray;
+  resetBeatDetection();
 }
 
 /**
  * Applies the Savitsky-Golay smoothing algorithm to an array of data points.
- *
- * @param array - The array of data points to be smoothed.
- * @param smoothingPoints - The number of points to use for smoothing.
- * @param smoothingPasses - The number of smoothing passes to perform.
- * @return The smoothed array of data points.
  */
 function savitskyGolaySmooth(
   array: number[],
@@ -346,7 +359,10 @@ function savitskyGolaySmooth(
 
 // Get normalized frequency data (0-1 range) with smoothing and frequency windowing
 export function getNormalizedFrequencyData(): number[] {
-  const data = getFrequencyData();
+  const data = getCachedFrequencyData();
+  if (!data) {
+    return new Array(CONFIG.freqLength).fill(0);
+  }
 
   // Extract only the useful frequency range based on config
   const startIdx = CONFIG.freqStartIndex;
@@ -355,8 +371,6 @@ export function getNormalizedFrequencyData(): number[] {
 
   // Normalize to 0-1 range
   const normalized = windowedData.map((val) => val / 255);
-
-  // return normalized;
 
   // Apply Savitsky-Golay smoothing (5 points, 2 passes)
   return savitskyGolaySmooth(normalized, 5, 2);
@@ -368,110 +382,91 @@ export function isAudioCaptureActive(): boolean {
 }
 
 // ============================================
-// Beat Detection System
+// Beat Detection System with Per-Band History
 // ============================================
 
-// Beat detection state
-const beatState = {
-  energyHistory: [] as number[],
+// Beat detection configuration
+const BEAT_CONFIG = {
   historySize: 43, // ~43 frames at 60fps = ~0.7 seconds of history
-  beatThreshold: 1.3, // Current energy must be 30% higher than average to be a beat
-  beatCooldown: 0, // Frames to wait before detecting another beat
+  beatThreshold: 1.35, // Current energy must be 35% higher than average to be a beat
   cooldownFrames: 8, // Minimum frames between beats (~133ms at 60fps)
-  lastBeatIntensity: 0, // Intensity of the last detected beat (0-1)
   beatDecay: 0.92, // How fast beat intensity decays (lower = faster decay)
+  beatMultiplier: 1.5, // How much to multiply the value when beat is detected
+};
+
+// Per-band beat detection state
+interface BandBeatState {
+  energyHistory: number[];
+  beatCooldown: number;
+  lastBeatIntensity: number;
+}
+
+const bandBeatState: {
+  bass: BandBeatState;
+  mid: BandBeatState;
+  high: BandBeatState;
+} = {
+  bass: { energyHistory: [], beatCooldown: 0, lastBeatIntensity: 0 },
+  mid: { energyHistory: [], beatCooldown: 0, lastBeatIntensity: 0 },
+  high: { energyHistory: [], beatCooldown: 0, lastBeatIntensity: 0 },
 };
 
 /**
- * Get the current bass energy from low frequencies (best for beat detection)
- * Bass frequencies are typically in the 20-250Hz range
+ * Detect beat on a specific band and update its state
+ * Returns the beat intensity (0-1) for that band
  */
-export function getBassEnergy(): number {
-  if (!analyser || !dataArray || !audioContext) return 0;
+function detectBandBeat(
+  bandState: BandBeatState,
+  currentEnergy: number
+): number {
+  const { historySize, beatThreshold, cooldownFrames, beatDecay } = BEAT_CONFIG;
 
-  // @ts-ignore - TypeScript buffer type strictness
-  analyser.getByteFrequencyData(dataArray);
-
-  const sampleRate = audioContext.sampleRate;
-  const fftSize = analyser.fftSize;
-  const binCount = dataArray.length;
-
-  // Calculate bin indices for bass range (20-250Hz)
-  const bassStart = Math.max(1, Math.round((20 * fftSize) / sampleRate));
-  const bassEnd = Math.min(binCount, Math.round((250 * fftSize) / sampleRate));
-  const bassCount = Math.max(1, bassEnd - bassStart);
-
-  let sum = 0;
-  for (let i = bassStart; i < bassEnd && i < binCount; i++) {
-    sum += dataArray[i];
+  // Add to history
+  bandState.energyHistory.push(currentEnergy);
+  if (bandState.energyHistory.length > historySize) {
+    bandState.energyHistory.shift();
   }
 
-  return sum / (bassCount * 255); // Normalize to 0-1
-}
-
-/**
- * Get the current mid-range energy (best for synths, vocals, guitars)
- * Mid frequencies are typically in the 250-2000Hz range
- */
-export function getMidEnergy(): number {
-  if (!analyser || !dataArray || !audioContext) return 0;
-
-  // @ts-ignore - TypeScript buffer type strictness
-  analyser.getByteFrequencyData(dataArray);
-
-  const sampleRate = audioContext.sampleRate;
-  const fftSize = analyser.fftSize;
-  const binCount = dataArray.length;
-
-  // Calculate bin indices for mid range (250-2000Hz)
-  const midStart = Math.min(binCount, Math.round((250 * fftSize) / sampleRate));
-  const midEnd = Math.min(binCount, Math.round((2000 * fftSize) / sampleRate));
-  const midCount = Math.max(1, midEnd - midStart);
-
-  let sum = 0;
-  for (let i = midStart; i < midEnd && i < binCount; i++) {
-    sum += dataArray[i];
+  // Need enough history to compare
+  if (bandState.energyHistory.length < 10) {
+    bandState.lastBeatIntensity *= beatDecay;
+    return bandState.lastBeatIntensity;
   }
 
-  return sum / (midCount * 255); // Normalize to 0-1
-}
+  // Calculate average energy from history
+  const avgEnergy =
+    bandState.energyHistory.reduce((a, b) => a + b, 0) /
+    bandState.energyHistory.length;
 
-/**
- * Get the current high frequency energy (best for hi-hats, cymbals, brightness)
- * High frequencies are typically in the 2000-16000Hz range
- */
-export function getHighEnergy(): number {
-  if (!analyser || !dataArray || !audioContext) return 0;
-
-  // @ts-ignore - TypeScript buffer type strictness
-  analyser.getByteFrequencyData(dataArray);
-
-  const sampleRate = audioContext.sampleRate;
-  const fftSize = analyser.fftSize;
-  const binCount = dataArray.length;
-
-  // Calculate bin indices for high range (2000-16000Hz)
-  const highStart = Math.min(
-    binCount,
-    Math.round((2000 * fftSize) / sampleRate)
-  );
-  const highEnd = Math.min(
-    binCount,
-    Math.round((16000 * fftSize) / sampleRate)
-  );
-  const highCount = Math.max(1, highEnd - highStart);
-
-  let sum = 0;
-  for (let i = highStart; i < highEnd && i < binCount; i++) {
-    sum += dataArray[i];
+  // Decrease cooldown
+  if (bandState.beatCooldown > 0) {
+    bandState.beatCooldown--;
   }
 
-  return sum / (highCount * 255); // Normalize to 0-1
+  // Check if current energy exceeds threshold compared to average
+  const isBeat =
+    bandState.beatCooldown === 0 &&
+    currentEnergy > avgEnergy * beatThreshold &&
+    currentEnergy > 0.08; // Minimum energy threshold
+
+  if (isBeat) {
+    // Calculate beat intensity based on how much it exceeds the average
+    const intensity = Math.min(1, (currentEnergy - avgEnergy) / avgEnergy);
+    bandState.lastBeatIntensity = Math.max(
+      bandState.lastBeatIntensity,
+      intensity
+    );
+    bandState.beatCooldown = cooldownFrames;
+  }
+
+  // Decay the beat intensity over time for smooth animation
+  bandState.lastBeatIntensity *= beatDecay;
+
+  return bandState.lastBeatIntensity;
 }
 
 /**
  * Convert a frequency (Hz) to the corresponding FFT bin index
- * binIndex = frequency * fftSize / sampleRate
  */
 function frequencyToBin(
   frequency: number,
@@ -482,43 +477,48 @@ function frequencyToBin(
 }
 
 /**
- * Get all frequency band energies at once
+ * Get all frequency band energies at once with beat detection
  * More efficient than calling each function separately
  *
- * Frequency ranges are dynamically calculated based on current fftSize:
+ * Frequency ranges:
  * - Bass: 20-250Hz (kick drums, bass lines)
  * - Mid: 250-2000Hz (vocals, guitars, synths)
  * - High: 2000-16000Hz (hi-hats, cymbals, brightness)
+ *
+ * Each band value is multiplied when a beat is detected on that band,
+ * creating a more dynamic response for visualizers.
  */
 export function getFrequencyBands(): {
   bass: number;
   mid: number;
   high: number;
 } {
-  if (!analyser || !dataArray || !audioContext) {
+  if (!analyser || !audioContext) {
     return { bass: 0, mid: 0, high: 0 };
   }
 
-  // @ts-ignore - TypeScript buffer type strictness
-  analyser.getByteFrequencyData(dataArray);
+  const data = getCachedFrequencyData();
+  if (!data) {
+    return { bass: 0, mid: 0, high: 0 };
+  }
 
   const sampleRate = audioContext.sampleRate; // Typically 44100 or 48000
   const fftSize = analyser.fftSize;
-  const binCount = dataArray.length; // = fftSize / 2
+  const binCount = data.length; // = fftSize / 2
 
   // Calculate bin indices for frequency ranges
   // Bass: 20-250Hz
   const bassStart = Math.max(1, frequencyToBin(20, fftSize, sampleRate));
   const bassEnd = Math.min(binCount, frequencyToBin(250, fftSize, sampleRate));
 
-  // Mid: 250-2000Hz
+  // Mid: 250-4000Hz
   const midStart = Math.min(binCount, frequencyToBin(250, fftSize, sampleRate));
-  const midEnd = Math.min(binCount, frequencyToBin(2000, fftSize, sampleRate));
+  const midEnd = Math.min(binCount, frequencyToBin(4000, fftSize, sampleRate));
 
-  // High: 2000-16000Hz
+  // High: 4000-16000Hz
   const highStart = Math.min(
     binCount,
-    frequencyToBin(2000, fftSize, sampleRate)
+    frequencyToBin(4000, fftSize, sampleRate)
   );
   const highEnd = Math.min(
     binCount,
@@ -529,94 +529,59 @@ export function getFrequencyBands(): {
   let bassSum = 0;
   const bassCount = Math.max(1, bassEnd - bassStart);
   for (let i = bassStart; i < bassEnd && i < binCount; i++) {
-    bassSum += dataArray[i];
+    bassSum += data[i];
   }
+  const bassEnergy = bassSum / (bassCount * 255);
 
   // Calculate mid energy
   let midSum = 0;
   const midCount = Math.max(1, midEnd - midStart);
   for (let i = midStart; i < midEnd && i < binCount; i++) {
-    midSum += dataArray[i];
+    midSum += data[i];
   }
+  const midEnergy = midSum / (midCount * 255);
 
   // Calculate high energy
   let highSum = 0;
   const highCount = Math.max(1, highEnd - highStart);
   for (let i = highStart; i < highEnd && i < binCount; i++) {
-    highSum += dataArray[i];
+    highSum += data[i];
   }
+  const highEnergy = highSum / (highCount * 255);
+
+  // Detect beats on each band and get beat intensity
+  const bassBeat = detectBandBeat(bandBeatState.bass, bassEnergy);
+  const midBeat = detectBandBeat(bandBeatState.mid, midEnergy);
+  const highBeat = detectBandBeat(bandBeatState.high, highEnergy);
+
+  // Apply beat multiplier when beat is detected
+  // This makes the value "pop" when a beat occurs
+  const { beatMultiplier } = BEAT_CONFIG;
 
   return {
-    bass: bassSum / (bassCount * 255),
-    mid: midSum / (midCount * 255),
-    high: highSum / (highCount * 255),
+    bass: Math.min(1, bassEnergy * (1 + bassBeat * beatMultiplier)),
+    mid: Math.min(1, midEnergy * (1 + midBeat * beatMultiplier)),
+    high: Math.min(1, highEnergy * (1 + highBeat * beatMultiplier)),
   };
 }
 
 /**
- * Detect if a beat is occurring
- * Returns a value 0-1 indicating beat intensity (0 = no beat, 1 = strong beat)
- * Uses energy comparison against rolling average
- */
-export function detectBeat(): number {
-  const currentEnergy = getBassEnergy();
-
-  // Add to history
-  beatState.energyHistory.push(currentEnergy);
-  if (beatState.energyHistory.length > beatState.historySize) {
-    beatState.energyHistory.shift();
-  }
-
-  // Need enough history to compare
-  if (beatState.energyHistory.length < 10) {
-    return (beatState.lastBeatIntensity *= beatState.beatDecay);
-  }
-
-  // Calculate average energy from history
-  const avgEnergy =
-    beatState.energyHistory.reduce((a, b) => a + b, 0) /
-    beatState.energyHistory.length;
-
-  // Decrease cooldown
-  if (beatState.beatCooldown > 0) {
-    beatState.beatCooldown--;
-  }
-
-  // Check if current energy exceeds threshold compared to average
-  const isBeat =
-    beatState.beatCooldown === 0 &&
-    currentEnergy > avgEnergy * beatState.beatThreshold &&
-    currentEnergy > 0.1; // Minimum energy threshold
-
-  if (isBeat) {
-    // Calculate beat intensity based on how much it exceeds the average
-    const intensity = Math.min(1, (currentEnergy - avgEnergy) / avgEnergy);
-    beatState.lastBeatIntensity = Math.max(
-      beatState.lastBeatIntensity,
-      intensity
-    );
-    beatState.beatCooldown = beatState.cooldownFrames;
-  }
-
-  // Decay the beat intensity over time for smooth animation
-  beatState.lastBeatIntensity *= beatState.beatDecay;
-
-  return beatState.lastBeatIntensity;
-}
-
-/**
- * Get the current beat intensity without detecting new beats
- * Useful for checking the current "pulse" level
- */
-export function getBeatIntensity(): number {
-  return beatState.lastBeatIntensity;
-}
-
-/**
- * Reset beat detection state (call when stopping capture)
+ * Reset beat detection state (called when stopping capture)
  */
 export function resetBeatDetection(): void {
-  beatState.energyHistory = [];
-  beatState.beatCooldown = 0;
-  beatState.lastBeatIntensity = 0;
+  bandBeatState.bass = {
+    energyHistory: [],
+    beatCooldown: 0,
+    lastBeatIntensity: 0,
+  };
+  bandBeatState.mid = {
+    energyHistory: [],
+    beatCooldown: 0,
+    lastBeatIntensity: 0,
+  };
+  bandBeatState.high = {
+    energyHistory: [],
+    beatCooldown: 0,
+    lastBeatIntensity: 0,
+  };
 }

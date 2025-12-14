@@ -9,7 +9,6 @@ export default /*glsl*/ `
 
   uniform float u_time;
   uniform float u_intensity;
-  uniform float u_beatIntensity;
   uniform float u_bass;
   uniform float u_mid;
   uniform float u_high;
@@ -254,7 +253,7 @@ export default /*glsl*/ `
     float animTime = u_time + mouseUv.x;
 
     // Light brightness multiplier based on audio
-    float lightBrightness = 1.0 + u_beatIntensity * 0.8 + u_bass * 0.5;
+    float lightBrightness = 1.0 + u_bass * 0.8 + u_mid * 0.5;
 
     vec3 col = StreetLight(ray, streetLightDiameter, bokeBlur, animTime) * lightBrightness;
     col += HeadLights(ray, headLightDiameter, bokeBlur, animTime) * lightBrightness;

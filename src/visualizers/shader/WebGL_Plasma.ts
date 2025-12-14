@@ -8,7 +8,6 @@ export default /*glsl*/ `
 
   uniform float u_time;
   uniform float u_intensity;
-  uniform float u_beatIntensity;
   uniform float u_bass;
   uniform float u_mid;
   uniform float u_high;
@@ -37,17 +36,17 @@ export default /*glsl*/ `
     float value = (v1 + v2 + v3 + v4) / 4.0;
 
     // Map to color - shift hue with audio
-    float hueShift = u_intensity * 0.17 + u_beatIntensity * 0.08;
+    float hueShift = u_intensity * 0.17 + u_bass * 0.08;
     float hue = (value + 1.0) * 0.25 + 0.56 + hueShift; // Purple/blue/pink range (200-380 deg -> 0.56-1.05)
     float saturation = 0.7 + u_intensity * 0.3;
-    float lightness = 0.4 + (value + 1.0) * 0.2 + u_beatIntensity * 0.15;
+    float lightness = 0.4 + (value + 1.0) * 0.2 + u_bass * 0.15;
 
     vec3 color = hsl2rgb(vec3(mod(hue, 1.0), saturation, lightness));
 
     // Add glow overlay on bass hits
     if (u_bass > 0.3) {
       float dist = length(uv - 0.5);
-      float glow = (1.0 - smoothstep(0.0, 0.7, dist)) * u_beatIntensity * 0.4;
+      float glow = (1.0 - smoothstep(0.0, 0.7, dist)) * u_bass * 0.4;
       color += vec3(1.0, 0.4, 1.0) * glow;
     }
 

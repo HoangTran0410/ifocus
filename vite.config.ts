@@ -1,44 +1,42 @@
 import path from "path";
-import { defineConfig, loadEnv } from "vite";
+import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 
 export default defineConfig(({ mode }) => {
-  const env = loadEnv(mode, ".", "");
   return {
     base: "./",
     root: "src",
+    publicDir: "src/assets",
     build: {
       outDir: "../",
+      copyPublicDir: true,
+      assetsDir: "public",
       emptyOutDir: false,
       rollupOptions: {
         output: {
+          assetFileNames: "public/assets/[name][extname]",
+          // entryFileNames: "public/[hash].js",
           manualChunks(id) {
             // Vendor chunks
             if (id.includes("node_modules")) {
-              // if (
-              //   id.includes("react-dom") ||
-              //   id.includes("react/") ||
-              //   id.includes("react-youtube") ||
-              //   id.includes("@loadable")
-              // ) {
-              //   return "react-vendor";
-              // }
-              // if (id.includes("lucide-react")) {
-              //   return "ui-vendor";
-              // }
-              // if (id.includes("uuid")) {
-              //   return "helper-vendor";
-              // }
-              // Other node_modules go to common vendor
               return "vendor";
             }
-            // Split components into their own chunks for lazy loading
-            if (id.includes("/components/")) {
-              const componentName = id.split("/components/")[1]?.split(".")[0];
-              if (componentName) {
-                return `comp-${componentName.toLowerCase()}`;
+
+            for (const folder of [
+              "components",
+              // "assets",
+              "visualizers",
+            ]) {
+              if (id.includes(`/${folder}/`)) {
+                const componentName = id.split(".")?.[0]?.split(`/`)?.at?.(-1);
+                console.log(id, componentName);
+                if (componentName) {
+                  return `${folder}/${componentName.toLowerCase()}`;
+                }
               }
             }
+
+            return "default";
           },
         },
       },
@@ -48,10 +46,6 @@ export default defineConfig(({ mode }) => {
       host: "0.0.0.0",
     },
     plugins: [react()],
-    define: {
-      "process.env.API_KEY": JSON.stringify(env.GEMINI_API_KEY),
-      "process.env.GEMINI_API_KEY": JSON.stringify(env.GEMINI_API_KEY),
-    },
     resolve: {
       alias: {
         "@": path.resolve(__dirname, "."),

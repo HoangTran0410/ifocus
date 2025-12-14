@@ -3,7 +3,10 @@ import { createPortal } from "react-dom";
 import type { YouTubeProps } from "react-youtube";
 import loadable from "@loadable/component";
 import { LoadingFallback } from "../utils/loader";
-import { isAudioCaptureActive, detectBeat } from "../utils/audioAnalyzer";
+import {
+  isAudioCaptureActive,
+  getFrequencyBands,
+} from "../utils/audioAnalyzer";
 import {
   DEFAULT_BG_FILTERS,
   DEFAULT_SYNC_VISUALIZER_CONFIG,
@@ -132,11 +135,11 @@ export default function Background({
       };
 
       if (isAudioCaptureActive()) {
-        // Use beat detection instead of average frequency
-        const beatIntensity = detectBeat();
+        // Use bass frequency band which includes beat detection
+        const bass = getFrequencyBands().bass;
 
         // Calculate target zoom based on beat intensity (using prop)
-        const targetZoom = baseZoom + beatIntensity * syncConfig.intensity;
+        const targetZoom = baseZoom + bass * syncConfig.intensity;
 
         // Smooth transition towards target (using prop)
         currentZoom += (targetZoom - currentZoom) * syncConfig.speed;

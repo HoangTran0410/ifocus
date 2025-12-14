@@ -11,7 +11,6 @@ export default function renderFractal({
   canvas,
   data,
   performanceMode = false,
-  beatIntensity = 0,
   bass = 0,
   mid = 0,
 }: VisualizeFnProps) {
@@ -42,7 +41,7 @@ export default function renderFractal({
     // Pulse effect
     const pulse = Math.sin(kaleidoState.pulsePhase + layer * 0.5) * 0.1;
     const layerRadius =
-      baseRadius * (1 + pulse + intensity * 0.15 + beatIntensity * 0.1);
+      baseRadius * (1 + pulse + intensity * 0.15 + bass * 0.1);
 
     // Layer color
     const hue = (260 + layer * 30 + kaleidoState.rotation * 20) % 360;
@@ -137,7 +136,7 @@ export default function renderFractal({
   }
 
   // Center orb
-  const orbRadius = 20 + avgIntensity * 25 + beatIntensity * 20;
+  const orbRadius = 20 + avgIntensity * 25 + bass * 20;
   const orbGradient = ctx.createRadialGradient(
     centerX,
     centerY,
@@ -171,7 +170,7 @@ export default function renderFractal({
     ctx.beginPath();
     ctx.arc(centerX, centerY, ringRadius, 0, Math.PI * 2);
     ctx.strokeStyle = `hsla(280, 80%, 60%, ${0.2 + avgIntensity * 0.3})`;
-    ctx.lineWidth = 2 + beatIntensity * 3;
+    ctx.lineWidth = 2 + bass * 3;
     ctx.shadowColor = `hsla(280, 100%, 70%, 0.8)`;
     ctx.shadowBlur = 15 + avgIntensity * 10;
     ctx.stroke();
@@ -179,8 +178,8 @@ export default function renderFractal({
   }
 
   // Particles on beats
-  if (!performanceMode && beatIntensity > 0.4) {
-    const particleCount = Math.floor(beatIntensity * 15);
+  if (!performanceMode && bass > 0.4) {
+    const particleCount = Math.floor(bass * 15);
     for (let i = 0; i < particleCount; i++) {
       const angle = Math.random() * Math.PI * 2;
       const dist = maxRadius * (0.3 + Math.random() * 0.6);
@@ -191,7 +190,7 @@ export default function renderFractal({
 
       ctx.beginPath();
       ctx.arc(px, py, size, 0, Math.PI * 2);
-      ctx.fillStyle = `hsla(${hue}, 80%, 70%, ${0.4 + beatIntensity * 0.4})`;
+      ctx.fillStyle = `hsla(${hue}, 80%, 70%, ${0.4 + bass * 0.4})`;
       ctx.fill();
     }
   }

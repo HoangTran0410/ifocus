@@ -7,7 +7,6 @@ export default /*glsl*/ `
 
   uniform float u_time;
   uniform float u_intensity;
-  uniform float u_beatIntensity;
   uniform float u_bass;
   uniform float u_mid;
   uniform float u_high;
@@ -30,7 +29,6 @@ export default /*glsl*/ `
 
     // Audio modulation for color reactivity (not speed)
     float audioMod = 1.0 + u_bass * 0.5; // + u_mid * 0.2 + u_high * 0.1;
-    // float beatGlow = 1.0 + u_beatIntensity * 0.8;
 
     vec2 v = u_resolution.xy;
     vec2 u = 0.2 * (fragCoord + fragCoord - v) / v.y;

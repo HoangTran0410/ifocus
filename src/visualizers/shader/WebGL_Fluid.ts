@@ -44,7 +44,6 @@ export default function renderFluid({
   canvas,
   data,
   performanceMode = false,
-  beatIntensity = 0,
   bass = 0,
   mid = 0,
 }: VisualizeFnProps) {

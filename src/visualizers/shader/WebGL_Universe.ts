@@ -9,7 +9,6 @@ export default /*glsl*/ `
 
   uniform float u_time;
   uniform float u_intensity;
-  uniform float u_beatIntensity;
   uniform float u_bass;
   uniform float u_mid;
   uniform float u_high;
@@ -166,7 +165,7 @@ export default /*glsl*/ `
     vec3 baseCol = vec3(s, cos(t * 0.4), -sin(t * 0.24)) * 0.4 + 0.6;
 
     // Make colors more vibrant on beats
-    baseCol = mix(baseCol, vec3(1.0, 0.5, 0.8), u_beatIntensity * 0.3);
+    baseCol = mix(baseCol, vec3(1.0, 0.5, 0.8), u_bass * 0.3);
 
     vec3 col = baseCol * m;
     col += baseCol * glow;

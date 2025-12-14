@@ -38,7 +38,6 @@ export default function renderHexagons({
   canvas,
   data,
   performanceMode = false,
-  beatIntensity = 0,
   bass = 0,
   high = 0,
 }: VisualizeFnProps) {

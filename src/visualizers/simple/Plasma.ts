@@ -10,7 +10,6 @@ export default function renderPlasma({
   canvas,
   data,
   performanceMode = false,
-  beatIntensity = 0,
   bass = 0,
   mid = 0,
   high = 0,
@@ -52,10 +51,10 @@ export default function renderPlasma({
       const value = (v1 + v2 + v3 + v4) / 4;
 
       // Map to color - shift hue with audio
-      const hueShift = avgIntensity * 60 + beatIntensity * 30;
+      const hueShift = avgIntensity * 60 + bass * 30;
       const hue = (value + 1) * 90 + 200 + hueShift; // Purple/blue/pink range
       const saturation = 70 + avgIntensity * 30;
-      const lightness = 40 + (value + 1) * 20 + beatIntensity * 15;
+      const lightness = 40 + (value + 1) * 20 + bass * 15;
 
       ctx.fillStyle = `hsl(${hue % 360}, ${saturation}%, ${lightness}%)`;
       ctx.fillRect(x * resolution, y * resolution, resolution, resolution);
@@ -72,11 +71,8 @@ export default function renderPlasma({
       height / 2,
       Math.max(width, height) / 2
     );
-    glowGradient.addColorStop(0, `rgba(255, 100, 255, ${beatIntensity * 0.3})`);
-    glowGradient.addColorStop(
-      0.5,
-      `rgba(100, 100, 255, ${beatIntensity * 0.15})`
-    );
+    glowGradient.addColorStop(0, `rgba(255, 100, 255, ${bass * 0.3})`);
+    glowGradient.addColorStop(0.5, `rgba(100, 100, 255, ${bass * 0.15})`);
     glowGradient.addColorStop(1, "transparent");
     ctx.fillStyle = glowGradient;
     ctx.fillRect(0, 0, width, height);

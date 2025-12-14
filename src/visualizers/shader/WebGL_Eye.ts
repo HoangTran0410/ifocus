@@ -10,7 +10,6 @@ export default /*glsl*/ `
 
   uniform float u_time;
   uniform float u_intensity;
-  uniform float u_beatIntensity;
   uniform float u_bass;
   uniform float u_mid;
   uniform float u_high;
@@ -73,7 +72,7 @@ export default /*glsl*/ `
       d = abs(min(length(p.xy) - cylinderSize, min(p.x, p.y) + 1e-3)) + 1e-3;
 
       // Add lighting contribution - beat makes glow more intense
-      float glowBoost = 1.0 + u_beatIntensity * 2.0;
+      float glowBoost = 1.0 + u_bass * 2.0;
       o += O.w / d * O * glowBoost;
 
       // Step forward
@@ -81,11 +80,11 @@ export default /*glsl*/ `
     }
 
     // Tone mapping - beat affects zoom/intensity
-    float toneDiv = 20000.0 - u_beatIntensity * 5000.0;
+    float toneDiv = 20000.0 - u_bass * 5000.0;
     O = tanh4(o / toneDiv);
 
     // Audio reactivity - brightness boost on beat
-    O.rgb *= 1.0 + u_beatIntensity * 0.5 + u_bass * 0.3;
+    O.rgb *= 1.0 + u_bass * 0.5 + u_mid * 0.3;
 
     // Alpha based on brightness
     float alpha = clamp(length(O.rgb) * 2.0, 0.0, 1.0);

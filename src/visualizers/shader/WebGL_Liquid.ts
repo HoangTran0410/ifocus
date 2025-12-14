@@ -8,7 +8,6 @@ export default /*glsl*/ `
 
   uniform float u_time;
   uniform float u_intensity;
-  uniform float u_beatIntensity;
   uniform float u_bass;
   uniform float u_mid;
   uniform float u_high;
@@ -44,7 +43,7 @@ export default /*glsl*/ `
     uv *= 30.0;
 
     // Constant speed (no beat effect on time)
-    float animSpeed = u_time * SPIN_SPEED * 0.3 + u_beatIntensity * 7.0;
+    float animSpeed = u_time * SPIN_SPEED * 0.3 + u_bass * 7.0;
 
     vec2 uv2 = vec2(uv.x + uv.y);
 

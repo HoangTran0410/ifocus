@@ -82,7 +82,6 @@ const IMAGE_SHADER = /*glsl*/ `
   varying vec2 v_uv;
 
   uniform sampler2D u_texture;
-  uniform float u_beatIntensity;
   uniform float u_bass;
   uniform float u_mid;
 
@@ -117,11 +116,11 @@ const IMAGE_SHADER = /*glsl*/ `
     color *= brightness;
 
     // Audio-reactive boost
-    float audioBoost = 0.3 + u_bass * 2.5 + u_mid * 1.5 + u_beatIntensity * 3.0;
+    float audioBoost = 0.3 + u_bass * 2.5 + u_mid * 1.5;
     color *= audioBoost;
 
     // Color punch on beats
-    color = mix(color, color * 2.0 + vec3(0.3), u_beatIntensity * 0.5);
+    color = mix(color, color * 2.0 + vec3(0.3), u_bass * 0.5);
 
     float alpha = clamp(length(color) * 0.8, 0.0, 1.0);
 
@@ -208,10 +207,6 @@ function initWebGL(
   // Get uniforms for Image pass
   state.uniforms.image = {
     u_texture: gl.getUniformLocation(state.imageProgram, "u_texture"),
-    u_beatIntensity: gl.getUniformLocation(
-      state.imageProgram,
-      "u_beatIntensity"
-    ),
     u_bass: gl.getUniformLocation(state.imageProgram, "u_bass"),
     u_mid: gl.getUniformLocation(state.imageProgram, "u_mid"),
   };
@@ -298,7 +293,6 @@ export default function renderWebGLFiber({
   canvas,
   data,
   performanceMode = false,
-  beatIntensity = 0,
   bass = 0,
   mid = 0,
 }: VisualizeFnProps) {
@@ -332,7 +326,6 @@ export default function renderWebGLFiber({
   gl.useProgram(state.bufferAProgram);
   gl.uniform1f(state.uniforms.bufferA.u_time, state.time);
   gl.uniform1f(state.uniforms.bufferA.u_intensity, avgIntensity);
-  gl.uniform1f(state.uniforms.bufferA.u_beatIntensity, beatIntensity);
   gl.uniform1f(state.uniforms.bufferA.u_bass, bass);
   gl.uniform1f(state.uniforms.bufferA.u_mid, mid);
   gl.uniform2f(
@@ -353,7 +346,6 @@ export default function renderWebGLFiber({
   gl.useProgram(state.imageProgram);
   gl.uniform1i(state.uniforms.image.u_texture, 0);
   gl.uniform2f(state.uniforms.image.u_resolution, canvas.width, canvas.height);
-  gl.uniform1f(state.uniforms.image.u_beatIntensity, beatIntensity);
   gl.uniform1f(state.uniforms.image.u_bass, bass);
 
   gl.activeTexture(gl.TEXTURE0);

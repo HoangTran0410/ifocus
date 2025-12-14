@@ -41,7 +41,6 @@ export default function renderMatrix({
   canvas,
   data,
   performanceMode = false,
-  beatIntensity = 0,
   bass = 0,
 }: VisualizeFnProps) {
   const avgIntensity = data.reduce((a, b) => a + b, 0) / data.length;
@@ -77,14 +76,14 @@ export default function renderMatrix({
 
   // Semi-transparent black to create trail effect - faster on beats
   // ctx.fillStyle = `rgba(0, 0, 0, ${
-  //   0.08 + avgIntensity * 0.08 + beatIntensity * 0.1
+  //   0.08 + avgIntensity * 0.08 + bass * 0.1
   // })`;
   // ctx.fillRect(0, 0, canvas.width, canvas.height);
 
   ctx.font = `${fontSize}px monospace`;
 
   // Fixed speed factor - independent of canvas size, boosted on beats
-  const baseSpeedFactor = 0.005 + beatIntensity * 0.003;
+  const baseSpeedFactor = 0.005 + bass * 0.003;
 
   // Update and draw each drop
   matrixState.drops.forEach((drop, i) => {

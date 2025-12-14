@@ -9,7 +9,6 @@ export default /*glsl*/ `
 
   uniform float u_time;
   uniform float u_intensity;
-  uniform float u_beatIntensity;
   uniform float u_bass;
   uniform float u_mid;
   uniform float u_high;
@@ -89,7 +88,7 @@ export default /*glsl*/ `
     col = tanh3(col / 500.0);
 
     // Beat boost
-    col *= 1.0 + u_beatIntensity * 0.5;
+    col *= 1.0 + u_bass * 0.5;
 
     // Alpha based on brightness
     float alpha = clamp(length(col) * 2.0, 0.0, 1.0);

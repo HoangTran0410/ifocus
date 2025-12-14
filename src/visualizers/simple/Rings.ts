@@ -11,7 +11,6 @@ export default function renderRings({
   canvas,
   data,
   performanceMode = false,
-  beatIntensity = 0,
   bass = 0,
 }: VisualizeFnProps) {
   const centerX = canvas.width / 2;
@@ -107,7 +106,7 @@ export default function renderRings({
   }
 
   // Center orb - pulses with beat
-  const orbRadius = 20 + avgIntensity * 30 + beatIntensity * 25;
+  const orbRadius = 20 + avgIntensity * 30 + bass * 25;
   const orbGradient = ctx.createRadialGradient(
     centerX,
     centerY,

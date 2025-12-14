@@ -55,7 +55,6 @@ export default function renderFireworks({
   canvas,
   data,
   performanceMode = false,
-  beatIntensity = 0,
   bass = 0,
 }: VisualizeFnProps) {
   const avgIntensity = data.reduce((a, b) => a + b, 0) / data.length;
@@ -282,19 +281,4 @@ export default function renderFireworks({
     ctx.shadowBlur = 0;
     ctx.globalAlpha = 1;
   }
-
-  // Enhanced ambient sparkles
-  // if (!performanceMode) {
-  //   const sparkleCount = Math.floor(3 + avgIntensity * 8 + beatIntensity * 10);
-  //   for (let i = 0; i < sparkleCount; i++) {
-  //     const x = Math.random() * canvas.width;
-  //     const y = Math.random() * canvas.height;
-  //     const size = 0.5 + Math.random() * 1.5;
-  //     const sparkleAlpha = 0.2 + Math.random() * 0.4 + beatIntensity * 0.3;
-  //     ctx.beginPath();
-  //     ctx.arc(x, y, size, 0, Math.PI * 2);
-  //     ctx.fillStyle = `rgba(255, 255, 255, ${sparkleAlpha})`;
-  //     ctx.fill();
-  //   }
-  // }
 }
