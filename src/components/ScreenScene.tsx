@@ -15,12 +15,29 @@ const SettingsTab = loadable(() => import("./TabSettings"), {
   fallback: LoadingFallback,
 });
 
-type TabType = "image" | "color" | "video" | "settings";
+const Tabs = [
+  {
+    name: "Image",
+    component: ImageTab,
+  },
+  {
+    name: "Color",
+    component: ColorTab,
+  },
+  {
+    name: "Video",
+    component: VideoTab,
+  },
+  {
+    name: "Settings",
+    component: SettingsTab,
+  },
+];
 
 export default function SceneScreen() {
-  const [activeTab, setActiveTab] = useState<TabType>("image");
-  const [visitedTabs, setVisitedTabs] = useState<Set<TabType>>(
-    new Set(["image"])
+  const [activeTab, setActiveTab] = useState<string>(Tabs[0].name);
+  const [visitedTabs, setVisitedTabs] = useState<Set<string>>(
+    new Set([Tabs[0].name])
   );
 
   useEffect(() => {
@@ -33,77 +50,33 @@ export default function SceneScreen() {
     <div className="flex flex-col h-full text-white">
       {/* Tabs */}
       <div className="flex border-b border-white/10 mb-4">
-        <button
-          onClick={() => setActiveTab("color")}
-          className={`flex-1 py-3 text-sm font-medium transition-colors ${
-            activeTab === "color"
-              ? "text-white border-b-2 border-white"
-              : "text-white/50 hover:text-white"
-          }`}
-        >
-          Color
-        </button>
-        <button
-          onClick={() => setActiveTab("image")}
-          className={`flex-1 py-3 text-sm font-medium transition-colors ${
-            activeTab === "image"
-              ? "text-white border-b-2 border-white"
-              : "text-white/50 hover:text-white"
-          }`}
-        >
-          Image
-        </button>
-        <button
-          onClick={() => setActiveTab("video")}
-          className={`flex-1 py-3 text-sm font-medium transition-colors ${
-            activeTab === "video"
-              ? "text-white border-b-2 border-white"
-              : "text-white/50 hover:text-white"
-          }`}
-        >
-          Video
-        </button>
-        <button
-          onClick={() => setActiveTab("settings")}
-          className={`flex-1 py-3 text-sm font-medium transition-colors ${
-            activeTab === "settings"
-              ? "text-white border-b-2 border-white"
-              : "text-white/50 hover:text-white"
-          }`}
-        >
-          Settings
-        </button>
+        {Tabs.map((tab) => (
+          <button
+            key={tab.name}
+            onClick={() => setActiveTab(tab.name)}
+            className={`flex-1 py-3 text-sm font-medium transition-colors ${
+              activeTab === tab.name
+                ? "text-white border-b-2 border-white"
+                : "text-white/50 hover:text-white"
+            }`}
+          >
+            {tab.name}
+          </button>
+        ))}
       </div>
 
-      <div
-        className={
-          "flex-1 custom-scrollbar" +
-          (activeTab === "video" ? " overflow-hidden" : " overflow-y-auto p-2")
-        }
-      >
-        {/* COLOR TAB */}
-        <div className={activeTab === "color" ? "block" : "hidden"}>
-          {visitedTabs.has("color") && <ColorTab />}
-        </div>
-
-        {/* IMAGE TAB */}
-        <div className={activeTab === "image" ? "block" : "hidden"}>
-          {visitedTabs.has("image") && <ImageTab />}
-        </div>
-
-        {/* VIDEO TAB */}
-        <div
-          className={
-            activeTab === "video" ? "flex flex-col h-full min-h-0" : "hidden"
-          }
-        >
-          {visitedTabs.has("video") && <VideoTab />}
-        </div>
-
-        {/* SETTINGS TAB */}
-        <div className={activeTab === "settings" ? "block" : "hidden"}>
-          {visitedTabs.has("settings") && <SettingsTab />}
-        </div>
+      {/* Content */}
+      <div className={"flex-1 overflow-y-auto p-2"}>
+        {Tabs.map((tab) => (
+          <div
+            key={tab.name}
+            className={
+              "flex-1 " + (tab.name === activeTab ? "block" : "hidden")
+            }
+          >
+            {visitedTabs.has(tab.name) && <tab.component />}
+          </div>
+        ))}
       </div>
     </div>
   );

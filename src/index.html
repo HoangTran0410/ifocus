@@ -12,67 +12,7 @@
       href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
       rel="stylesheet"
     />
-    <style>
-      body {
-        font-family: "Inter", sans-serif;
-        overflow: hidden; /* Prevent scrolling on the main body */
-      }
-      /* Use dynamic viewport height for full-screen on mobile */
-      .h-screen {
-        height: 100vh;
-        height: 100dvh; /* Dynamic viewport height - accounts for mobile browser UI */
-      }
-      /* Custom Scrollbar for panels */
-      .custom-scrollbar::-webkit-scrollbar {
-        width: 6px;
-      }
-      .custom-scrollbar::-webkit-scrollbar-track {
-        background: rgba(255, 255, 255, 0.1);
-      }
-      .custom-scrollbar::-webkit-scrollbar-thumb {
-        background: rgba(255, 255, 255, 0.3);
-        border-radius: 3px;
-      }
-      .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-        background: rgba(255, 255, 255, 0.5);
-      }
-      .glass-panel {
-        background: rgba(20, 20, 20, 0.6);
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-      }
-
-      /* Disable expensive blur effects on mobile for better performance */
-      @media (max-width: 768px) {
-        .backdrop-blur-sm,
-        .backdrop-blur,
-        .backdrop-blur-md,
-        .backdrop-blur-lg,
-        .backdrop-blur-xl,
-        .backdrop-blur-2xl,
-        .backdrop-blur-3xl,
-        [class*="backdrop-blur"] {
-          backdrop-filter: none !important;
-          -webkit-backdrop-filter: none !important;
-        }
-        .blur-sm,
-        .blur,
-        .blur-md,
-        .blur-lg,
-        .blur-xl,
-        .blur-2xl,
-        .blur-3xl,
-        [class*="blur-["] {
-          filter: none !important;
-        }
-        .glass-panel {
-          backdrop-filter: none;
-          -webkit-backdrop-filter: none;
-          background: rgba(20, 20, 20, 0.85);
-        }
-      }
-    </style>
+    <link rel="stylesheet" href="./style.css" />
   </head>
   <body>
     <div id="root"></div>

@@ -73,7 +73,7 @@ export default function TasksScreen() {
         </div>
       </form>
 
-      <div className="flex-1 overflow-y-auto custom-scrollbar space-y-2 pr-2">
+      <div className="flex-1 overflow-y-auto  space-y-2 pr-2">
         {tasks.length === 0 && (
           <div className="text-center text-white/30 py-8 text-sm">
             No tasks yet. Stay focused!

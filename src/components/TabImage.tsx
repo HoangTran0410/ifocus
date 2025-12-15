@@ -1,6 +1,5 @@
 import React, { useState } from "react";
-import { Upload, Check } from "lucide-react";
-import type { Scene } from "../types";
+import { Upload, Play } from "lucide-react";
 import { DEFAULT_IMAGES } from "../constants";
 import { useCurrentScene, useSetCurrentScene } from "../stores/useAppStore";
 
@@ -52,9 +51,9 @@ export default function ImageTab() {
           />
           <button
             type="submit"
-            className="bg-white text-black p-2 rounded-lg hover:bg-white/90"
+            className="bg-white/10 text-white p-2 rounded-lg hover:bg-white/20"
           >
-            <Check size={18} />
+            <Play size={18} />
           </button>
         </form>
         <p className="text-[10px] text-white/30 mt-1">

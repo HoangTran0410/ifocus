@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
-import loadable, { LoadableComponent } from "@loadable/component";
+import loadable from "@loadable/component";
 import {
   X,
   Music,
@@ -53,6 +53,37 @@ const Visualizer = loadable(() => import("./components/Visualizer"), {
   fallback: LoadingFallback,
 });
 
+const Panels = [
+  {
+    label: "Scenes",
+    icon: <ImageIcon size={18} />,
+    comp: SceneScreen,
+  },
+  {
+    label: "Sounds",
+    icon: <Music size={18} />,
+    comp: AudioScreen,
+  },
+  {
+    label: "Effects",
+    icon: <Sparkles size={18} />,
+    comp: EffectsScreen,
+  },
+  { divider: true },
+  {
+    label: "Tasks",
+    icon: <CheckSquare size={18} />,
+    comp: TasksScreen,
+  },
+  {
+    label: "Notes",
+    icon: <Edit3 size={18} />,
+    comp: NotesScreen,
+  },
+];
+
+const DefaultPanel = Panels[0]?.label;
+
 // Extend Window interface for Document Picture-in-Picture API
 declare global {
   interface Window {
@@ -66,9 +97,6 @@ declare global {
   }
 }
 
-// Panel types
-type PanelType = "none" | "audio" | "tasks" | "notes" | "scenes" | "effects";
-
 function App() {
   // Get state from Zustand store
   const showVisualizer = useShowVisualizer();
@@ -78,30 +106,23 @@ function App() {
   const setShowTimer = useSetShowTimer();
 
   // Local UI state (not persisted)
-  const [activePanel, setActivePanel] = useState<PanelType>("none");
-  const lastActivePanelRef = useRef<PanelType>("scenes");
+  const [activePanel, setActivePanel] = useState<string>(DefaultPanel);
+  const lastActivePanelRef = useRef<string>(activePanel);
 
-  const [visitedPanels, setVisitedPanels] = useState<Set<PanelType>>(new Set());
+  const [visitedPanels, setVisitedPanels] = useState<Set<string>>(new Set());
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isPiPWebsite, setIsPiPWebsite] = useState(false);
   const pipWindowRef = useRef<Window | null>(null);
 
   // Lazy load panels
   useEffect(() => {
-    if (activePanel !== "none") {
+    if (!!activePanel) {
       lastActivePanelRef.current = activePanel;
 
       if (!visitedPanels.has(activePanel))
         setVisitedPanels((prev) => new Set([...prev, activePanel]));
     }
   }, [activePanel, visitedPanels]);
-
-  // auto open effect panel when timer is closed, and no other panel is open
-  // useEffect(() => {
-  //   if (!showTimer && activePanel === "none") {
-  //     setActivePanel("effects");
-  //   }
-  // }, [showTimer]);
 
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
@@ -252,12 +273,10 @@ function App() {
             {/* Hamburger menu for mobile */}
             <button
               onClick={() =>
-                setActivePanel(
-                  activePanel === "none" ? lastActivePanelRef.current : "none"
-                )
+                setActivePanel(!activePanel ? lastActivePanelRef.current : "")
               }
               className={`p-3 transition-colors rounded-full hover:bg-white/10 sm:hidden ${
-                activePanel !== "none"
+                !!activePanel
                   ? "text-white bg-white/10"
                   : "text-white/70 hover:text-white"
               }`}
@@ -282,47 +301,17 @@ function App() {
           {/* We apply the same transition logic here to keep it centered relative to the timer */}
           <div className={`transition-all duration-500`}>
             <div className="flex gap-0 sm:gap-2 p-2 bg-black/40 opacity-50 hover:opacity-100 hover:backdrop-blur transition-all rounded-2xl border border-white/10 shadow-2xl">
-              <DockButton
-                icon={<ImageIcon size={20} />}
-                label="Scenes"
-                isActive={activePanel === "scenes"}
-                onClick={() =>
-                  setActivePanel(activePanel === "scenes" ? "none" : "scenes")
-                }
-              />
-              <DockButton
-                icon={<Sparkles size={20} />}
-                label="Effects"
-                isActive={activePanel === "effects"}
-                onClick={() =>
-                  setActivePanel(activePanel === "effects" ? "none" : "effects")
-                }
-              />
-              <DockButton
-                icon={<Music size={20} />}
-                label="Sounds"
-                isActive={activePanel === "audio"}
-                onClick={() =>
-                  setActivePanel(activePanel === "audio" ? "none" : "audio")
-                }
-              />
-              <div className="w-px h-10 bg-white/10 mx-1 self-center" />
-              <DockButton
-                icon={<CheckSquare size={20} />}
-                label="Tasks"
-                isActive={activePanel === "tasks"}
-                onClick={() =>
-                  setActivePanel(activePanel === "tasks" ? "none" : "tasks")
-                }
-              />
-              <DockButton
-                icon={<Edit3 size={20} />}
-                label="Notes"
-                isActive={activePanel === "notes"}
-                onClick={() =>
-                  setActivePanel(activePanel === "notes" ? "none" : "notes")
-                }
-              />
+              {Panels.filter((item) => !item.divider).map((item) => (
+                <DockButton
+                  key={item.label}
+                  icon={item.icon}
+                  label={item.label}
+                  isActive={activePanel === item.label}
+                  onClick={() =>
+                    setActivePanel(activePanel === item.label ? "" : item.label)
+                  }
+                />
+              ))}
             </div>
           </div>
         </div>
@@ -331,10 +320,10 @@ function App() {
       {/* Side Panel Drawer - Keep all panels mounted, just hide them */}
       <div
         className={`absolute top-0 right-0 h-full w-full sm:w-96 glass-panel border-l border-white/10 transition-transform duration-300 ease-out ${
-          activePanel !== "none" ? "translate-x-0" : "translate-x-full"
+          !!activePanel ? "translate-x-0" : "translate-x-full"
         }`}
         style={{
-          zIndex: activePanel !== "none" ? 50 : -1,
+          zIndex: !!activePanel ? 50 : -1,
         }}
       >
         <div className="h-full flex flex-col p-4 sm:p-6">
@@ -342,66 +331,31 @@ function App() {
           <div className="flex items-center justify-between mb-4">
             {/* Tab Navigation */}
             <div className="flex gap-1">
-              <button
-                onClick={() => setActivePanel("scenes")}
-                className={`p-2 rounded-lg transition-all ${
-                  activePanel === "scenes"
-                    ? "bg-white/20 text-white"
-                    : "text-white/50 hover:text-white hover:bg-white/10"
-                }`}
-                title="Scenes"
-              >
-                <ImageIcon size={18} />
-              </button>
-              <button
-                onClick={() => setActivePanel("effects")}
-                className={`p-2 rounded-lg transition-all ${
-                  activePanel === "effects"
-                    ? "bg-white/20 text-white"
-                    : "text-white/50 hover:text-white hover:bg-white/10"
-                }`}
-                title="Effects"
-              >
-                <Sparkles size={18} />
-              </button>
-              <button
-                onClick={() => setActivePanel("audio")}
-                className={`p-2 rounded-lg transition-all ${
-                  activePanel === "audio"
-                    ? "bg-white/20 text-white"
-                    : "text-white/50 hover:text-white hover:bg-white/10"
-                }`}
-                title="Sounds"
-              >
-                <Music size={18} />
-              </button>
-              <div className="w-px h-6 bg-white/20 mx-1 self-center" />
-              <button
-                onClick={() => setActivePanel("tasks")}
-                className={`p-2 rounded-lg transition-all ${
-                  activePanel === "tasks"
-                    ? "bg-white/20 text-white"
-                    : "text-white/50 hover:text-white hover:bg-white/10"
-                }`}
-                title="Tasks"
-              >
-                <CheckSquare size={18} />
-              </button>
-              <button
-                onClick={() => setActivePanel("notes")}
-                className={`p-2 rounded-lg transition-all ${
-                  activePanel === "notes"
-                    ? "bg-white/20 text-white"
-                    : "text-white/50 hover:text-white hover:bg-white/10"
-                }`}
-                title="Notes"
-              >
-                <Edit3 size={18} />
-              </button>
+              {Panels.map((item) =>
+                item.divider ? (
+                  <div
+                    key={item.label}
+                    className="w-px h-10 bg-white/10 mx-1 self-center"
+                  />
+                ) : (
+                  <button
+                    key={item.label}
+                    onClick={() => setActivePanel(item.label)}
+                    className={`p-2 rounded-lg transition-all ${
+                      activePanel === item.label
+                        ? "bg-white/20 text-white"
+                        : "text-white/50 hover:text-white hover:bg-white/10"
+                    }`}
+                    title={item.label}
+                  >
+                    {item.icon}
+                  </button>
+                )
+              )}
             </div>
             {/* Close button */}
             <button
-              onClick={() => setActivePanel("none")}
+              onClick={() => setActivePanel("")}
               className="p-2 text-white/50 hover:text-white hover:bg-white/10 rounded-lg transition-all"
             >
               <X size={20} />
@@ -416,41 +370,16 @@ function App() {
 
           {/* All panels stay mounted, just hidden - now use Zustand internally */}
           <div className="flex-1 overflow-hidden relative">
-            <div
-              className={`absolute inset-0 ${
-                activePanel === "scenes" ? "block" : "hidden"
-              }`}
-            >
-              {visitedPanels.has("scenes") && <SceneScreen />}
-            </div>
-            <div
-              className={`absolute inset-0 ${
-                activePanel === "audio" ? "block" : "hidden"
-              }`}
-            >
-              {visitedPanels.has("audio") && <AudioScreen />}
-            </div>
-            <div
-              className={`absolute inset-0 ${
-                activePanel === "tasks" ? "block" : "hidden"
-              }`}
-            >
-              {visitedPanels.has("tasks") && <TasksScreen />}
-            </div>
-            <div
-              className={`absolute inset-0 ${
-                activePanel === "notes" ? "block" : "hidden"
-              }`}
-            >
-              {visitedPanels.has("notes") && <NotesScreen />}
-            </div>
-            <div
-              className={`absolute inset-0 ${
-                activePanel === "effects" ? "block" : "hidden"
-              }`}
-            >
-              {visitedPanels.has("effects") && <EffectsScreen />}
-            </div>
+            {Panels.filter((item) => item.comp).map((item) => (
+              <div
+                key={item.label}
+                className={`absolute inset-0 ${
+                  activePanel === item.label ? "block" : "hidden"
+                }`}
+              >
+                {visitedPanels.has(item.label) && <item.comp />}
+              </div>
+            ))}
           </div>
         </div>
       </div>

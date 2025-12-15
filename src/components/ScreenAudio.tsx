@@ -47,7 +47,7 @@ export default function AudioScreen() {
         </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto custom-scrollbar p-1 pt-0">
+      <div className="flex-1 overflow-y-auto  p-1 pt-0">
         <div className={activeTab === "sounds" ? "block" : "hidden"}>
           {visitedTabs.has("sounds") && <AmbienceTab />}
         </div>

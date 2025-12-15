@@ -70,9 +70,10 @@ export default function AmbienceTab() {
 
   // UI state
   const [searchQuery, setSearchQuery] = useState("");
-  const [collapsedCategories, setCollapsedCategories] = useLocalStorage<
-    string[]
-  >("zen_collapsed_categories", []);
+  const [expandedCategories, setExpandedCategories] = useLocalStorage<string[]>(
+    "zen_expanded_categories",
+    []
+  );
   const [savedPresets, setSavedPresets] = useLocalStorage<SoundPreset[]>(
     "zen_sound_presets",
     []
@@ -214,7 +215,7 @@ export default function AmbienceTab() {
   };
 
   const toggleCategory = (category: string) => {
-    setCollapsedCategories((prev) =>
+    setExpandedCategories((prev) =>
       prev.includes(category)
         ? prev.filter((c) => c !== category)
         : [...prev, category]
@@ -557,9 +558,8 @@ export default function AmbienceTab() {
           </div>
         ) : (
           Object.entries(filteredGroupedSounds).map(([category, sounds]) => {
-            const isCollapsed =
-              collapsedCategories.includes(category) && !searchQuery;
-            const isExpanded = !isCollapsed;
+            const isExpanded =
+              expandedCategories.includes(category) && !searchQuery;
 
             return (
               <div key={category}>

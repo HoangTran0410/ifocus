@@ -154,7 +154,7 @@ export default function Timer({ onClose }: TimerProps) {
       </div>
 
       {/* Timer Display - Centered, always visible, enhances on hover */}
-      <div className="timer-display text-7xl sm:text-9xl font-bold tracking-tight select-none drop-shadow-2xl transition-transform duration-500 group-hover:scale-105">
+      <div className="font-sf-pro time-number timer-display text-7xl sm:text-9xl font-bold tracking-tight select-none drop-shadow-2xl transition-transform duration-500 group-hover:scale-105">
         {mode === "clock" ? formatClock(currentTime) : formatTimer(timeLeft)}
       </div>
 

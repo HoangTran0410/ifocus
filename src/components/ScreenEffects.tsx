@@ -25,7 +25,7 @@ export default function EffectsScreen() {
 
   return (
     <div className="flex flex-col h-full text-white">
-      <div className="flex-1 overflow-y-auto custom-scrollbar p-2">
+      <div className="flex-1 overflow-y-auto  p-2">
         {/* Visualizer Toggle - Special independent effect */}
         <div className="mb-4">
           <button
