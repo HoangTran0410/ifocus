@@ -14,8 +14,10 @@ import {
 } from "lucide-react";
 import { useLocalStorage } from "../hooks/useLocalStorage";
 import { DEFAULT_MUSIC } from "../constants";
-import { connectElement, isElementConnected } from "../utils/audioAnalyzer";
-
+import {
+  registerAudioElement,
+  unregisterAudioElement,
+} from "../utils/audioAnalyzer";
 interface UploadedMedia {
   id: string;
   name: string;
@@ -55,6 +57,13 @@ export default function MediaTab() {
       mediaRef.current.volume = isMuted ? 0 : volume;
     }
   }, [volume, isMuted]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      unregisterAudioElement("uploaded-media");
+    };
+  }, []);
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -106,12 +115,8 @@ export default function MediaTab() {
     if (mediaRef.current) {
       setDuration(mediaRef.current.duration);
 
-      // Connect to audio mixer for visualization
-      if (!isElementConnected("uploaded-media")) {
-        connectElement("uploaded-media", mediaRef.current).catch(() => {
-          // May fail if already connected - that's OK
-        });
-      }
+      // Register audio element for mixer mode visualization
+      registerAudioElement("uploaded-media", mediaRef.current);
     }
   };
 
@@ -140,6 +145,8 @@ export default function MediaTab() {
     if (uploadedMedia?.url.startsWith("blob:")) {
       URL.revokeObjectURL(uploadedMedia.url);
     }
+    // Unregister from audio analyzer
+    unregisterAudioElement("uploaded-media");
     setUploadedMedia(null);
     setIsPlaying(false);
     setCurrentTime(0);

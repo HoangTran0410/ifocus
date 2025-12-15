@@ -14,6 +14,8 @@ import {
   AudioAnalyzerConfig,
   AudioSourceType,
   getFrequencyBands,
+  initMixerMode,
+  disconnectAllElements,
 } from "../utils/audioAnalyzer";
 import {
   Mic,
@@ -33,6 +35,7 @@ import {
   StopCircle,
   ChevronDown,
   ChevronUp,
+  Music2,
 } from "lucide-react";
 import {
   useVisualizerMode as useVisualizerDisplayMode,
@@ -277,9 +280,22 @@ export default function Visualizer({
 
   // Handle stop capture
   const handleStopCapture = useCallback(() => {
-    stopAudioCapture();
+    // If in mixer mode, disconnect all elements
+    if (audioSourceType === "mixer") {
+      disconnectAllElements();
+    } else {
+      stopAudioCapture();
+    }
     setIsCapturing(false);
     setAudioSourceType("none");
+  }, [audioSourceType]);
+
+  // Handle mixer mode (connect in-app audio sources)
+  const handleMixerCapture = useCallback(async () => {
+    const success = await initMixerMode();
+    setIsCapturing(success);
+    setAudioSourceType(success ? "mixer" : "none");
+    if (success) setActivePanel("none");
   }, []);
 
   // Toggle audio panel
@@ -1223,6 +1239,7 @@ export default function Visualizer({
               {audioSourceType === "mic" && <Mic size={14} />}
               {audioSourceType === "tab" && <Monitor size={14} />}
               {audioSourceType === "file" && <FileAudio size={14} />}
+              {audioSourceType === "mixer" && <Music2 size={14} />}
               {audioSourceType === "none" && <Mic size={14} />}
             </button>
             {/* Settings Button */}
@@ -1323,9 +1340,11 @@ export default function Visualizer({
                     {audioSourceType === "mic" && <Mic size={14} />}
                     {audioSourceType === "tab" && <Monitor size={14} />}
                     {audioSourceType === "file" && <FileAudio size={14} />}
+                    {audioSourceType === "mixer" && <Music2 size={14} />}
                     {audioSourceType === "tab" && "Tab Audio"}
                     {audioSourceType === "mic" && "Microphone"}
                     {audioSourceType === "file" && "Audio File"}
+                    {audioSourceType === "mixer" && "In-App Audio"}
                   </span>
                   <button
                     onClick={handleStopCapture}
@@ -1335,6 +1354,17 @@ export default function Visualizer({
                     Stop
                   </button>
                 </div>
+              )}
+
+              {/* In-App Audio Option (Mixer mode) */}
+              {!isCapturing && (
+                <button
+                  onClick={handleMixerCapture}
+                  className="w-full px-3 py-2 text-xs font-medium text-white/80 bg-white/10 hover:bg-white/20 rounded-md transition-colors flex items-center gap-2"
+                >
+                  <Music2 size={14} />
+                  Ambience / Uploaded Media
+                </button>
               )}
 
               {/* Tab Audio Option - Desktop only */}
@@ -1378,8 +1408,8 @@ export default function Visualizer({
               {!isCapturing && (
                 <p className="text-xs text-white/40 mt-2">
                   {isMobile
-                    ? "Tab audio capture is not available on mobile devices."
-                    : "Choose how you want to provide audio for the visualizer."}
+                    ? "Use 'In-App Audio' for sounds from Ambience/Media tabs."
+                    : "Use 'In-App Audio' to visualize sounds from Ambience or Media tabs."}
                 </p>
               )}
             </div>

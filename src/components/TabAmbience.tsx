@@ -15,8 +15,10 @@ import {
 import type { SoundState, SoundPreset, SoundTrack } from "../types";
 import { DEFAULT_SOUNDS } from "../constants";
 import { useLocalStorage } from "../hooks/useLocalStorage";
-import { connectElement, isElementConnected } from "../utils/audioAnalyzer";
-
+import {
+  registerAudioElement,
+  unregisterAudioElement,
+} from "../utils/audioAnalyzer";
 export default function AmbienceTab() {
   // Sound preferences stored in localStorage
   const [savedSoundStates, setSavedSoundStates] = useLocalStorage<SoundState[]>(
@@ -174,12 +176,8 @@ export default function AmbienceTab() {
         const audio = audioRefs.current[sound.id];
         if (!audio) return;
 
-        // Connect to audio mixer for visualization (if not already connected)
-        if (!isElementConnected(`ambience-${sound.id}`)) {
-          connectElement(`ambience-${sound.id}`, audio).catch(() => {
-            // May fail if already connected or CORS issue - that's OK
-          });
-        }
+        // Register audio element for mixer mode visualization
+        registerAudioElement(`ambience-${sound.id}`, audio);
 
         // Set volume and play (read globalVolume from ref for latest value)
         audio.volume = soundState.volume * globalVolumeRef.current;
@@ -202,8 +200,9 @@ export default function AmbienceTab() {
   // Cleanup on unmount
   useEffect(() => {
     return () => {
-      Object.values(audioRefs.current).forEach((audio) => {
+      Object.entries(audioRefs.current).forEach(([id, audio]) => {
         audio.pause();
+        unregisterAudioElement(`ambience-${id}`);
       });
     };
   }, []);

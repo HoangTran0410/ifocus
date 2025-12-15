@@ -82,8 +82,6 @@ const Panels = [
   },
 ];
 
-const DefaultPanel = Panels[0]?.label;
-
 // Extend Window interface for Document Picture-in-Picture API
 declare global {
   interface Window {
@@ -106,8 +104,8 @@ function App() {
   const setShowTimer = useSetShowTimer();
 
   // Local UI state (not persisted)
-  const [activePanel, setActivePanel] = useState<string>(DefaultPanel);
-  const lastActivePanelRef = useRef<string>(activePanel);
+  const [activePanel, setActivePanel] = useState<string>("");
+  const lastActivePanelRef = useRef<string>(Panels[0]?.label);
 
   const [visitedPanels, setVisitedPanels] = useState<Set<string>>(new Set());
   const [isFullscreen, setIsFullscreen] = useState(false);

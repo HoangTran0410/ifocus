@@ -342,9 +342,53 @@ export function stopAudioCapture(): void {
 // Mixer Mode: Connect multiple audio elements
 // ============================================
 
+// Registry for audio elements that want to be connected when mixer mode is active
+// Components can register their elements here, and they'll be connected on demand
+const registeredElements = new Map<
+  string,
+  HTMLAudioElement | HTMLVideoElement
+>();
+
+/**
+ * Register an audio/video element to be connected when mixer mode is active.
+ * This does NOT connect the element immediately - it just registers it.
+ * Elements will be connected when initMixerMode() is called.
+ *
+ * @param id Unique identifier for this element
+ * @param element The audio or video element
+ */
+export function registerAudioElement(
+  id: string,
+  element: HTMLAudioElement | HTMLVideoElement
+): void {
+  registeredElements.set(id, element);
+  console.log(
+    `Audio element "${id}" registered. Total registered: ${registeredElements.size}`
+  );
+
+  // If mixer mode is already active, connect immediately
+  if (currentSourceType === "mixer" && mixerGain && audioContext) {
+    connectElement(id, element).catch(() => {
+      // May fail if already connected - that's OK
+    });
+  }
+}
+
+/**
+ * Unregister an audio element (e.g., when component unmounts).
+ * This also disconnects it if it was connected.
+ */
+export function unregisterAudioElement(id: string): void {
+  registeredElements.delete(id);
+  disconnectElement(id);
+  console.log(
+    `Audio element "${id}" unregistered. Total registered: ${registeredElements.size}`
+  );
+}
+
 /**
  * Initialize mixer mode for connecting multiple audio elements.
- * Call this once before connecting elements.
+ * This will also connect all previously registered elements.
  */
 export async function initMixerMode(): Promise<boolean> {
   // If already in mixer mode with valid context, just return
@@ -383,11 +427,31 @@ export async function initMixerMode(): Promise<boolean> {
       mixerGain = audioContext.createGain();
       mixerGain.gain.value = 1;
       mixerGain.connect(analyser);
-      mixerGain.connect(audioContext.destination);
+      // Note: We don't connect to destination here - the original elements
+      // already play through their own audio path. This avoids double playback.
     }
 
     isCapturing = true;
     currentSourceType = "mixer";
+
+    // Connect all registered elements
+    for (const [id, element] of registeredElements) {
+      if (!connectedElements.has(id)) {
+        try {
+          const source = audioContext.createMediaElementSource(element);
+          source.connect(mixerGain);
+          source.connect(audioContext.destination); // Route to speakers
+          connectedElements.set(id, source);
+          console.log(`Connected registered element "${id}" to mixer.`);
+        } catch (error) {
+          console.warn(`Failed to connect registered element "${id}":`, error);
+        }
+      }
+    }
+
+    console.log(
+      `Mixer mode initialized. Connected ${connectedElements.size} elements.`
+    );
     return true;
   } catch (error) {
     console.error("Failed to initialize mixer mode:", error);
@@ -401,6 +465,9 @@ export async function initMixerMode(): Promise<boolean> {
  *
  * IMPORTANT: Once connected, a media element cannot be connected again
  * (Web Audio API limitation). We track connected elements by ID.
+ *
+ * Audio routing: source -> mixerGain -> analyser (for visualization)
+ *               source -> destination (for playback through speakers)
  */
 export async function connectElement(
   id: string,
@@ -417,9 +484,12 @@ export async function connectElement(
       return false;
     }
 
-    // Create source from element and connect to mixer
+    // Create source from element and connect to mixer AND destination
+    // When we create a MediaElementSource, it "hijacks" the audio output
+    // so we must explicitly route it to the destination for playback
     const source = audioContext!.createMediaElementSource(element);
-    source.connect(mixerGain!);
+    source.connect(mixerGain!); // For visualization (mixerGain -> analyser)
+    source.connect(audioContext!.destination); // For playback through speakers
 
     // Store the source for later disconnection
     connectedElements.set(id, source);
