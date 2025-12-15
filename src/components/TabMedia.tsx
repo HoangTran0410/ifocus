@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { useLocalStorage } from "../hooks/useLocalStorage";
 import { DEFAULT_MUSIC } from "../constants";
+import { connectElement, isElementConnected } from "../utils/audioAnalyzer";
 
 interface UploadedMedia {
   id: string;
@@ -32,8 +33,9 @@ export default function MediaTab() {
   const [inputUrl, setInputUrl] = useState(youtubeUrl);
 
   // Uploaded media state
-  const [uploadedMedia, setUploadedMedia] =
-    useLocalStorage<UploadedMedia | null>("zen_uploaded_media", null);
+  const [uploadedMedia, setUploadedMedia] = useState<UploadedMedia | null>(
+    null
+  );
   const [isLooping, setIsLooping] = useLocalStorage<boolean>(
     "zen_media_loop",
     true
@@ -103,6 +105,13 @@ export default function MediaTab() {
   const handleLoadedMetadata = () => {
     if (mediaRef.current) {
       setDuration(mediaRef.current.duration);
+
+      // Connect to audio mixer for visualization
+      if (!isElementConnected("uploaded-media")) {
+        connectElement("uploaded-media", mediaRef.current).catch(() => {
+          // May fail if already connected - that's OK
+        });
+      }
     }
   };
 

@@ -1,7 +1,7 @@
 // Audio capture and analysis using getDisplayMedia, getUserMedia, or file input
 
 // Audio source types
-export type AudioSourceType = "none" | "tab" | "mic" | "file";
+export type AudioSourceType = "none" | "tab" | "mic" | "file" | "mixer";
 
 // Global AudioContext and Analyser singleton
 let audioContext: AudioContext | null = null;
@@ -15,6 +15,10 @@ let sourceNode:
   | null = null;
 let isCapturing = false;
 let currentSourceType: AudioSourceType = "none";
+
+// Mixer mode: allows multiple audio elements to be connected
+let mixerGain: GainNode | null = null;
+const connectedElements = new Map<string, MediaElementAudioSourceNode>();
 
 // Config for analyzer - optimized settings from music-visualizer
 export interface AudioAnalyzerConfig {
@@ -282,7 +286,14 @@ export async function startFileCapture(file: File): Promise<boolean> {
 }
 
 // Stop audio capture and clean up
+// NOTE: We deliberately do NOT close the audioContext to avoid invalidating
+// connected media elements (they're permanently bound to their AudioContext)
 export function stopAudioCapture(): void {
+  // Don't stop if in mixer mode - use disconnectAllElements instead
+  if (currentSourceType === "mixer") {
+    return;
+  }
+
   if (mediaStream) {
     mediaStream.getTracks().forEach((track) => track.stop());
     mediaStream = null;
@@ -314,17 +325,178 @@ export function stopAudioCapture(): void {
     }
     sourceNode = null;
   }
-  if (audioContext) {
-    audioContext.close();
-    audioContext = null;
-  }
-  analyser = null;
-  dataArray = null;
+
+  // NOTE: Do NOT close audioContext here - it would invalidate all connected
+  // media elements that were created with createMediaElementSource()
+  // audioContext stays alive for mixer mode elements
+
+  // Reset analyser-related data but keep audioContext
   cachedDataArray = null;
   cachedFrameId = -1;
   isCapturing = false;
   currentSourceType = "none";
   resetBeatDetection();
+}
+
+// ============================================
+// Mixer Mode: Connect multiple audio elements
+// ============================================
+
+/**
+ * Initialize mixer mode for connecting multiple audio elements.
+ * Call this once before connecting elements.
+ */
+export async function initMixerMode(): Promise<boolean> {
+  // If already in mixer mode with valid context, just return
+  if (currentSourceType === "mixer" && audioContext && mixerGain && analyser) {
+    return true;
+  }
+
+  try {
+    // Clean up any non-mixer capture first
+    if (currentSourceType !== "none" && currentSourceType !== "mixer") {
+      stopAudioCapture();
+    }
+
+    // Initialize audio context
+    if (!audioContext || audioContext.state === "closed") {
+      audioContext = new AudioContext();
+    }
+
+    // Resume if suspended
+    if (audioContext.state === "suspended") {
+      await audioContext.resume();
+    }
+
+    // Create analyser
+    if (!analyser) {
+      analyser = audioContext.createAnalyser();
+      analyser.fftSize = CONFIG.fftSize;
+      analyser.smoothingTimeConstant = CONFIG.smoothingTimeConstant;
+      analyser.minDecibels = CONFIG.minDecibels;
+      analyser.maxDecibels = CONFIG.maxDecibels;
+      dataArray = new Uint8Array(analyser.frequencyBinCount);
+    }
+
+    // Create mixer gain node
+    if (!mixerGain) {
+      mixerGain = audioContext.createGain();
+      mixerGain.gain.value = 1;
+      mixerGain.connect(analyser);
+      mixerGain.connect(audioContext.destination);
+    }
+
+    isCapturing = true;
+    currentSourceType = "mixer";
+    return true;
+  } catch (error) {
+    console.error("Failed to initialize mixer mode:", error);
+    return false;
+  }
+}
+
+/**
+ * Connect an audio or video element to the mixer for visualization.
+ * The element must have crossOrigin="anonymous" if loading cross-origin content.
+ *
+ * IMPORTANT: Once connected, a media element cannot be connected again
+ * (Web Audio API limitation). We track connected elements by ID.
+ */
+export async function connectElement(
+  id: string,
+  element: HTMLAudioElement | HTMLVideoElement
+): Promise<boolean> {
+  // Check if already connected
+  if (connectedElements.has(id)) {
+    return true;
+  }
+
+  try {
+    // Ensure mixer mode is initialized
+    if (!(await initMixerMode())) {
+      return false;
+    }
+
+    // Create source from element and connect to mixer
+    const source = audioContext!.createMediaElementSource(element);
+    source.connect(mixerGain!);
+
+    // Store the source for later disconnection
+    connectedElements.set(id, source);
+
+    console.log(
+      `Audio element "${id}" connected to mixer. Total: ${connectedElements.size}`
+    );
+    return true;
+  } catch (error) {
+    // Common error: element already connected to a different AudioContext
+    console.error(`Failed to connect element "${id}":`, error);
+    return false;
+  }
+}
+
+/**
+ * Disconnect a specific audio element from the mixer.
+ * Note: The element itself is not affected, just disconnected from analysis.
+ */
+export function disconnectElement(id: string): void {
+  const source = connectedElements.get(id);
+  if (source) {
+    try {
+      source.disconnect();
+    } catch (e) {
+      // Already disconnected
+    }
+    connectedElements.delete(id);
+    console.log(
+      `Audio element "${id}" disconnected. Remaining: ${connectedElements.size}`
+    );
+  }
+}
+
+/**
+ * Disconnect all audio elements and clean up mixer mode.
+ */
+export function disconnectAllElements(): void {
+  // Disconnect all sources
+  connectedElements.forEach((source, id) => {
+    try {
+      source.disconnect();
+    } catch (e) {
+      // Already disconnected
+    }
+  });
+  connectedElements.clear();
+
+  // Clean up mixer (will be recreated on next initMixerMode)
+  if (mixerGain) {
+    try {
+      mixerGain.disconnect();
+    } catch (e) {
+      // Already disconnected
+    }
+    mixerGain = null;
+  }
+
+  // NOTE: Do NOT close audioContext - it would invalidate all connected
+  // media elements that were created with createMediaElementSource()
+  // The audioContext stays alive for future connections
+
+  // Reset state but keep audioContext and analyser
+  cachedDataArray = null;
+  cachedFrameId = -1;
+  isCapturing = false;
+  currentSourceType = "none";
+  resetBeatDetection();
+
+  console.log("Mixer mode cleaned up (context preserved)");
+}
+
+/**
+ * Check if an element is already connected to the mixer
+ */
+export function isElementConnected(id: string): boolean {
+  return connectedElements.has(id);
 }
 
 /**

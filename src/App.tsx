@@ -303,7 +303,7 @@ function App() {
             <div className="flex gap-0 sm:gap-2 p-2 bg-black/40 opacity-50 hover:opacity-100 hover:backdrop-blur transition-all rounded-2xl border border-white/10 shadow-2xl">
               {Panels.filter((item) => !item.divider).map((item) => (
                 <DockButton
-                  key={item.label}
+                  key={"dock-" + item.label}
                   icon={item.icon}
                   label={item.label}
                   isActive={activePanel === item.label}
@@ -334,12 +334,12 @@ function App() {
               {Panels.map((item) =>
                 item.divider ? (
                   <div
-                    key={item.label}
+                    key={"divider-" + item.label}
                     className="w-px h-10 bg-white/10 mx-1 self-center"
                   />
                 ) : (
                   <button
-                    key={item.label}
+                    key={"tab-" + item.label}
                     onClick={() => setActivePanel(item.label)}
                     className={`p-2 rounded-lg transition-all ${
                       activePanel === item.label
@@ -372,7 +372,7 @@ function App() {
           <div className="flex-1 overflow-hidden relative">
             {Panels.filter((item) => item.comp).map((item) => (
               <div
-                key={item.label}
+                key={"panel-" + item.label}
                 className={`absolute inset-0 ${
                   activePanel === item.label ? "block" : "hidden"
                 }`}
