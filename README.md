@@ -6,6 +6,14 @@ A beautiful, feature-rich **Pomodoro Timer** with stunning **Music Visualizer** 
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.8-3178C6?style=flat-square&logo=typescript)
 ![Vite](https://img.shields.io/badge/Vite-6.2-646CFF?style=flat-square&logo=vite)
 
+## Demo
+
+[Try it Online](https://hoangtran0410.github.io/ifocus/)
+
+[Facebook Post 1](https://www.facebook.com/share/p/14S6yGbuV23/)
+
+[Facebook Post 2](https://www.facebook.com/share/p/1BrAqb1Rap/)
+
 ## ✨ Features
 
 ### 🍅 Pomodoro Timer
