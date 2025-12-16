@@ -17,12 +17,12 @@ const SettingsTab = loadable(() => import("./TabSettings"), {
 
 const Tabs = [
   {
-    name: "Image",
-    component: ImageTab,
-  },
-  {
     name: "Color",
     component: ColorTab,
+  },
+  {
+    name: "Image",
+    component: ImageTab,
   },
   {
     name: "Video",
