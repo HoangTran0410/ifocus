@@ -68,6 +68,8 @@ const RenderMode: Record<
   "🌀 Julia (WebGL)": () => import("./shader/WebGL_Julia"),
   "🔄 Inversion (WebGL)": () => import("./shader/WebGL_Inversion"),
   "🌊 Liquid (WebGL)": () => import("./shader/WebGL_Liquid"),
+  "🐚 Rocaille (WebGL)": () => import("./shader/WebGL_Rocaille"),
+  "🌪️ Gyroid (WebGL)": () => import("./shader/WebGL_Gyroid"),
 };
 export type VisualizerMode = keyof typeof RenderMode;
 export const MODES = Object.keys(RenderMode) as VisualizerMode[];
